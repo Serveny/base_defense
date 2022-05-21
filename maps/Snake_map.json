@@ -1,0 +1,165 @@
+{
+  "name": "Snake",
+  "height": 6,
+  "width": 10,
+  "tiles": [
+    [
+      {
+        "TowerGround": null
+      },
+      "Road",
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      }
+    ],
+    [
+      {
+        "TowerGround": null
+      },
+      "Road",
+      "Road",
+      "Road",
+      "Road",
+      {
+        "TowerGround": null
+      }
+    ],
+    [
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      "Road",
+      {
+        "TowerGround": null
+      }
+    ],
+    [
+      {
+        "TowerGround": null
+      },
+      "Road",
+      "Road",
+      "Road",
+      "Road",
+      {
+        "TowerGround": null
+      }
+    ],
+    [
+      {
+        "TowerGround": null
+      },
+      "Road",
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      }
+    ],
+    [
+      {
+        "TowerGround": null
+      },
+      "Road",
+      "Road",
+      "Road",
+      "Road",
+      {
+        "TowerGround": null
+      }
+    ],
+    [
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      {
+        "TowerGround": null
+      },
+      "Road",
+      {
+        "TowerGround": null
+      }
+    ],
+    [
+      {
+        "BuildingGround": null
+      },
+      {
+        "BuildingGround": null
+      },
+      {
+        "BuildingGround": null
+      },
+      {
+        "BuildingGround": null
+      },
+      "Road",
+      {
+        "BuildingGround": null
+      }
+    ],
+    [
+      {
+        "BuildingGround": null
+      },
+      "Road",
+      "Road",
+      "Road",
+      "Road",
+      {
+        "BuildingGround": null
+      }
+    ],
+    [
+      {
+        "BuildingGround": null
+      },
+      {
+        "BuildingGround": null
+      },
+      {
+        "BuildingGround": null
+      },
+      {
+        "BuildingGround": null
+      },
+      {
+        "BuildingGround": null
+      },
+      {
+        "BuildingGround": null
+      }
+    ]
+  ]
+}

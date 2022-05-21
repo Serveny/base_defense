@@ -1,10 +1,13 @@
 pub struct MenuPlugin;
-use crate::{utils::GameState, TITLE};
+use crate::{
+    utils::{add_row, GameState},
+    TITLE,
+};
 use bevy::{app::AppExit, prelude::*};
 use bevy_egui::{
     egui::{
-        self, style::Spacing, CentralPanel, Color32, FontDefinitions, Frame, Label, Response,
-        RichText, ScrollArea, SidePanel, Ui, Widget,
+        self, CentralPanel, Color32, FontDefinitions, Frame, Label, Response, RichText, ScrollArea,
+        SidePanel,
     },
     EguiContext,
 };
@@ -125,21 +128,6 @@ fn add_settings(egui_ctx: &mut ResMut<EguiContext>, settings: &mut ResMut<crate:
                 .clamp_to_range(true);
             add_row("Volume", volume_silder, ui);
         });
-    });
-}
-
-fn add_row(label: &str, widget: impl Widget, ui: &mut Ui) {
-    let width_right_col = ui.available_width() - 200.0;
-    ui.horizontal(|ui| {
-        ui.set_style(egui::Style {
-            spacing: Spacing {
-                slider_width: width_right_col - 60.0,
-                ..Default::default()
-            },
-            ..Default::default()
-        });
-        ui.add_sized([200., 60.], Label::new(label));
-        ui.add_sized([width_right_col, 60.0], widget);
     });
 }
 

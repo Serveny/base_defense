@@ -1,5 +1,5 @@
 #![allow(unused)]
-use crate::{board::Board, utils::despawn_screen, GameState};
+use crate::{board::Board, utils::despawn_all_of, GameState};
 use bevy::prelude::*;
 
 // This plugin will contain the game. In this case, it's just be a screen that will
@@ -11,7 +11,7 @@ impl Plugin for GamePlugin {
         app.add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
             .add_system_set(SystemSet::on_update(GameState::Game).with_system(game))
             .add_system_set(
-                SystemSet::on_exit(GameState::Game).with_system(despawn_screen::<OnGameScreen>),
+                SystemSet::on_exit(GameState::Game).with_system(despawn_all_of::<OnGameScreen>),
             );
     }
 }

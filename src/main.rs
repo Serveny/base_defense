@@ -6,7 +6,7 @@ use user::Settings;
 use utils::GameState;
 
 #[cfg(feature = "debug")]
-use bevy_inspector_egui::WorldInspectorPlugin;
+use bevy_editor_pls::*;
 
 mod assets;
 mod board;
@@ -26,6 +26,7 @@ fn main() {
     let mut app = App::new();
     let window_setup = WindowDescriptor {
         title: TITLE.to_string(),
+        position: Some(Vec2::new(3000., 200.)),
         ..Default::default()
     };
 
@@ -39,7 +40,9 @@ fn main() {
         .add_plugin(board_editor::BoardEditorPlugin);
 
     #[cfg(feature = "debug")]
-    app.add_plugin(WorldInspectorPlugin::new());
+    app.add_plugin(EditorPlugin)
+        .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
+        .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin);
 
     AssetLoader::new(GameState::Splash)
         .continue_to_state(GameState::Menu)
