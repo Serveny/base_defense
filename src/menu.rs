@@ -33,9 +33,16 @@ impl Plugin for MenuPlugin {
 
 pub fn setup_fonts(mut egui_ctx: ResMut<EguiContext>) {
     let mut fonts = FontDefinitions::default();
+
+    #[cfg(windows)]
+    let font = include_bytes!("..\\assets\\fonts\\Quicksand-Regular.ttf");
+
+    #[cfg(unix)]
+    let font = include_bytes!("../assets/fonts/Quicksand-Regular.ttf");
+
     fonts.font_data.insert(
         "Quicksand-Regular".to_owned(),
-        egui::FontData::from_static(include_bytes!("..\\assets\\fonts\\Quicksand-Regular.ttf")),
+        egui::FontData::from_static(font),
     );
     // Put Quicksand-Regular first (highest priority) for proportional text:
     fonts
