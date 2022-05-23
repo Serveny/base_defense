@@ -200,7 +200,6 @@ dependencies = [
  "bevy_asset_loader",
  "bevy_editor_pls",
  "bevy_egui 0.14.0",
- "path_macro",
  "serde",
  "serde_json",
 ]
@@ -2708,12 +2707,6 @@ dependencies = [
  "smallvec",
  "windows-sys",
 ]
-
-[[package]]
-name = "path_macro"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6e819bbd49d5939f682638fa54826bf1650abddcd65d000923de8ad63cc7d15"
 
 [[package]]
 name = "peeking_take_while"

@@ -34,22 +34,24 @@ impl EditorTile {
 const TOP_BAR_HEIGHT_PX: f32 = 40.0;
 const LEFT_BAR_WIDTH_PX: f32 = 140.0;
 
+#[derive(Default)]
 struct BoardEditorState {
     current_map: Board,
+    err_text: Option<String>,
 }
 
-impl Default for BoardEditorState {
-    fn default() -> Self {
-        Self {
-            current_map: Board::default(),
-        }
-    }
-}
-
-#[derive(Default)]
 struct NewBoardWindow {
     width: u8,
     height: u8,
+}
+
+impl Default for NewBoardWindow {
+    fn default() -> Self {
+        Self {
+            width: 10,
+            height: 6,
+        }
+    }
 }
 
 struct LoadBoardWindow {
@@ -81,6 +83,7 @@ struct SaveBoardWindow {
 enum PopupWindows {
     Load(LoadBoardWindow),
     Save(SaveBoardWindow),
+    New(NewBoardWindow),
     None,
 }
 
@@ -102,12 +105,13 @@ impl Plugin for BoardEditorPlugin {
             .add_system_set(SystemSet::on_enter(GameState::MapEditor).with_system(editor_setup))
             .add_system_set(
                 SystemSet::on_update(GameState::MapEditor)
-                    .with_system(add_top_menu_bar)
+                    .with_system(add_top_menu_bar.before(add_side_tool_bar))
                     .with_system(add_side_tool_bar)
                     .with_system(on_resize)
                     .with_system(editor_click_actions)
                     .with_system(add_load_board_window)
-                    .with_system(add_save_board_window),
+                    .with_system(add_save_board_window)
+                    .with_system(add_new_board_window),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::MapEditor)
@@ -127,8 +131,8 @@ fn editor_setup(mut commands: Commands, windows: Res<Windows>) {
 fn add_top_menu_bar(
     mut egui_ctx: ResMut<EguiContext>,
     mut game_state: ResMut<State<GameState>>,
-    mut state: ResMut<BoardEditorState>,
     mut popup: ResMut<PopupWindows>,
+    state: Res<BoardEditorState>,
 ) {
     TopBottomPanel::top("map_editor_top_bar").show(egui_ctx.ctx_mut(), |ui| {
         ui.set_height(TOP_BAR_HEIGHT_PX);
@@ -154,7 +158,15 @@ fn add_top_menu_bar(
             }
 
             if add_top_bar_button("New", ui).clicked() {
-                state.current_map = Board::default();
+                *popup = match *popup {
+                    PopupWindows::New(_) => PopupWindows::None,
+                    _ => PopupWindows::New(NewBoardWindow::default()),
+                }
+            }
+
+            if let Some(err_text) = &state.err_text {
+                ui.add_space(LEFT_BAR_WIDTH_PX - 80.);
+                add_error_box(err_text, ui);
             }
         });
     });
@@ -237,6 +249,47 @@ fn add_load_board_window(
             if let Some(err_text) = &load_win.err_text {
                 add_error_box(err_text, ui);
                 add_error_box(err_text, ui);
+            }
+        });
+    }
+    if is_close {
+        *popup = PopupWindows::None;
+    }
+}
+
+fn add_new_board_window(
+    mut commands: Commands,
+    mut egui_ctx: ResMut<EguiContext>,
+    mut state: ResMut<BoardEditorState>,
+    mut popup: ResMut<PopupWindows>,
+    mut editor_tiles: Query<Entity, With<EditorTile>>,
+    windows: Res<Windows>,
+) {
+    let mut is_close = false;
+    if let PopupWindows::New(new_win) = &mut *popup {
+        add_popup_window(&mut egui_ctx, "New map", |ui| {
+            // Width
+            let width_silder = egui::Slider::new(&mut new_win.width, 4..=32)
+                .show_value(true)
+                .clamp_to_range(true);
+            add_row("Width", width_silder, ui);
+
+            // Height
+            let height_silder = egui::Slider::new(&mut new_win.height, 4..=32)
+                .show_value(true)
+                .clamp_to_range(true);
+            add_row("Height", height_silder, ui);
+
+            // Ok/Cancel Buttons
+            ui.add_space(10.);
+            let (is_ok, is_cancel) = add_ok_cancel_row(ui);
+
+            if is_ok {
+                state.current_map = Board::empty(new_win.width, new_win.height);
+                repaint(&mut commands, &mut editor_tiles, &windows, &state);
+                is_close = true;
+            } else if is_cancel {
+                is_close = true;
             }
         });
     }
