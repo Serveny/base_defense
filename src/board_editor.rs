@@ -54,6 +54,20 @@ impl Default for NewBoardWindow {
     }
 }
 
+struct EditBoardWindow {
+    width: u8,
+    height: u8,
+}
+
+impl EditBoardWindow {
+    fn new(board: &Board) -> Self {
+        Self {
+            width: board.width,
+            height: board.height,
+        }
+    }
+}
+
 struct LoadBoardWindow {
     boards: Vec<Board>,
     err_text: Option<String>,
@@ -84,6 +98,7 @@ enum PopupWindows {
     Load(LoadBoardWindow),
     Save(SaveBoardWindow),
     New(NewBoardWindow),
+    Edit(EditBoardWindow),
     None,
 }
 
@@ -111,7 +126,8 @@ impl Plugin for BoardEditorPlugin {
                     .with_system(editor_click_actions)
                     .with_system(add_load_board_window)
                     .with_system(add_save_board_window)
-                    .with_system(add_new_board_window),
+                    .with_system(add_new_board_window)
+                    .with_system(add_edit_board_window),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::MapEditor)
@@ -161,6 +177,13 @@ fn add_top_menu_bar(
                 *popup = match *popup {
                     PopupWindows::New(_) => PopupWindows::None,
                     _ => PopupWindows::New(NewBoardWindow::default()),
+                }
+            }
+
+            if add_top_bar_button("Edit", ui).clicked() {
+                *popup = match *popup {
+                    PopupWindows::Edit(_) => PopupWindows::None,
+                    _ => PopupWindows::Edit(EditBoardWindow::new(&state.current_map)),
                 }
             }
 
@@ -259,7 +282,7 @@ fn add_load_board_window(
 
 fn add_new_board_window(
     mut commands: Commands,
-    mut egui_ctx: ResMut<EguiContext>,
+    egui_ctx: ResMut<EguiContext>,
     mut state: ResMut<BoardEditorState>,
     mut popup: ResMut<PopupWindows>,
     mut editor_tiles: Query<Entity, With<EditorTile>>,
@@ -267,35 +290,116 @@ fn add_new_board_window(
 ) {
     let mut is_close = false;
     if let PopupWindows::New(new_win) = &mut *popup {
-        add_popup_window(&mut egui_ctx, "New map", |ui| {
-            // Width
-            let width_silder = egui::Slider::new(&mut new_win.width, 4..=32)
-                .show_value(true)
-                .clamp_to_range(true);
-            add_row("Width", width_silder, ui);
+        let (is_ok, is_cancel) =
+            add_new_edit_popup(egui_ctx, &mut new_win.width, &mut new_win.height, "New map");
 
-            // Height
-            let height_silder = egui::Slider::new(&mut new_win.height, 4..=32)
-                .show_value(true)
-                .clamp_to_range(true);
-            add_row("Height", height_silder, ui);
-
-            // Ok/Cancel Buttons
-            ui.add_space(10.);
-            let (is_ok, is_cancel) = add_ok_cancel_row(ui);
-
-            if is_ok {
-                state.current_map = Board::empty(new_win.width, new_win.height);
-                repaint(&mut commands, &mut editor_tiles, &windows, &state);
-                is_close = true;
-            } else if is_cancel {
-                is_close = true;
-            }
-        });
+        if is_ok {
+            state.current_map = Board::empty(new_win.width, new_win.height);
+            repaint(&mut commands, &mut editor_tiles, &windows, &state);
+            is_close = true;
+        } else if is_cancel {
+            is_close = true;
+        }
     }
     if is_close {
         *popup = PopupWindows::None;
     }
+}
+
+fn add_edit_board_window(
+    mut commands: Commands,
+    egui_ctx: ResMut<EguiContext>,
+    mut state: ResMut<BoardEditorState>,
+    mut popup: ResMut<PopupWindows>,
+    mut editor_tiles: Query<Entity, With<EditorTile>>,
+    windows: Res<Windows>,
+) {
+    let mut is_close = false;
+    if let PopupWindows::Edit(edit_win) = &mut *popup {
+        let (is_ok, is_cancel) = add_new_edit_popup(
+            egui_ctx,
+            &mut edit_win.width,
+            &mut edit_win.height,
+            "Edit size",
+        );
+
+        if is_ok {
+            edit_board(&mut state.current_map, edit_win.width, edit_win.height);
+            repaint(&mut commands, &mut editor_tiles, &windows, &state);
+            is_close = true;
+        } else if is_cancel {
+            is_close = true;
+        }
+    }
+    if is_close {
+        *popup = PopupWindows::None;
+    }
+}
+
+fn add_new_edit_popup(
+    mut egui_ctx: ResMut<EguiContext>,
+    width: &mut u8,
+    height: &mut u8,
+    title: &str,
+) -> (bool, bool) {
+    let (mut is_ok, mut is_cancel) = (false, false);
+    add_popup_window(&mut egui_ctx, title, |ui| {
+        // Width
+        let width_silder = egui::Slider::new(width, 4..=32)
+            .show_value(true)
+            .clamp_to_range(true);
+        add_row("Width", width_silder, ui);
+
+        // Height
+        let height_silder = egui::Slider::new(height, 4..=32)
+            .show_value(true)
+            .clamp_to_range(true);
+        add_row("Height", height_silder, ui);
+
+        // Ok/Cancel Buttons
+        ui.add_space(10.);
+        (is_ok, is_cancel) = add_ok_cancel_row(ui);
+    });
+    (is_ok, is_cancel)
+}
+
+fn edit_board(board: &mut Board, new_width: u8, new_heigth: u8) {
+    // Add/reduce width
+    if new_width > board.width {
+        let to_add = new_width - board.width;
+        for row in &mut board.tiles {
+            for _ in 0..to_add {
+                row.push(Tile::Empty);
+            }
+        }
+    } else if new_width < board.width {
+        let to_del = board.width - new_width;
+        for row in &mut board.tiles {
+            for _ in 0..to_del {
+                row.pop();
+            }
+        }
+    }
+
+    // Add/reduce height
+    if new_heigth > board.height {
+        let to_add = new_heigth - board.height;
+        for _ in 0..to_add {
+            let mut row = Vec::new();
+            for _ in 0..board.width {
+                row.push(Tile::Empty);
+            }
+            board.tiles.push(row);
+        }
+    } else if new_heigth < board.height {
+        let to_del = board.height - new_heigth;
+        for _ in 0..to_del {
+            board.tiles.pop();
+        }
+    }
+
+    board.width = new_width;
+    board.height = new_heigth;
 }
 
 fn repaint(
@@ -347,14 +451,14 @@ fn add_tile_radio_button(
         .add(RadioButton::new(*current_state.current() == state, text))
         .clicked()
     {
-        current_state.set(state).unwrap();
+        current_state.set(state).unwrap_or_default();
     }
 }
 
 fn spawn_tiles(commands: &mut Commands, windows: &Windows, board: &Board) {
     let rs_params = TileResizeParams::new(windows, board);
-    for (x, row) in board.tiles.iter().enumerate() {
-        for (y, tile) in row.iter().enumerate() {
+    for (y, row) in board.tiles.iter().enumerate() {
+        for (x, tile) in row.iter().enumerate() {
             spawn_tile(tile, x, y, &rs_params, commands);
         }
     }
@@ -442,8 +546,8 @@ fn resize_tiles(
 }
 
 struct TileResizeParams {
-    tile_inner_size: Vec2,
     tile_size: f32,
+    tile_inner_size: Vec2,
     board_start_x: f32,
     board_start_y: f32,
 }
@@ -458,15 +562,13 @@ impl TileResizeParams {
         let tile_size = get_tile_size_px(board_width_px, board_height_px, board);
         let tile_inner_size = Vec2::new(tile_size - 10., tile_size - 10.);
 
-        // Think from the middle of the sceen
-        let board_start_x = (LEFT_BAR_WIDTH_PX - board_width_px) / 2.;
-        let board_start_y = (board_height_px - TOP_BAR_HEIGHT_PX) / 2.;
-
         Self {
-            tile_inner_size,
             tile_size,
-            board_start_x,
-            board_start_y,
+            tile_inner_size,
+
+            // Think from the middle of the sceen
+            board_start_x: (LEFT_BAR_WIDTH_PX - board_width_px) / 2.,
+            board_start_y: (board_height_px - TOP_BAR_HEIGHT_PX) / 2.,
         }
     }
 }
@@ -482,10 +584,10 @@ fn editor_click_actions(
     if popups.is_open() {
         return;
     }
-    if mouse_button_input.just_pressed(MouseButton::Left) {
+    if mouse_button_input.pressed(MouseButton::Left) {
         let tile = settile_state_to_tile(set_tile_state.current().clone());
         set_tile(&windows, &mut state.current_map, &mut editor_tiles, tile);
-    } else if mouse_button_input.just_pressed(MouseButton::Right) {
+    } else if mouse_button_input.pressed(MouseButton::Right) {
         set_tile(
             &windows,
             &mut state.current_map,
@@ -510,7 +612,7 @@ fn set_tile(
                 &transform,
             ) {
                 sprite.color = get_tile_color(&tile_to);
-                board.tiles[tile.pos.x as usize][tile.pos.y as usize] = tile_to;
+                board.tiles[tile.pos.y as usize][tile.pos.x as usize] = tile_to;
                 break;
             }
         }
@@ -518,7 +620,6 @@ fn set_tile(
 }
 
 fn is_hover(cursor_pos: Vec2, sprite: &Sprite, transform: &Transform) -> bool {
-    //println!("is_hover: {} | {}", cursor_pos, transform.translation);
     if let Some(size) = sprite.custom_size {
         cursor_pos.x >= transform.translation.x
             && cursor_pos.x <= transform.translation.x + size.x

@@ -66,8 +66,8 @@ impl Board {
             name: String::new(),
             width,
             height,
-            tiles: (0..width)
-                .map(|_| (0..height).map(|_| Tile::Empty).collect())
+            tiles: (0..height)
+                .map(|_| (0..width).map(|_| Tile::Empty).collect())
                 .collect(),
         }
     }
