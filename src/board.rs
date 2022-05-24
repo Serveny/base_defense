@@ -79,42 +79,81 @@ impl Default for Board {
     }
 }
 
+const TILE_NEIGHBOR_MATRIX: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
+
 // Validation
 impl Board {
-    fn is_valid(&self) -> Result<(), &str> {
+    pub fn validate(&self) -> Result<(), &str> {
+        let tower_tiles = self.get_tiles(Tile::TowerGround(None));
+        let building_tiles = self.get_tiles(Tile::BuildingGround(None));
+        let road_tiles = self.get_tiles(Tile::Road);
+
+        if tower_tiles.len() == 0 {
+            return Err("Board needs tower tiles");
+        }
+        if building_tiles.len() == 0 {
+            return Err("Board needs building tiles");
+        }
+        if road_tiles.len() == 0 {
+            return Err("Board needs road tiles");
+        }
+
         let edges = BoardEdges::new(&self.tiles);
         if !edges.has_start_point() {
-            return Err("No road starting point at the board edge.");
+            return Err("Need road starting point at the board edge.");
         }
-        if !self.are_all_building_tiles_connected() {
-            return Err("Not all building tiles are connected to each other.");
+        if !Self::are_tiles_connected(&road_tiles) {
+            return Err("All road tiles must be connected to each other.");
+        }
+        if !Self::are_tiles_connected(&building_tiles) {
+            return Err("All building tiles must be connected to each other.");
+        }
+        if Self::have_tiles_more_than_max_neighbors(2, &road_tiles) {
+            return Err("Only one clear road allowed.");
+        }
+        if !Self::road_has_valid_end(&road_tiles, &building_tiles) {
+            return Err("Road must end surrounded by three building tiles.");
         }
 
         Ok(())
     }
 
-    fn are_all_building_tiles_connected(&self) -> bool {
-        let building_tiles = self.get_tiles(Tile::BuildingGround(None));
-        let mut connected_tiles: HashSet<UVec2> = HashSet::new();
+    fn road_has_valid_end(road_tiles: &HashSet<UVec2>, building_tiles: &HashSet<UVec2>) -> bool {
+        for road_tile in road_tiles {
+            if Self::get_neighbors(road_tile, building_tiles).len() == 3 {
+                return true;
+            }
+        }
         false
     }
 
+    fn have_tiles_more_than_max_neighbors(max: usize, tiles: &HashSet<UVec2>) -> bool {
+        for tile in tiles {
+            if Self::get_neighbors(tile, tiles).len() > max {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn are_tiles_connected(tiles: &HashSet<UVec2>) -> bool {
+        let mut connected_tiles: HashSet<UVec2> = HashSet::new();
+        if let Some(start) = tiles.iter().last() {
+            println!("{:?}", tiles);
+            Self::check_neighbors(start.clone(), tiles, &mut connected_tiles);
+        }
+        println!("cmp {}, {}", tiles.len(), connected_tiles.len());
+        tiles.len() == connected_tiles.len()
+    }
+
     fn check_neighbors(pos: UVec2, tiles: &HashSet<UVec2>, linked: &mut HashSet<UVec2>) {
-        let additors = [
-            IVec2::new(1, 0),
-            IVec2::new(0, 1),
-            IVec2::new(-1, 0),
-            IVec2::new(0, -1),
-        ];
-        for additor in additors {
-            let x = pos.x as i32 + additor.x;
-            let y = pos.y as i32 + additor.y;
-            if x > 0 && y > 0 {
-                let neighbor = UVec2::new(x as u32, y as u32);
-                if tiles.get(&neighbor).is_some() && linked.get(&neighbor).is_none() {
-                    linked.insert(neighbor);
-                    Board::check_neighbors(neighbor, tiles, linked);
-                }
+        println!("Add {:?}", pos);
+        linked.insert(pos);
+        for neighbor in Self::get_neighbors(&pos, &tiles) {
+            println!("Check {:?}", neighbor);
+            if tiles.get(&neighbor).is_some() && linked.get(&neighbor).is_none() {
+                println!("Found {:?}", neighbor);
+                Self::check_neighbors(neighbor, tiles, linked);
             }
         }
     }
@@ -131,17 +170,18 @@ impl Board {
         building_tiles
     }
 
-    fn is_neighor(one: (u8, u8), two: (u8, u8)) -> bool {
-        let distance_x = if one.0 >= two.0 {
-            one.0 - two.0
-        } else {
-            two.0 - one.0
-        };
-        let distance_y = if one.1 >= two.1 {
-            one.1 - two.1
-        } else {
-            two.1 - one.1
-        };
-        distance_x + distance_y == 1
+    fn get_neighbors(pos: &UVec2, tiles: &HashSet<UVec2>) -> Vec<UVec2> {
+        let mut neighbors = Vec::new();
+        for additor in TILE_NEIGHBOR_MATRIX {
+            let x = pos.x as i32 + additor.0;
+            let y = pos.y as i32 + additor.1;
+            if x >= 0 && y >= 0 {
+                let neighbor = UVec2::new(x as u32, y as u32);
+                if tiles.get(&neighbor).is_some() {
+                    neighbors.push(neighbor);
+                }
+            }
+        }
+        neighbors
     }
 }

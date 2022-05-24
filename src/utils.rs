@@ -123,11 +123,11 @@ pub fn add_error_box(err_text: &str, ui: &mut bevy_egui::egui::Ui) {
     bevy_egui::egui::Frame::none()
         .fill(bevy_egui::egui::Color32::LIGHT_RED)
         .stroke(bevy_egui::egui::Stroke::new(
-            5.,
+            2.,
             bevy_egui::egui::Color32::DARK_RED,
         ))
-        .inner_margin(5.)
-        .outer_margin(3.)
+        .inner_margin(3.)
+        .outer_margin(2.)
         .show(ui, |ui| ui.add(bevy_egui::egui::Label::new(err_text)));
 }
 

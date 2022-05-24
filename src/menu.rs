@@ -1,6 +1,7 @@
 pub struct MenuPlugin;
 use crate::{
-    utils::{add_row, GameState},
+    board::Board,
+    utils::{add_error_box, add_row, get_all_boards_in_folder, GameState},
     TITLE,
 };
 use bevy::{app::AppExit, prelude::*};
@@ -18,13 +19,49 @@ const SIDE_BAR_WIDTH: f32 = 300.0;
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 enum MenuState {
     Main,
+    NewGame,
     Settings,
     Disabled,
 }
 
+struct NewGameMenu {
+    boards: Vec<Board>,
+    selected_board_index: usize,
+    err_text: Option<String>,
+}
+
+impl Default for NewGameMenu {
+    fn default() -> Self {
+        match get_all_boards_in_folder() {
+            Ok(boards) => Self {
+                boards,
+                selected_board_index: 0,
+                err_text: None,
+            },
+            Err(err) => Self {
+                boards: Vec::new(),
+                selected_board_index: 0,
+                err_text: Some(err.to_string()),
+            },
+        }
+    }
+}
+
+// #[derive(Default)]
+// struct NewGameParams {
+//     board: Board,
+// }
+
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_update(GameState::Menu).with_system(startup_menu))
+            .add_system_set(
+                SystemSet::on_enter(MenuState::NewGame).with_system(new_game_menu_setup),
+            )
+            .add_system_set(
+                SystemSet::on_update(MenuState::NewGame)
+                    .with_system(add_new_game_menu.after(startup_menu)),
+            )
             .add_state(MenuState::Disabled)
             .add_startup_system(setup_fonts)
             .add_startup_system(configure_visuals);
@@ -69,7 +106,7 @@ fn startup_menu(
     mut menu_state: ResMut<State<MenuState>>,
     mut egui_ctx: ResMut<EguiContext>,
     mut app_exit_events: EventWriter<AppExit>,
-    mut settings: ResMut<crate::user::Settings>,
+    settings: ResMut<crate::user::Settings>,
 ) {
     add_main_menu(
         &mut game_state,
@@ -79,7 +116,7 @@ fn startup_menu(
     );
 
     match *menu_state.current() {
-        MenuState::Settings => add_settings(&mut egui_ctx, &mut settings),
+        MenuState::Settings => add_settings(&mut egui_ctx, settings),
         MenuState::Disabled => menu_state.set(MenuState::Main).unwrap(),
         _ => (),
     }
@@ -103,7 +140,9 @@ fn add_main_menu(
             );
 
             if add_menu_button("Play", ui).clicked() {
-                leave_menu(GameState::Game, menu_state, game_state);
+                menu_state.set(MenuState::NewGame).unwrap_or_else(|_| {
+                    menu_state.set(MenuState::Main).unwrap();
+                });
             }
 
             if add_menu_button("Map Editor", ui).clicked() {
@@ -126,7 +165,7 @@ fn add_menu_button(text: &str, ui: &mut egui::Ui) -> Response {
     ui.add_sized([SIDE_BAR_WIDTH, 60.0], egui::Button::new(text).frame(false))
 }
 
-fn add_settings(egui_ctx: &mut ResMut<EguiContext>, settings: &mut ResMut<crate::user::Settings>) {
+fn add_settings(egui_ctx: &mut ResMut<EguiContext>, mut settings: ResMut<crate::user::Settings>) {
     CentralPanel::default().show(egui_ctx.ctx_mut(), |ui| {
         ui.set_height(ui.available_height());
         ScrollArea::vertical().show(ui, |ui| {
@@ -135,6 +174,80 @@ fn add_settings(egui_ctx: &mut ResMut<EguiContext>, settings: &mut ResMut<crate:
                 .clamp_to_range(true);
             add_row("Volume", volume_silder, ui);
         });
+    });
+}
+
+fn new_game_menu_setup(mut commands: Commands) {
+    commands.init_resource::<NewGameMenu>();
+}
+
+fn add_new_game_menu(
+    mut egui_ctx: ResMut<EguiContext>,
+    mut game_state: ResMut<State<GameState>>,
+    mut menu_state: ResMut<State<MenuState>>,
+    mut new_game_menu: ResMut<NewGameMenu>,
+) {
+    CentralPanel::default().show(egui_ctx.ctx_mut(), |ui| {
+        ui.set_height(ui.available_height());
+        ui.vertical_centered(|ui| {
+            ui.heading("New Game");
+
+            // Error container
+            if let Some(err_text) = &new_game_menu.err_text {
+                add_error_box(err_text, ui);
+            }
+            ui.horizontal(|ui| {
+                ui.add_sized([200., 60.], bevy_egui::egui::Label::new("Map"));
+                let selected = &new_game_menu.boards[new_game_menu.selected_board_index].name;
+                egui::containers::ComboBox::from_label("")
+                    .selected_text(selected)
+                    .show_ui(ui, |ui| {
+                        ui.set_height(60.);
+                        ui.set_width(ui.available_width());
+                        let boards = &new_game_menu.boards;
+                        let mut selected_i = new_game_menu.selected_board_index;
+
+                        for (i, board) in boards.iter().enumerate() {
+                            ui.selectable_value(&mut selected_i, i, &board.name);
+                        }
+                        new_game_menu.selected_board_index = selected_i;
+                    });
+            });
+        });
+        // ui.group(|ui| {
+        //     ui.set_max_height(400.);
+        //     ui.set_width(390.);
+        //     ui.label("Select map");
+        //     egui::containers::ScrollArea::vertical().show(ui, |ui| {
+        //         let boards = &new_game_menu.boards;
+        //         let mut selected_i = new_game_menu.selected_board_index;
+
+        //         for (i, board) in boards.iter().enumerate() {
+        //             ui.selectable_value(&mut selected_i, i, &board.name);
+        //         }
+        //         new_game_menu.selected_board_index = selected_i;
+        //     });
+        // });
+        egui::TopBottomPanel::bottom("bottom_panel")
+            .resizable(false)
+            .default_height(60.)
+            .frame(egui::Frame {
+                stroke: egui::Stroke {
+                    width: 0.,
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .show_inside(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    if ui
+                        .add_sized([400., 60.], bevy_egui::egui::widgets::Button::new("Play"))
+                        .clicked()
+                    {
+                        leave_menu(GameState::Game, &mut menu_state, &mut game_state);
+                    }
+                });
+            });
     });
 }
 

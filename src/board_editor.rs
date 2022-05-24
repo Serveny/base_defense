@@ -137,8 +137,8 @@ impl Plugin for BoardEditorPlugin {
     }
 }
 fn editor_setup(mut commands: Commands, windows: Res<Windows>) {
-    let editor_state = BoardEditorState::default();
-    spawn_tiles(&mut commands, &windows, &editor_state.current_map);
+    let mut editor_state = BoardEditorState::default();
+    spawn_tiles(&mut commands, &windows, &mut editor_state.current_map);
 
     commands.insert_resource(editor_state);
     commands.insert_resource(PopupWindows::None);
@@ -197,7 +197,7 @@ fn add_top_menu_bar(
 
 fn add_save_board_window(
     mut egui_ctx: ResMut<EguiContext>,
-    mut state: ResMut<BoardEditorState>,
+    mut editor_state: ResMut<BoardEditorState>,
     mut popup: ResMut<PopupWindows>,
 ) {
     let mut is_close = false;
@@ -216,17 +216,17 @@ fn add_save_board_window(
 
             if is_ok {
                 save_win.err_text = None;
-                state.current_map.name = save_win.map_file_name.clone();
-                match save_board_to_file(&save_win.map_file_name, &state.current_map) {
+                editor_state.current_map.name = save_win.map_file_name.clone();
+                match save_board_to_file(&save_win.map_file_name, &editor_state.current_map) {
                     Ok(()) => is_close = true,
                     Err(error) => add_error_box(&error.to_string(), ui),
                 }
             } else if is_cancel {
                 is_close = true;
             }
+
             // Error container
             if let Some(err_text) = &save_win.err_text {
-                add_error_box(err_text, ui);
                 add_error_box(err_text, ui);
             }
         });
@@ -239,7 +239,7 @@ fn add_save_board_window(
 fn add_load_board_window(
     mut commands: Commands,
     mut egui_ctx: ResMut<EguiContext>,
-    mut state: ResMut<BoardEditorState>,
+    mut editor_state: ResMut<BoardEditorState>,
     mut popup: ResMut<PopupWindows>,
     mut editor_tiles: Query<Entity, With<EditorTile>>,
     windows: Res<Windows>,
@@ -256,8 +256,17 @@ fn add_load_board_window(
                         )
                         .clicked()
                     {
-                        state.current_map = board.clone();
-                        repaint(&mut commands, &mut editor_tiles, &windows, &state);
+                        editor_state.current_map = board.clone();
+                        repaint(
+                            &mut commands,
+                            &mut editor_tiles,
+                            &windows,
+                            &mut editor_state,
+                        );
+                        editor_state.err_text = match editor_state.current_map.validate() {
+                            Ok(_) => None,
+                            Err(err) => Some(String::from(err)),
+                        };
                         is_close = true;
                     }
                 }
@@ -270,7 +279,6 @@ fn add_load_board_window(
                 is_close = true;
             }
             if let Some(err_text) = &load_win.err_text {
-                add_error_box(err_text, ui);
                 add_error_box(err_text, ui);
             }
         });
@@ -295,7 +303,8 @@ fn add_new_board_window(
 
         if is_ok {
             state.current_map = Board::empty(new_win.width, new_win.height);
-            repaint(&mut commands, &mut editor_tiles, &windows, &state);
+            state.err_text = None;
+            repaint(&mut commands, &mut editor_tiles, &windows, &mut state);
             is_close = true;
         } else if is_cancel {
             is_close = true;
@@ -324,8 +333,8 @@ fn add_edit_board_window(
         );
 
         if is_ok {
-            edit_board(&mut state.current_map, edit_win.width, edit_win.height);
-            repaint(&mut commands, &mut editor_tiles, &windows, &state);
+            board_edit(&mut state.current_map, edit_win.width, edit_win.height);
+            repaint(&mut commands, &mut editor_tiles, &windows, &mut state);
             is_close = true;
         } else if is_cancel {
             is_close = true;
@@ -345,13 +354,13 @@ fn add_new_edit_popup(
     let (mut is_ok, mut is_cancel) = (false, false);
     add_popup_window(&mut egui_ctx, title, |ui| {
         // Width
-        let width_silder = egui::Slider::new(width, 4..=32)
+        let width_silder = egui::Slider::new(width, 3..=32)
             .show_value(true)
             .clamp_to_range(true);
         add_row("Width", width_silder, ui);
 
         // Height
-        let height_silder = egui::Slider::new(height, 4..=32)
+        let height_silder = egui::Slider::new(height, 3..=32)
             .show_value(true)
             .clamp_to_range(true);
         add_row("Height", height_silder, ui);
@@ -363,7 +372,7 @@ fn add_new_edit_popup(
     (is_ok, is_cancel)
 }
 
-fn edit_board(board: &mut Board, new_width: u8, new_heigth: u8) {
+fn board_edit(board: &mut Board, new_width: u8, new_heigth: u8) {
     // Add/reduce width
     if new_width > board.width {
         let to_add = new_width - board.width;
@@ -406,12 +415,12 @@ fn repaint(
     commands: &mut Commands,
     editor_tiles: &mut Query<Entity, With<EditorTile>>,
     windows: &Windows,
-    state: &BoardEditorState,
+    state: &mut BoardEditorState,
 ) {
     for entity in editor_tiles.iter_mut() {
         commands.entity(entity).despawn_recursive();
     }
-    spawn_tiles(commands, windows, &state.current_map);
+    spawn_tiles(commands, windows, &mut state.current_map);
 }
 
 fn add_top_bar_button(text: &str, ui: &mut Ui) -> Response {
@@ -455,7 +464,7 @@ fn add_tile_radio_button(
     }
 }
 
-fn spawn_tiles(commands: &mut Commands, windows: &Windows, board: &Board) {
+fn spawn_tiles(commands: &mut Commands, windows: &Windows, board: &mut Board) {
     let rs_params = TileResizeParams::new(windows, board);
     for (y, row) in board.tiles.iter().enumerate() {
         for (x, tile) in row.iter().enumerate() {
@@ -498,7 +507,7 @@ fn get_tile_color(tile: &Tile) -> Color {
         Tile::TowerGround(_) => Color::GOLD,
         Tile::BuildingGround(_) => Color::ANTIQUE_WHITE,
         Tile::Road => Color::AQUAMARINE,
-        Tile::Empty => Color::AZURE,
+        Tile::Empty => Color::DARK_GRAY,
     }
 }
 
@@ -578,29 +587,24 @@ fn editor_click_actions(
     windows: Res<Windows>,
     popups: Res<PopupWindows>,
     set_tile_state: Res<State<SettileState>>,
-    mut state: ResMut<BoardEditorState>,
-    mut editor_tiles: Query<(&mut Sprite, &mut Transform, &EditorTile), With<EditorTile>>,
+    state: ResMut<BoardEditorState>,
+    editor_tiles: Query<(&mut Sprite, &Transform, &EditorTile), With<EditorTile>>,
 ) {
     if popups.is_open() {
         return;
     }
     if mouse_button_input.pressed(MouseButton::Left) {
         let tile = settile_state_to_tile(set_tile_state.current().clone());
-        set_tile(&windows, &mut state.current_map, &mut editor_tiles, tile);
+        set_tile(windows, state, editor_tiles, tile);
     } else if mouse_button_input.pressed(MouseButton::Right) {
-        set_tile(
-            &windows,
-            &mut state.current_map,
-            &mut editor_tiles,
-            Tile::Empty,
-        );
+        set_tile(windows, state, editor_tiles, Tile::Empty);
     }
 }
 
 fn set_tile(
-    windows: &Res<Windows>,
-    board: &mut Board,
-    editor_tiles: &mut Query<(&mut Sprite, &mut Transform, &EditorTile), With<EditorTile>>,
+    windows: Res<Windows>,
+    mut state: ResMut<BoardEditorState>,
+    mut editor_tiles: Query<(&mut Sprite, &Transform, &EditorTile), With<EditorTile>>,
     tile_to: Tile,
 ) {
     let window = windows.get_primary().unwrap();
@@ -611,8 +615,15 @@ fn set_tile(
                 &sprite,
                 &transform,
             ) {
-                sprite.color = get_tile_color(&tile_to);
-                board.tiles[tile.pos.y as usize][tile.pos.x as usize] = tile_to;
+                if state.current_map.tiles[tile.pos.y as usize][tile.pos.x as usize] != tile_to {
+                    sprite.color = get_tile_color(&tile_to);
+                    state.current_map.tiles[tile.pos.y as usize][tile.pos.x as usize] = tile_to;
+                    state.err_text = match state.current_map.validate() {
+                        Ok(()) => None,
+                        Err(err) => Some(String::from(err)),
+                    }
+                }
+
                 break;
             }
         }
