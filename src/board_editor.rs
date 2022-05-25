@@ -12,7 +12,7 @@ use bevy_egui::{
 };
 
 #[derive(Component)]
-struct OnBoardEditorScreen;
+struct BoardEditorScreen;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 enum SettileState {
@@ -111,6 +111,11 @@ impl PopupWindows {
     }
 }
 
+#[derive(Component)]
+struct BoardRoadStartPoint;
+#[derive(Component)]
+struct BoardRoadEndPoint;
+
 // This plugin will contain the map editor
 pub struct BoardEditorPlugin;
 
@@ -131,7 +136,7 @@ impl Plugin for BoardEditorPlugin {
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::MapEditor)
-                    .with_system(despawn_all_of::<OnBoardEditorScreen>)
+                    .with_system(despawn_all_of::<BoardEditorScreen>)
                     .with_system(clean_up_editor),
             );
     }
@@ -499,7 +504,7 @@ fn spawn_tile(
             ..Default::default()
         })
         .insert(EditorTile::new(UVec2::new(x as u32, y as u32)))
-        .insert(OnBoardEditorScreen);
+        .insert(BoardEditorScreen);
 }
 
 fn get_tile_color(tile: &Tile) -> Color {
