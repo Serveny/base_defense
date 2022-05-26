@@ -2,6 +2,8 @@ use crate::utils::{Building, Tower};
 use bevy::{prelude::*, utils::HashSet};
 use serde::{Deserialize, Serialize};
 
+const TILE_NEIGHBOR_MATRIX: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
+
 // Place on the board
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Tile {
@@ -44,7 +46,7 @@ impl Board {
         }
     }
 
-    fn get_tiles(&self, filter: Tile) -> HashSet<UVec2> {
+    pub fn get_tiles(&self, filter: Tile) -> HashSet<UVec2> {
         let mut building_tiles: HashSet<UVec2> = HashSet::new();
         for (y, row) in self.tiles.iter().enumerate() {
             for (x, tile) in row.iter().enumerate() {
@@ -70,6 +72,44 @@ impl Board {
         }
         neighbors
     }
+
+    // is tile at one edge of the board and has only one road neighbor, it is the starting point
+    pub fn get_road_start_pos<'a>(&self, road_tiles: &'a HashSet<UVec2>) -> Option<&'a UVec2> {
+        road_tiles.iter().find(|pos| {
+            let (x, y) = (pos.x, pos.y);
+            (x == 0 || y == 0 || x == self.width as u32 - 1 || y == self.height as u32 - 1)
+                && Self::get_neighbors(pos, road_tiles).len() == 1
+        })
+    }
+
+    // if tile is surrounded by three building tiles, it is the ending point
+    pub fn get_road_end_pos<'a>(
+        road_tiles: &'a HashSet<UVec2>,
+        building_tiles: &HashSet<UVec2>,
+    ) -> Option<&'a UVec2> {
+        road_tiles
+            .iter()
+            .find(|pos| Self::get_neighbors(pos, building_tiles).len() == 3)
+    }
+
+    fn have_tiles_more_than_max_neighbors(max: usize, tiles: &HashSet<UVec2>) -> bool {
+        for tile in tiles {
+            if Self::get_neighbors(tile, tiles).len() > max {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn are_tiles_connected(tiles: &HashSet<UVec2>) -> bool {
+        let mut connected_tiles: HashSet<UVec2> = HashSet::new();
+        if let Some(start) = tiles.iter().last() {
+            println!("{:?}", tiles);
+            Self::check_neighbors(start.clone(), tiles, &mut connected_tiles);
+        }
+        println!("cmp {}, {}", tiles.len(), connected_tiles.len());
+        tiles.len() == connected_tiles.len()
+    }
 }
 
 impl Default for Board {
@@ -77,8 +117,6 @@ impl Default for Board {
         Self::empty(10, 6)
     }
 }
-
-const TILE_NEIGHBOR_MATRIX: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
 
 // Validation
 impl Board {
@@ -114,44 +152,6 @@ impl Board {
         }
 
         Ok(())
-    }
-
-    // is tile at one edge of the board and has only one road neighbor, it is the starting point
-    fn get_road_start_pos<'a>(&self, road_tiles: &'a HashSet<UVec2>) -> Option<&'a UVec2> {
-        road_tiles.iter().find(|pos| {
-            let (x, y) = (pos.x, pos.y);
-            (x == 0 || y == 0 || x == self.width as u32 - 1 || y == self.height as u32 - 1)
-                && Self::get_neighbors(pos, road_tiles).len() == 1
-        })
-    }
-
-    // if tile is surrounded by three building tiles, it is the ending point
-    fn get_road_end_pos<'a>(
-        road_tiles: &'a HashSet<UVec2>,
-        building_tiles: &HashSet<UVec2>,
-    ) -> Option<&'a UVec2> {
-        road_tiles
-            .iter()
-            .find(|pos| Self::get_neighbors(pos, building_tiles).len() == 3)
-    }
-
-    fn have_tiles_more_than_max_neighbors(max: usize, tiles: &HashSet<UVec2>) -> bool {
-        for tile in tiles {
-            if Self::get_neighbors(tile, tiles).len() > max {
-                return true;
-            }
-        }
-        false
-    }
-
-    fn are_tiles_connected(tiles: &HashSet<UVec2>) -> bool {
-        let mut connected_tiles: HashSet<UVec2> = HashSet::new();
-        if let Some(start) = tiles.iter().last() {
-            println!("{:?}", tiles);
-            Self::check_neighbors(start.clone(), tiles, &mut connected_tiles);
-        }
-        println!("cmp {}, {}", tiles.len(), connected_tiles.len());
-        tiles.len() == connected_tiles.len()
     }
 
     fn check_neighbors(pos: UVec2, tiles: &HashSet<UVec2>, linked: &mut HashSet<UVec2>) {
