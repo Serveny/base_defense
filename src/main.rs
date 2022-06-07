@@ -1,7 +1,8 @@
 use assets::StandardAssets;
 use bevy::prelude::*;
 use bevy_asset_loader::AssetLoader;
-use bevy_egui::EguiPlugin;
+use bevy_egui::{egui, EguiContext, EguiPlugin};
+use bevy_prototype_lyon::plugin::ShapePlugin;
 use user::Settings;
 use utils::GameState;
 
@@ -32,8 +33,10 @@ fn main() {
 
     app.insert_resource(ClearColor(BACKGROUND_COLOR))
         .insert_resource(window_setup)
+        .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
+        .add_plugin(ShapePlugin)
         .add_plugin(splash::SplashPlugin)
         .add_plugin(menu::MenuPlugin)
         .add_plugin(game::GamePlugin)
@@ -52,10 +55,44 @@ fn main() {
     app.insert_resource(Settings::new())
         .add_state(GameState::Splash)
         .add_startup_system(setup_cameras)
+        .add_startup_system(setup_egui)
         .run();
 }
 
 fn setup_cameras(mut commands: Commands) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(UiCameraBundle::default());
+}
+
+fn setup_egui(mut egui_ctx: ResMut<EguiContext>) {
+    // Fonts
+    let mut fonts = egui::FontDefinitions::default();
+
+    #[cfg(windows)]
+    let font = include_bytes!("..\\assets\\fonts\\Quicksand-Regular.ttf");
+
+    #[cfg(unix)]
+    let font = include_bytes!("../assets/fonts/Quicksand-Regular.ttf");
+
+    fonts.font_data.insert(
+        "Quicksand-Regular".to_owned(),
+        egui::FontData::from_static(font),
+    );
+    // Put Quicksand-Regular first (highest priority) for proportional text:
+    fonts
+        .families
+        .entry(egui::FontFamily::Proportional)
+        .or_default()
+        .insert(0, "Quicksand-Regular".to_owned());
+
+    for (_text_style, data) in fonts.font_data.iter_mut() {
+        data.tweak.scale = 2.;
+    }
+    egui_ctx.ctx_mut().set_fonts(fonts);
+
+    //Visuals
+    egui_ctx.ctx_mut().set_visuals(egui::Visuals {
+        window_rounding: 10.0.into(),
+        ..Default::default()
+    });
 }

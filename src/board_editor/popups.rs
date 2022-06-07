@@ -1,5 +1,6 @@
+use super::{repaint, BoardEditorScreen, BoardEditorState};
 use crate::{
-    board::Board,
+    board::{ActionBoard, Board},
     utils::{
         add_error_box, add_ok_cancel_row, add_popup_window, add_row, get_all_boards_in_folder,
         save_board_to_file,
@@ -9,11 +10,6 @@ use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, TextEdit},
     EguiContext,
-};
-
-use super::{
-    editor_tiles::{edit_board_size, EditorTile},
-    repaint, BoardEditorState,
 };
 
 pub(super) enum Popups {
@@ -108,8 +104,9 @@ pub(super) fn add_save_board_window(
 
             if is_ok {
                 save_win.err_text = None;
-                editor_state.current_map.name = save_win.map_file_name.clone();
-                match save_board_to_file(&save_win.map_file_name, &editor_state.current_map) {
+                *editor_state.current_map.name_mut() = save_win.map_file_name.clone();
+                match save_board_to_file(&save_win.map_file_name, editor_state.current_map.board())
+                {
                     Ok(()) => is_close = true,
                     Err(error) => add_error_box(&error.to_string(), ui),
                 }
@@ -133,7 +130,7 @@ pub(super) fn add_load_board_window(
     mut egui_ctx: ResMut<EguiContext>,
     mut editor_state: ResMut<BoardEditorState>,
     mut popup: ResMut<Popups>,
-    mut editor_tiles: Query<Entity, With<EditorTile>>,
+    query: Query<Entity, With<BoardEditorScreen>>,
     windows: Res<Windows>,
 ) {
     let mut is_close = false;
@@ -148,18 +145,14 @@ pub(super) fn add_load_board_window(
                         )
                         .clicked()
                     {
-                        editor_state.current_map = board.clone();
-                        repaint(
-                            &mut commands,
-                            &mut editor_tiles,
-                            &windows,
-                            &mut editor_state,
-                        );
+                        editor_state.current_map = ActionBoard::new(board.clone());
+                        repaint(&mut commands, query, &windows, &mut editor_state);
                         editor_state.err_text = match editor_state.current_map.validate() {
                             Ok(_) => None,
                             Err(err) => Some(String::from(err)),
                         };
                         is_close = true;
+                        break;
                     }
                 }
             });
@@ -185,7 +178,7 @@ pub(super) fn add_new_board_window(
     egui_ctx: ResMut<EguiContext>,
     mut state: ResMut<BoardEditorState>,
     mut popup: ResMut<Popups>,
-    mut editor_tiles: Query<Entity, With<EditorTile>>,
+    query: Query<Entity, With<BoardEditorScreen>>,
     windows: Res<Windows>,
 ) {
     let mut is_close = false;
@@ -194,9 +187,9 @@ pub(super) fn add_new_board_window(
             add_new_edit_popup(egui_ctx, &mut new_win.width, &mut new_win.height, "New map");
 
         if is_ok {
-            state.current_map = Board::empty(new_win.width, new_win.height);
+            state.current_map = ActionBoard::empty(new_win.width, new_win.height);
             state.err_text = None;
-            repaint(&mut commands, &mut editor_tiles, &windows, &mut state);
+            repaint(&mut commands, query, &windows, &mut state);
             is_close = true;
         } else if is_cancel {
             is_close = true;
@@ -212,7 +205,7 @@ pub(super) fn add_edit_board_window(
     egui_ctx: ResMut<EguiContext>,
     mut state: ResMut<BoardEditorState>,
     mut popup: ResMut<Popups>,
-    mut editor_tiles: Query<Entity, With<EditorTile>>,
+    query: Query<Entity, With<BoardEditorScreen>>,
     windows: Res<Windows>,
 ) {
     let mut is_close = false;
@@ -225,8 +218,10 @@ pub(super) fn add_edit_board_window(
         );
 
         if is_ok {
-            edit_board_size(&mut state.current_map, edit_win.width, edit_win.height);
-            repaint(&mut commands, &mut editor_tiles, &windows, &mut state);
+            state
+                .current_map
+                .change_size(edit_win.width, edit_win.height);
+            repaint(&mut commands, query, &windows, &mut state);
             is_close = true;
         } else if is_cancel {
             is_close = true;

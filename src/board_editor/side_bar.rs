@@ -1,12 +1,10 @@
+use super::LEFT_BAR_WIDTH_PX;
+use crate::board::Tile;
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, Label, RadioButton, SidePanel},
     EguiContext,
 };
-
-use crate::board::Tile;
-
-use super::LEFT_BAR_WIDTH_PX;
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub(super) enum SettileState {

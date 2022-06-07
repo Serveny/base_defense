@@ -1,10 +1,9 @@
-use crate::board::{Board, Tile};
-use bevy::{prelude::*, sprite::Anchor};
-
 use super::{
     actions::{cursor_pos_to_transform_pos, is_hover},
     BoardEditorScreen, BoardEditorState, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
 };
+use crate::board::{Board, Tile};
+use bevy::{prelude::*, sprite::Anchor};
 
 #[derive(Component, Debug)]
 pub(super) struct EditorTile {
@@ -45,8 +44,7 @@ impl TileResizeParams {
     }
 }
 
-pub(super) fn spawn_tiles(commands: &mut Commands, windows: &Windows, board: &mut Board) {
-    let rs_params = TileResizeParams::new(windows, board);
+pub(super) fn spawn_tiles(commands: &mut Commands, rs_params: &TileResizeParams, board: &Board) {
     for (y, row) in board.tiles.iter().enumerate() {
         for (x, tile) in row.iter().enumerate() {
             spawn_tile(tile, x, y, &rs_params, commands);
@@ -105,7 +103,7 @@ fn get_tile_size_px(board_width_px: f32, board_height_px: f32, board: &Board) ->
 
 pub(super) fn set_tile(
     windows: Res<Windows>,
-    mut state: ResMut<BoardEditorState>,
+    state: &mut ResMut<BoardEditorState>,
     mut editor_tiles: Query<(&mut Sprite, &Transform, &EditorTile), With<EditorTile>>,
     tile_to: Tile,
 ) {
@@ -117,70 +115,16 @@ pub(super) fn set_tile(
                 &sprite,
                 &transform,
             ) {
-                if state.current_map.tiles[tile.pos.y as usize][tile.pos.x as usize] != tile_to {
+                if *state.current_map.get_tile(tile.pos) != tile_to {
                     sprite.color = get_tile_color(&tile_to);
-                    state.current_map.tiles[tile.pos.y as usize][tile.pos.x as usize] = tile_to;
+                    state.current_map.set_tile(tile.pos, tile_to);
                     state.err_text = match state.current_map.validate() {
                         Ok(()) => None,
                         Err(err) => Some(String::from(err)),
                     }
                 }
-
                 break;
             }
         }
     }
-}
-
-pub(super) fn edit_board_size(board: &mut Board, new_width: u8, new_heigth: u8) {
-    // Add/reduce width
-    if new_width > board.width {
-        let to_add = new_width - board.width;
-        for row in &mut board.tiles {
-            for _ in 0..to_add {
-                row.push(Tile::Empty);
-            }
-        }
-    } else if new_width < board.width {
-        let to_del = board.width - new_width;
-        for row in &mut board.tiles {
-            for _ in 0..to_del {
-                row.pop();
-            }
-        }
-    }
-
-    // Add/reduce height
-    if new_heigth > board.height {
-        let to_add = new_heigth - board.height;
-        for _ in 0..to_add {
-            let mut row = Vec::new();
-            for _ in 0..board.width {
-                row.push(Tile::Empty);
-            }
-            board.tiles.push(row);
-        }
-    } else if new_heigth < board.height {
-        let to_del = board.height - new_heigth;
-        for _ in 0..to_del {
-            board.tiles.pop();
-        }
-    }
-
-    board.width = new_width;
-    board.height = new_heigth;
-}
-
-pub(super) fn resize_tiles(
-    rs_params: &TileResizeParams,
-    mut editor_tiles: Query<(&mut Sprite, &mut Transform, &EditorTile), With<EditorTile>>,
-) {
-    editor_tiles.for_each_mut(|(mut sprite, mut transform, tile)| {
-        sprite.custom_size = Some(rs_params.tile_inner_size);
-        transform.translation = Vec3::new(
-            rs_params.board_start_x + (tile.pos.x as f32 * rs_params.tile_size),
-            rs_params.board_start_y - (tile.pos.y as f32 * rs_params.tile_size),
-            0.,
-        );
-    });
 }

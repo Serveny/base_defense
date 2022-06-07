@@ -1,15 +1,12 @@
 pub struct MenuPlugin;
 use crate::{
-    board::Board,
+    board::ActionBoard,
     utils::{add_error_box, add_row, get_all_boards_in_folder, GameState},
     TITLE,
 };
 use bevy::{app::AppExit, prelude::*};
 use bevy_egui::{
-    egui::{
-        self, CentralPanel, Color32, FontDefinitions, Frame, Label, Response, RichText, ScrollArea,
-        SidePanel,
-    },
+    egui::{self, CentralPanel, Color32, Frame, Label, Response, RichText, ScrollArea, SidePanel},
     EguiContext,
 };
 
@@ -25,7 +22,7 @@ enum MenuState {
 }
 
 struct NewGameMenu {
-    boards: Vec<Board>,
+    boards: Vec<ActionBoard>,
     selected_board_index: usize,
     err_text: Option<String>,
 }
@@ -34,7 +31,10 @@ impl Default for NewGameMenu {
     fn default() -> Self {
         match get_all_boards_in_folder() {
             Ok(boards) => Self {
-                boards,
+                boards: boards
+                    .into_iter()
+                    .map(|board| ActionBoard::new(board))
+                    .collect(),
                 selected_board_index: 0,
                 err_text: None,
             },
@@ -47,11 +47,6 @@ impl Default for NewGameMenu {
     }
 }
 
-// #[derive(Default)]
-// struct NewGameParams {
-//     board: Board,
-// }
-
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_system_set(SystemSet::on_update(GameState::Menu).with_system(startup_menu))
@@ -62,43 +57,8 @@ impl Plugin for MenuPlugin {
                 SystemSet::on_update(MenuState::NewGame)
                     .with_system(add_new_game_menu.after(startup_menu)),
             )
-            .add_state(MenuState::Disabled)
-            .add_startup_system(setup_fonts)
-            .add_startup_system(configure_visuals);
+            .add_state(MenuState::Disabled);
     }
-}
-
-pub fn setup_fonts(mut egui_ctx: ResMut<EguiContext>) {
-    let mut fonts = FontDefinitions::default();
-
-    #[cfg(windows)]
-    let font = include_bytes!("..\\assets\\fonts\\Quicksand-Regular.ttf");
-
-    #[cfg(unix)]
-    let font = include_bytes!("../assets/fonts/Quicksand-Regular.ttf");
-
-    fonts.font_data.insert(
-        "Quicksand-Regular".to_owned(),
-        egui::FontData::from_static(font),
-    );
-    // Put Quicksand-Regular first (highest priority) for proportional text:
-    fonts
-        .families
-        .entry(egui::FontFamily::Proportional)
-        .or_default()
-        .insert(0, "Quicksand-Regular".to_owned());
-
-    for (_text_style, data) in fonts.font_data.iter_mut() {
-        data.tweak.scale = 2.;
-    }
-    egui_ctx.ctx_mut().set_fonts(fonts);
-}
-
-fn configure_visuals(mut egui_ctx: ResMut<EguiContext>) {
-    egui_ctx.ctx_mut().set_visuals(egui::Visuals {
-        window_rounding: 10.0.into(),
-        ..Default::default()
-    });
 }
 
 fn startup_menu(
@@ -198,7 +158,7 @@ fn add_new_game_menu(
             }
             ui.horizontal(|ui| {
                 ui.add_sized([200., 60.], bevy_egui::egui::Label::new("Map"));
-                let selected = &new_game_menu.boards[new_game_menu.selected_board_index].name;
+                let selected = new_game_menu.boards[new_game_menu.selected_board_index].name();
                 egui::containers::ComboBox::from_label("")
                     .selected_text(selected)
                     .show_ui(ui, |ui| {
@@ -208,7 +168,7 @@ fn add_new_game_menu(
                         let mut selected_i = new_game_menu.selected_board_index;
 
                         for (i, board) in boards.iter().enumerate() {
-                            ui.selectable_value(&mut selected_i, i, &board.name);
+                            ui.selectable_value(&mut selected_i, i, board.name());
                         }
                         new_game_menu.selected_board_index = selected_i;
                     });

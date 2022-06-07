@@ -1,14 +1,7 @@
-use crate::{
-    assets::StandardAssets,
-    board::Board,
-    utils::{despawn_all_of, GameState},
-};
-use bevy::{prelude::*, window::WindowResized};
-
 use self::{
     actions::editor_click_actions,
-    editor_tiles::{resize_tiles, spawn_tiles, EditorTile, TileResizeParams},
-    markers::{resize_markers, spawn_markers, EditorRoadEndPoint, EditorRoadStartPoint},
+    editor_tiles::{spawn_tiles, TileResizeParams},
+    markers::{spawn_end_marker, spawn_start_marker},
     popups::{
         add_edit_board_window, add_load_board_window, add_new_board_window, add_save_board_window,
         Popups,
@@ -16,6 +9,11 @@ use self::{
     side_bar::{add_side_bar, SettileState},
     top_bar::add_top_menu_bar,
 };
+use crate::{
+    board::ActionBoard,
+    utils::{despawn_all_of, GameState},
+};
+use bevy::{prelude::*, window::WindowResized};
 
 mod actions;
 mod editor_tiles;
@@ -32,7 +30,7 @@ const LEFT_BAR_WIDTH_PX: f32 = 140.0;
 
 #[derive(Default)]
 struct BoardEditorState {
-    current_map: Board,
+    current_map: ActionBoard,
     err_text: Option<String>,
 }
 
@@ -61,40 +59,46 @@ impl Plugin for BoardEditorPlugin {
             );
     }
 }
-fn editor_setup(mut commands: Commands, windows: Res<Windows>, assets: Res<StandardAssets>) {
-    let mut editor_state = BoardEditorState::default();
-    spawn_tiles(&mut commands, &windows, &mut editor_state.current_map);
-    spawn_markers(&mut commands, &assets);
 
-    commands.insert_resource(editor_state);
+fn editor_setup(mut commands: Commands, windows: Res<Windows>) {
+    let state = BoardEditorState::default();
+    let rs_params = TileResizeParams::new(&windows, state.current_map.board());
+    spawn_tiles(&mut commands, &rs_params, state.current_map.board());
+
+    commands.insert_resource(state);
     commands.insert_resource(Popups::None);
 }
 
 fn on_resize(
+    mut commands: Commands,
     events: EventReader<WindowResized>,
-    editor_tiles: Query<(&mut Sprite, &mut Transform, &EditorTile), With<EditorTile>>,
-    // road_start: Query<&mut Transform, With<EditorRoadStartPoint>>,
-    // road_end: Query<&mut Transform, With<EditorRoadEndPoint>>,
+    query: Query<Entity, With<BoardEditorScreen>>,
     windows: Res<Windows>,
-    state: Res<BoardEditorState>,
+    mut state: ResMut<BoardEditorState>,
 ) {
     if !events.is_empty() {
-        let rs_params = TileResizeParams::new(&windows, &state.current_map);
-        resize_tiles(&rs_params, editor_tiles);
-        //resize_markers(&rs_params, road_start, road_end, &state);
+        repaint(&mut commands, query, &windows, &mut state);
     }
 }
 
 fn repaint(
     commands: &mut Commands,
-    editor_tiles: &mut Query<Entity, With<EditorTile>>,
+    mut query: Query<Entity, With<BoardEditorScreen>>,
     windows: &Windows,
     state: &mut BoardEditorState,
 ) {
-    for entity in editor_tiles.iter_mut() {
+    for entity in query.iter_mut() {
         commands.entity(entity).despawn_recursive();
     }
-    spawn_tiles(commands, windows, &mut state.current_map);
+    let rs_params = TileResizeParams::new(windows, state.current_map.board());
+    spawn_tiles(commands, &rs_params, &mut state.current_map.board());
+
+    if let Some(start_mark) = state.current_map.road_start_pos() {
+        spawn_start_marker(commands, &rs_params, start_mark.clone());
+    }
+    if let Some(end_mark) = state.current_map.road_end_pos() {
+        spawn_end_marker(commands, &rs_params, end_mark.clone());
+    }
 }
 
 fn clean_up_editor(mut commands: Commands) {

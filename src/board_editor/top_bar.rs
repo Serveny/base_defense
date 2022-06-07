@@ -1,14 +1,12 @@
+use super::{
+    popups::{EditBoardWindow, LoadBoardWindow, NewBoardWindow, Popups, SaveBoardWindow},
+    BoardEditorState, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
+};
+use crate::utils::{add_error_box, GameState};
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, Response, TopBottomPanel, Ui},
     EguiContext,
-};
-
-use crate::utils::{add_error_box, GameState};
-
-use super::{
-    popups::{EditBoardWindow, LoadBoardWindow, NewBoardWindow, Popups, SaveBoardWindow},
-    BoardEditorState, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
 };
 
 pub(super) fn add_top_menu_bar(
@@ -50,7 +48,7 @@ pub(super) fn add_top_menu_bar(
             if add_top_bar_button("Edit", ui).clicked() {
                 *popup = match *popup {
                     Popups::Edit(_) => Popups::None,
-                    _ => Popups::Edit(EditBoardWindow::new(&state.current_map)),
+                    _ => Popups::Edit(EditBoardWindow::new(state.current_map.board())),
                 }
             }
 

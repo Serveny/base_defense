@@ -2,7 +2,7 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::board::Board;
+use crate::board::{ActionBoard, Board};
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -145,4 +145,11 @@ pub fn add_popup_window<R>(
             ui.add_space(10.);
             content(ui);
         });
+}
+
+pub fn clone_opt_ref<T: Clone>(opt: Option<&T>) -> Option<T> {
+    match opt {
+        Some(t) => Some(t.clone()),
+        None => None,
+    }
 }
