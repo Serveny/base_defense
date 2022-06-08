@@ -13,7 +13,7 @@ mod assets;
 mod board;
 mod board_editor;
 mod game;
-mod menu;
+mod main_menu;
 mod splash;
 mod user;
 mod utils;
@@ -38,7 +38,7 @@ fn main() {
         .add_plugin(EguiPlugin)
         .add_plugin(ShapePlugin)
         .add_plugin(splash::SplashPlugin)
-        .add_plugin(menu::MenuPlugin)
+        .add_plugin(main_menu::MainMenuPlugin)
         .add_plugin(game::GamePlugin)
         .add_plugin(board_editor::BoardEditorPlugin);
 
