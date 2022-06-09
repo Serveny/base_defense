@@ -1,8 +1,11 @@
 use super::{
     actions::{cursor_pos_to_transform_pos, is_hover},
-    BoardEditorScreen, BoardEditorState, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
+    BoardEditorScreen, BoardEditorState,
 };
-use crate::board::{Board, Tile};
+use crate::{
+    board::{Board, Tile},
+    utils::TileResizeParams,
+};
 use bevy::{prelude::*, sprite::Anchor};
 
 #[derive(Component, Debug)]
@@ -13,34 +16,6 @@ pub(super) struct EditorTile {
 impl EditorTile {
     fn new(pos: UVec2) -> Self {
         Self { pos }
-    }
-}
-
-pub(super) struct TileResizeParams {
-    pub tile_size: f32,
-    pub tile_inner_size: Vec2,
-    pub board_start_x: f32,
-    pub board_start_y: f32,
-}
-
-impl TileResizeParams {
-    pub fn new(windows: &Windows, board: &Board) -> Self {
-        let window = windows.get_primary().unwrap();
-        let board_width_px = window.width() - LEFT_BAR_WIDTH_PX;
-        let board_height_px = window.height() - TOP_BAR_HEIGHT_PX;
-
-        // the tiles are quadratic, so use the smaller size
-        let tile_size = get_tile_size_px(board_width_px, board_height_px, board);
-        let tile_inner_size = Vec2::new(tile_size - 10., tile_size - 10.);
-
-        Self {
-            tile_size,
-            tile_inner_size,
-
-            // Think from the middle of the sceen
-            board_start_x: (LEFT_BAR_WIDTH_PX - board_width_px) / 2.,
-            board_start_y: (board_height_px - TOP_BAR_HEIGHT_PX) / 2.,
-        }
     }
 }
 
@@ -87,17 +62,6 @@ fn get_tile_color(tile: &Tile) -> Color {
         Tile::BuildingGround(_) => Color::ANTIQUE_WHITE,
         Tile::Road => Color::AQUAMARINE,
         Tile::Empty => Color::DARK_GRAY,
-    }
-}
-
-fn get_tile_size_px(board_width_px: f32, board_height_px: f32, board: &Board) -> f32 {
-    let tile_width_px = board_width_px / board.width as f32;
-    let tile_height_px = board_height_px / board.height as f32;
-
-    if tile_height_px > tile_width_px {
-        tile_width_px
-    } else {
-        tile_height_px
     }
 }
 

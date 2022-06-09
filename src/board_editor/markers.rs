@@ -1,6 +1,6 @@
-use crate::BACKGROUND_COLOR;
+use crate::{utils::TileResizeParams, BACKGROUND_COLOR};
 
-use super::{editor_tiles::TileResizeParams, BoardEditorScreen};
+use super::BoardEditorScreen;
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
@@ -9,28 +9,6 @@ pub(super) struct BoardEditorRoadStartMark;
 
 #[derive(Component)]
 pub(super) struct BoardEditorRoadEndMark;
-
-pub(super) fn spawn_end_marker(commands: &mut Commands, rs_params: &TileResizeParams, pos: UVec2) {
-    let shape = shapes::RegularPolygon {
-        sides: 8,
-        feature: shapes::RegularPolygonFeature::Radius(rs_params.tile_inner_size.x / 4.),
-        ..shapes::RegularPolygon::default()
-    };
-    let line_width = rs_params.tile_size - rs_params.tile_inner_size.x;
-
-    // Road end marker
-    commands
-        .spawn_bundle(GeometryBuilder::build_as(
-            &shape,
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::SEA_GREEN),
-                outline_mode: StrokeMode::new(BACKGROUND_COLOR, line_width),
-            },
-            get_mark_transform(pos, rs_params),
-        ))
-        .insert(BoardEditorRoadEndMark)
-        .insert(BoardEditorScreen);
-}
 
 pub(super) fn spawn_start_marker(
     commands: &mut Commands,
@@ -55,6 +33,28 @@ pub(super) fn spawn_start_marker(
             get_mark_transform(pos, rs_params),
         ))
         .insert(BoardEditorRoadStartMark)
+        .insert(BoardEditorScreen);
+}
+
+pub(super) fn spawn_end_marker(commands: &mut Commands, rs_params: &TileResizeParams, pos: UVec2) {
+    let shape = shapes::RegularPolygon {
+        sides: 8,
+        feature: shapes::RegularPolygonFeature::Radius(rs_params.tile_inner_size.x / 4.),
+        ..shapes::RegularPolygon::default()
+    };
+    let line_width = rs_params.tile_size - rs_params.tile_inner_size.x;
+
+    // Road end marker
+    commands
+        .spawn_bundle(GeometryBuilder::build_as(
+            &shape,
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::SEA_GREEN),
+                outline_mode: StrokeMode::new(BACKGROUND_COLOR, line_width),
+            },
+            get_mark_transform(pos, rs_params),
+        ))
+        .insert(BoardEditorRoadEndMark)
         .insert(BoardEditorScreen);
 }
 

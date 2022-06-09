@@ -61,8 +61,7 @@ pub(super) fn add_new_game_menu(
                 egui::containers::ComboBox::from_label("")
                     .selected_text(selected)
                     .show_ui(ui, |ui| {
-                        ui.set_height(60.);
-                        ui.set_width(ui.available_width());
+                        ui.set_width(400.);
                         let boards = &new_game_menu.boards;
                         let mut selected_i = new_game_menu.selected_board_index;
 

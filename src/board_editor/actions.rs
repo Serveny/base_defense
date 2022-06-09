@@ -1,11 +1,11 @@
 use super::{
-    editor_tiles::{set_tile, EditorTile, TileResizeParams},
+    editor_tiles::{set_tile, EditorTile},
     markers::{set_mark, BoardEditorRoadEndMark, BoardEditorRoadStartMark},
     popups::Popups,
     side_bar::{settile_state_to_tile, SettileState},
-    BoardEditorState,
+    BoardEditorState, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
 };
-use crate::board::Tile;
+use crate::{board::Tile, utils::TileResizeParams};
 use bevy::prelude::*;
 
 pub(super) fn editor_click_actions(
@@ -43,7 +43,11 @@ fn on_tile_click(
     mut state: ResMut<BoardEditorState>,
     tile_to: Tile,
 ) {
-    let rs_params = TileResizeParams::new(&windows, state.current_map.board());
+    let rs_params = TileResizeParams::from_start_to_win_end(
+        &windows,
+        state.current_map.board(),
+        Vec2::new(LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX),
+    );
     set_tile(windows, &mut state, queries.p0(), tile_to);
     set_mark(
         &mut commands,

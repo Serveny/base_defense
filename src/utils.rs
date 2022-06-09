@@ -153,3 +153,46 @@ pub fn clone_opt_ref<T: Clone>(opt: Option<&T>) -> Option<T> {
         None => None,
     }
 }
+
+pub struct TileResizeParams {
+    pub tile_size: f32,
+    pub tile_inner_size: Vec2,
+    pub board_start_x: f32,
+    pub board_start_y: f32,
+}
+
+impl TileResizeParams {
+    pub fn new(board: &Board, start: Vec2, end: Vec2) -> Self {
+        let board_width_px = end.x - start.x;
+        let board_height_px = end.y - start.y;
+
+        // the tiles are quadratic, so use the smaller size
+        let tile_size = get_tile_size_px(board_width_px, board_height_px, board);
+        let tile_inner_size = Vec2::new(tile_size - 10., tile_size - 10.);
+
+        Self {
+            tile_size,
+            tile_inner_size,
+
+            // Think from the middle of the sceen
+            board_start_x: (start.x - board_width_px) / 2.,
+            board_start_y: (board_height_px - start.y) / 2.,
+        }
+    }
+
+    pub fn from_start_to_win_end(windows: &Windows, board: &Board, start: Vec2) -> Self {
+        let window = windows.get_primary().unwrap();
+        Self::new(board, start, Vec2::new(window.width(), window.height()))
+    }
+}
+
+fn get_tile_size_px(board_width_px: f32, board_height_px: f32, board: &Board) -> f32 {
+    let tile_width_px = board_width_px / board.width as f32;
+    let tile_height_px = board_height_px / board.height as f32;
+
+    if tile_height_px > tile_width_px {
+        tile_width_px
+    } else {
+        tile_height_px
+    }
+}

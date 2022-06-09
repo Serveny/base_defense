@@ -1,6 +1,6 @@
 use self::{
     actions::editor_click_actions,
-    editor_tiles::{spawn_tiles, TileResizeParams},
+    editor_tiles::spawn_tiles,
     markers::{spawn_end_marker, spawn_start_marker},
     popups::{
         add_edit_board_window, add_load_board_window, add_new_board_window, add_save_board_window,
@@ -11,7 +11,7 @@ use self::{
 };
 use crate::{
     board::ActionBoard,
-    utils::{despawn_all_of, GameState},
+    utils::{despawn_all_of, GameState, TileResizeParams},
 };
 use bevy::{prelude::*, window::WindowResized};
 
@@ -27,6 +27,7 @@ struct BoardEditorScreen;
 
 const TOP_BAR_HEIGHT_PX: f32 = 40.0;
 const LEFT_BAR_WIDTH_PX: f32 = 140.0;
+const EDITOR_BOARD_START: (f32, f32) = (LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX);
 
 #[derive(Default)]
 struct BoardEditorState {
@@ -62,7 +63,11 @@ impl Plugin for BoardEditorPlugin {
 
 fn editor_setup(mut commands: Commands, windows: Res<Windows>) {
     let state = BoardEditorState::default();
-    let rs_params = TileResizeParams::new(&windows, state.current_map.board());
+    let rs_params = TileResizeParams::from_start_to_win_end(
+        &windows,
+        state.current_map.board(),
+        Vec2::from(EDITOR_BOARD_START),
+    );
     spawn_tiles(&mut commands, &rs_params, state.current_map.board());
 
     commands.insert_resource(state);
@@ -90,7 +95,11 @@ fn repaint(
     for entity in query.iter_mut() {
         commands.entity(entity).despawn_recursive();
     }
-    let rs_params = TileResizeParams::new(windows, state.current_map.board());
+    let rs_params = TileResizeParams::from_start_to_win_end(
+        windows,
+        state.current_map.board(),
+        Vec2::from(EDITOR_BOARD_START),
+    );
     spawn_tiles(commands, &rs_params, &mut state.current_map.board());
 
     if let Some(start_mark) = state.current_map.road_start_pos() {

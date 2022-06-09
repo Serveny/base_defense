@@ -251,4 +251,6 @@ impl ActionBoard {
         }
         tiles.len() == connected_tiles.len()
     }
+
+    //pub fn draw(&self, cmds: Commands, start: UVec2, size: Size) {}
 }
