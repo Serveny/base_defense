@@ -1,5 +1,6 @@
 use crate::{
-    board::ActionBoard,
+    board::{draw_board, ActionBoard},
+    game::Game,
     utils::{add_error_box, get_all_boards_in_folder, GameState},
 };
 use bevy::prelude::*;
@@ -14,6 +15,12 @@ pub(super) struct NewGameMenu {
     boards: Vec<ActionBoard>,
     selected_board_index: usize,
     err_text: Option<String>,
+}
+
+impl NewGameMenu {
+    fn get_selected_board(&self) -> &ActionBoard {
+        &self.boards[self.selected_board_index]
+    }
 }
 
 impl Default for NewGameMenu {
@@ -37,10 +44,18 @@ impl Default for NewGameMenu {
 }
 
 pub(super) fn new_game_menu_setup(mut commands: Commands) {
-    commands.init_resource::<NewGameMenu>();
+    let resource = NewGameMenu::default();
+    draw_board(
+        &mut commands,
+        resource.get_selected_board(),
+        UVec2::new(400, 400),
+        Vec2::new(400., 400.),
+    );
+    commands.insert_resource(resource);
 }
 
 pub(super) fn add_new_game_menu(
+    mut cmds: Commands,
     mut egui_ctx: ResMut<EguiContext>,
     mut game_state: ResMut<State<GameState>>,
     mut menu_state: ResMut<State<MenuState>>,
@@ -88,6 +103,7 @@ pub(super) fn add_new_game_menu(
                         .add_sized([400., 60.], bevy_egui::egui::widgets::Button::new("Play"))
                         .clicked()
                     {
+                        cmds.insert_resource(Game::new(new_game_menu.get_selected_board().clone()));
                         leave_menu(GameState::Game, &mut menu_state, &mut game_state);
                     }
                 });

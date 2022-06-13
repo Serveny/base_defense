@@ -1,9 +1,11 @@
+pub(crate) use self::draw_board::draw_board;
 pub use self::tile::Tile;
 pub use action_board::ActionBoard;
 use bevy::{prelude::*, utils::HashSet};
 use serde::{Deserialize, Serialize};
 
 mod action_board;
+mod draw_board;
 mod tile;
 
 const TILE_NEIGHBOR_MATRIX: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];

@@ -1,5 +1,9 @@
 #![allow(unused)]
-use crate::{board::Board, utils::despawn_all_of, GameState};
+use crate::{
+    board::{draw_board, ActionBoard, Board},
+    utils::despawn_all_of,
+    GameState,
+};
 use bevy::prelude::*;
 
 // This plugin will contain the game. In this case, it's just be a screen that will
@@ -8,16 +12,25 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
-            .add_system_set(SystemSet::on_update(GameState::Game).with_system(game))
-            .add_system_set(
-                SystemSet::on_exit(GameState::Game).with_system(despawn_all_of::<OnGameScreen>),
-            );
+        app.add_system_set(
+            SystemSet::on_enter(GameState::Game)
+                .with_system(game_setup)
+                .with_system(draw_ingame_board),
+        )
+        .add_system_set(SystemSet::on_update(GameState::Game).with_system(game))
+        .add_system_set(
+            SystemSet::on_exit(GameState::Game).with_system(despawn_all_of::<OnGameScreen>),
+        );
     }
 }
 
-struct Game {
-    map: Board,
+pub(crate) struct Game {
+    board: ActionBoard,
+}
+impl Game {
+    pub fn new(board: ActionBoard) -> Self {
+        Self { board }
+    }
 }
 
 // Tag component used to tag entities added on the game screen
@@ -30,3 +43,13 @@ fn game_setup(mut commands: Commands) {
 
 // Tick the timer, and change state when finished
 fn game() {}
+
+fn draw_ingame_board(mut cmds: Commands, windows: Res<Windows>, game: Res<Game>) {
+    let window = windows.get_primary().unwrap();
+    draw_board(
+        &mut cmds,
+        &game.board,
+        UVec2::new(400, 400),
+        Vec2::new(window.width() - 20., window.height() - 20.),
+    );
+}

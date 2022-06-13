@@ -2,7 +2,7 @@ use super::{tile::Tile, Board, TILE_NEIGHBOR_MATRIX};
 use bevy::{prelude::*, utils::HashSet};
 
 // Board with meta data and edit actions
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct ActionBoard {
     board: Board,
     tower_tile_posis: HashSet<UVec2>,
@@ -251,6 +251,4 @@ impl ActionBoard {
         }
         tiles.len() == connected_tiles.len()
     }
-
-    //pub fn draw(&self, cmds: Commands, start: UVec2, size: Size) {}
 }
