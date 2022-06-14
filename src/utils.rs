@@ -13,6 +13,13 @@ pub enum GameState {
     MapEditor,
 }
 
+#[derive(strum::EnumIter, strum::Display, PartialEq, Eq, Clone, Copy)]
+pub enum Difficulty {
+    Easy,
+    Middle,
+    Hard,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Tower {
     tower_type: TowerType,

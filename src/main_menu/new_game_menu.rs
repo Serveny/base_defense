@@ -1,7 +1,7 @@
 use crate::{
     board::{draw_board, ActionBoard},
     game::Game,
-    utils::{add_error_box, get_all_boards_in_folder, GameState},
+    utils::{add_error_box, get_all_boards_in_folder, Difficulty, GameState},
 };
 use bevy::prelude::*;
 use bevy_egui::{
@@ -14,6 +14,7 @@ use super::{leave_menu, MenuState};
 pub(super) struct NewGameMenu {
     boards: Vec<ActionBoard>,
     selected_board_index: usize,
+    difficulty: Difficulty,
     err_text: Option<String>,
 }
 
@@ -32,11 +33,13 @@ impl Default for NewGameMenu {
                     .map(|board| ActionBoard::new(board))
                     .collect(),
                 selected_board_index: 0,
+                difficulty: Difficulty::Easy,
                 err_text: None,
             },
             Err(err) => Self {
                 boards: Vec::new(),
                 selected_board_index: 0,
+                difficulty: Difficulty::Easy,
                 err_text: Some(err.to_string()),
             },
         }
@@ -86,6 +89,10 @@ pub(super) fn add_new_game_menu(
                         new_game_menu.selected_board_index = selected_i;
                     });
             });
+            ui.horizontal(|ui| {
+                ui.add_sized([200., 60.], bevy_egui::egui::Label::new("Difficulty"));
+                enum_as_radio_select(ui, &mut new_game_menu.difficulty);
+            })
         });
         egui::TopBottomPanel::bottom("bottom_panel")
             .resizable(false)
@@ -109,4 +116,23 @@ pub(super) fn add_new_game_menu(
                 });
             });
     });
+}
+pub fn enum_as_radio_select<T: std::fmt::Display + strum::IntoEnumIterator + PartialEq>(
+    ui: &mut bevy_egui::egui::Ui,
+    selected: &mut T,
+) {
+    for enum_value in T::iter() {
+        let is_selected = enum_value == *selected;
+        let text = enum_value.to_string();
+        if add_selectable_label(ui, is_selected, &text) {
+            *selected = enum_value;
+        }
+    }
+}
+fn add_selectable_label(ui: &mut bevy_egui::egui::Ui, is_selected: bool, text: &str) -> bool {
+    ui.add_sized(
+        [200., 60.],
+        bevy_egui::egui::widgets::SelectableLabel::new(is_selected, text),
+    )
+    .clicked()
 }
