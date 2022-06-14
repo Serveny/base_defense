@@ -19,7 +19,6 @@ impl ActionBoard {
         let road_tile_posis = board.get_tiles(Tile::Road);
         let road_start = Self::road_start_pos_from(&road_tile_posis, board.width, board.height);
         let road_end = Self::road_end_pos_from(&road_tile_posis, &building_tile_posis);
-        println!("{:?} | {:?}", &road_start, &road_end);
 
         Self {
             board,
@@ -171,7 +170,15 @@ impl ActionBoard {
         self.building_tile_posis = self.board.get_tiles(Tile::BuildingGround(None));
         self.road_tile_posis = self.board.get_tiles(Tile::Road);
     }
-
+    pub fn tower_tile_posis(&self) -> &HashSet<UVec2> {
+        &self.tower_tile_posis
+    }
+    pub fn building_tile_posis(&self) -> &HashSet<UVec2> {
+        &self.building_tile_posis
+    }
+    pub fn road_tile_posis(&self) -> &HashSet<UVec2> {
+        &self.road_tile_posis
+    }
     fn get_tile_posis_mut(&mut self, tile: &Tile) -> Option<&mut HashSet<UVec2>> {
         match tile {
             Tile::TowerGround(_) => Some(&mut self.tower_tile_posis),

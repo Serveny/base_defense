@@ -156,6 +156,7 @@ pub fn clone_opt_ref<T: Clone>(opt: Option<&T>) -> Option<T> {
 
 pub struct TileResizeParams {
     pub tile_size: f32,
+    pub tile_size_vec: Vec2,
     pub tile_inner_size: Vec2,
     pub board_start_x: f32,
     pub board_start_y: f32,
@@ -172,6 +173,7 @@ impl TileResizeParams {
 
         Self {
             tile_size,
+            tile_size_vec: Vec2::new(tile_size, tile_size),
             tile_inner_size,
 
             // Think from the middle of the sceen

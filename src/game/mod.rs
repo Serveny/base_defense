@@ -49,7 +49,7 @@ fn draw_ingame_board(mut cmds: Commands, windows: Res<Windows>, game: Res<Game>)
     draw_board(
         &mut cmds,
         &game.board,
-        UVec2::new(400, 400),
+        Vec2::new(400., 400.),
         Vec2::new(window.width() - 20., window.height() - 20.),
     );
 }

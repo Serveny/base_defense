@@ -48,7 +48,7 @@ pub(super) fn new_game_menu_setup(mut commands: Commands) {
     draw_board(
         &mut commands,
         resource.get_selected_board(),
-        UVec2::new(400, 400),
+        Vec2::new(400., 400.),
         Vec2::new(400., 400.),
     );
     commands.insert_resource(resource);
