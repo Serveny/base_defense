@@ -43,12 +43,13 @@ fn on_tile_click(
     mut state: ResMut<BoardEditorState>,
     tile_to: Tile,
 ) {
+    let window = windows.get_primary().unwrap();
     let rs_params = TileResizeParams::from_start_to_win_end(
-        &windows,
+        window,
         state.current_map.board(),
         Vec2::new(LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX),
     );
-    set_tile(windows, &mut state, queries.p0(), tile_to);
+    set_tile(window, &mut state, queries.p0(), tile_to);
     set_mark(
         &mut commands,
         queries.p1().get_single_mut().ok(),
@@ -63,17 +64,6 @@ fn on_tile_click(
         &rs_params,
         false,
     );
-}
-
-pub(super) fn is_hover(cursor_pos: Vec2, sprite: &Sprite, transform: &Transform) -> bool {
-    if let Some(size) = sprite.custom_size {
-        cursor_pos.x >= transform.translation.x
-            && cursor_pos.x <= transform.translation.x + size.x
-            && cursor_pos.y >= transform.translation.y - size.y
-            && cursor_pos.y <= transform.translation.y
-    } else {
-        false
-    }
 }
 
 pub(super) fn cursor_pos_to_transform_pos(cursor_pos: Vec2, window: &Window) -> Vec2 {

@@ -1,10 +1,7 @@
-use super::{
-    actions::{cursor_pos_to_transform_pos, is_hover},
-    BoardEditorScreen, BoardEditorState,
-};
+use super::{actions::cursor_pos_to_transform_pos, BoardEditorScreen, BoardEditorState};
 use crate::{
     board::{Board, Tile},
-    utils::TileResizeParams,
+    utils::{get_tile_color, is_hover, TileResizeParams},
 };
 use bevy::{prelude::*, sprite::Anchor};
 
@@ -56,22 +53,12 @@ fn spawn_tile(
         .insert(BoardEditorScreen);
 }
 
-fn get_tile_color(tile: &Tile) -> Color {
-    match tile {
-        Tile::TowerGround(_) => Color::GOLD,
-        Tile::BuildingGround(_) => Color::ANTIQUE_WHITE,
-        Tile::Road => Color::AQUAMARINE,
-        Tile::Empty => Color::DARK_GRAY,
-    }
-}
-
 pub(super) fn set_tile(
-    windows: Res<Windows>,
+    window: &Window,
     state: &mut ResMut<BoardEditorState>,
     mut editor_tiles: Query<(&mut Sprite, &Transform, &EditorTile), With<EditorTile>>,
     tile_to: Tile,
 ) {
-    let window = windows.get_primary().unwrap();
     if let Some(cursor_pos) = window.cursor_position() {
         for (mut sprite, transform, tile) in editor_tiles.iter_mut() {
             if is_hover(

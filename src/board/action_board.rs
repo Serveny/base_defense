@@ -99,6 +99,12 @@ impl ActionBoard {
     pub fn get_tile(&self, pos: UVec2) -> &Tile {
         &self.board.tiles[pos.y as usize][pos.x as usize]
     }
+    pub fn try_get_tile(&self, pos: UVec2) -> Option<&Tile> {
+        if let Some(row) = self.board.tiles.get(pos.y as usize) {
+            return row.get(pos.x as usize);
+        }
+        None
+    }
 
     pub fn set_tile(&mut self, pos: UVec2, tile_to: Tile) {
         let tile = self.board.tiles[pos.y as usize][pos.x as usize].clone();
@@ -170,15 +176,19 @@ impl ActionBoard {
         self.building_tile_posis = self.board.get_tiles(Tile::BuildingGround(None));
         self.road_tile_posis = self.board.get_tiles(Tile::Road);
     }
+
     pub fn tower_tile_posis(&self) -> &HashSet<UVec2> {
         &self.tower_tile_posis
     }
+
     pub fn building_tile_posis(&self) -> &HashSet<UVec2> {
         &self.building_tile_posis
     }
+
     pub fn road_tile_posis(&self) -> &HashSet<UVec2> {
         &self.road_tile_posis
     }
+
     fn get_tile_posis_mut(&mut self, tile: &Tile) -> Option<&mut HashSet<UVec2>> {
         match tile {
             Tile::TowerGround(_) => Some(&mut self.tower_tile_posis),

@@ -1,7 +1,10 @@
 use assets::StandardAssets;
 use bevy::prelude::*;
 use bevy_asset_loader::AssetLoader;
-use bevy_egui::{egui, EguiContext, EguiPlugin};
+use bevy_egui::{
+    egui::{self, style::Selection, Color32, Stroke},
+    EguiContext, EguiPlugin,
+};
 use bevy_prototype_lyon::plugin::ShapePlugin;
 use user::Settings;
 use utils::GameState;
@@ -20,6 +23,7 @@ mod utils;
 
 const TITLE: &str = "Base Defense";
 const BACKGROUND_COLOR: Color = Color::rgba(35.0 / 255.0, 33.0 / 255.0, 38.0 / 255.0, 15.0);
+//Color::rgb(50. / 255., 50. / 255., 44. / 255.);
 // const TEXT_COLOR: Color = Color::rgb(232.0 / 255.0, 230.0 / 255.0, 227.0 / 255.0);
 // const FONT_PATH: &str = "fonts/Quicksand-Regular.ttf";
 
@@ -93,6 +97,13 @@ fn setup_egui(mut egui_ctx: ResMut<EguiContext>) {
     //Visuals
     egui_ctx.ctx_mut().set_visuals(egui::Visuals {
         window_rounding: 10.0.into(),
+        selection: Selection {
+            bg_fill: Color32::from_rgb(54, 241, 205),
+            stroke: Stroke {
+                width: 2.,
+                color: Color32::WHITE,
+            },
+        },
         ..Default::default()
     });
 }

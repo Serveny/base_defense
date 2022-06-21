@@ -63,8 +63,9 @@ impl Plugin for BoardEditorPlugin {
 
 fn editor_setup(mut commands: Commands, windows: Res<Windows>) {
     let state = BoardEditorState::default();
+    let window = windows.get_primary().unwrap();
     let rs_params = TileResizeParams::from_start_to_win_end(
-        &windows,
+        window,
         state.current_map.board(),
         Vec2::from(EDITOR_BOARD_START),
     );
@@ -95,8 +96,9 @@ fn repaint(
     for entity in query.iter_mut() {
         commands.entity(entity).despawn_recursive();
     }
+    let window = windows.get_primary().unwrap();
     let rs_params = TileResizeParams::from_start_to_win_end(
-        windows,
+        window,
         state.current_map.board(),
         Vec2::from(EDITOR_BOARD_START),
     );

@@ -1,5 +1,5 @@
 use crate::{
-    board::{draw_board, ActionBoard},
+    board::ActionBoard,
     game::Game,
     utils::{add_error_box, get_all_boards_in_folder, Difficulty, GameState},
 };
@@ -48,12 +48,12 @@ impl Default for NewGameMenu {
 
 pub(super) fn new_game_menu_setup(mut commands: Commands) {
     let resource = NewGameMenu::default();
-    draw_board(
-        &mut commands,
-        resource.get_selected_board(),
-        Vec2::new(400., 400.),
-        Vec2::new(400., 400.),
-    );
+    // draw_board(
+    //     &mut commands,
+    //     resource.get_selected_board(),
+    //     Vec2::new(400., 400.),
+    //     Vec2::new(400., 400.),
+    // );
     commands.insert_resource(resource);
 }
 
@@ -110,7 +110,10 @@ pub(super) fn add_new_game_menu(
                         .add_sized([400., 60.], bevy_egui::egui::widgets::Button::new("Play"))
                         .clicked()
                     {
-                        cmds.insert_resource(Game::new(new_game_menu.get_selected_board().clone()));
+                        cmds.insert_resource(Game::new(
+                            new_game_menu.get_selected_board().clone(),
+                            new_game_menu.difficulty,
+                        ));
                         leave_menu(GameState::Game, &mut menu_state, &mut game_state);
                     }
                 });

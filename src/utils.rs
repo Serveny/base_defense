@@ -2,7 +2,7 @@
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::board::{ActionBoard, Board};
+use crate::board::{ActionBoard, Board, Tile};
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -167,6 +167,7 @@ pub struct TileResizeParams {
     pub tile_inner_size: Vec2,
     pub board_start_x: f32,
     pub board_start_y: f32,
+    pub board_size: Vec2,
 }
 
 impl TileResizeParams {
@@ -186,22 +187,45 @@ impl TileResizeParams {
             // Think from the middle of the sceen
             board_start_x: (start.x - board_width_px) / 2.,
             board_start_y: (board_height_px - start.y) / 2.,
+            board_size: Vec2::new(
+                tile_size * board.width as f32,
+                tile_size * board.height as f32,
+            ),
         }
     }
 
-    pub fn from_start_to_win_end(windows: &Windows, board: &Board, start: Vec2) -> Self {
-        let window = windows.get_primary().unwrap();
+    pub fn from_start_to_win_end(window: &Window, board: &Board, start: Vec2) -> Self {
         Self::new(board, start, Vec2::new(window.width(), window.height()))
     }
 }
 
-fn get_tile_size_px(board_width_px: f32, board_height_px: f32, board: &Board) -> f32 {
-    let tile_width_px = board_width_px / board.width as f32;
-    let tile_height_px = board_height_px / board.height as f32;
+pub fn get_tile_size_px(available_width_px: f32, available_height_px: f32, board: &Board) -> f32 {
+    let tile_width_px = available_width_px / board.width as f32;
+    let tile_height_px = available_height_px / board.height as f32;
 
     if tile_height_px > tile_width_px {
         tile_width_px
     } else {
         tile_height_px
+    }
+}
+
+pub fn get_tile_color(tile: &Tile) -> Color {
+    match tile {
+        Tile::TowerGround(_) => Color::GOLD,
+        Tile::BuildingGround(_) => Color::ANTIQUE_WHITE,
+        Tile::Road => Color::GRAY,
+        Tile::Empty => Color::DARK_GRAY,
+    }
+}
+
+pub fn is_hover(cursor_pos: Vec2, sprite: &Sprite, transform: &Transform) -> bool {
+    if let Some(size) = sprite.custom_size {
+        cursor_pos.x >= transform.translation.x
+            && cursor_pos.x <= transform.translation.x + size.x
+            && cursor_pos.y >= transform.translation.y - size.y
+            && cursor_pos.y <= transform.translation.y
+    } else {
+        false
     }
 }
