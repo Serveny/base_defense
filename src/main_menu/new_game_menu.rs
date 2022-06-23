@@ -27,15 +27,24 @@ impl NewGameMenu {
 impl Default for NewGameMenu {
     fn default() -> Self {
         match get_all_boards_in_folder() {
-            Ok(boards) => Self {
-                boards: boards
+            Ok(boards) => {
+                let mut boards: Vec<ActionBoard> = boards
                     .into_iter()
                     .map(|board| ActionBoard::new(board))
-                    .collect(),
-                selected_board_index: 0,
-                difficulty: Difficulty::Easy,
-                err_text: None,
-            },
+                    .collect();
+                let mut validated_boards = Vec::new();
+                for board in boards.iter_mut() {
+                    if let Ok(_) = board.validate() {
+                        validated_boards.push(board.clone());
+                    }
+                }
+                Self {
+                    boards: validated_boards,
+                    selected_board_index: 0,
+                    difficulty: Difficulty::Easy,
+                    err_text: None,
+                }
+            }
             Err(err) => Self {
                 boards: Vec::new(),
                 selected_board_index: 0,
@@ -48,12 +57,6 @@ impl Default for NewGameMenu {
 
 pub(super) fn new_game_menu_setup(mut commands: Commands) {
     let resource = NewGameMenu::default();
-    // draw_board(
-    //     &mut commands,
-    //     resource.get_selected_board(),
-    //     Vec2::new(400., 400.),
-    //     Vec2::new(400., 400.),
-    // );
     commands.insert_resource(resource);
 }
 

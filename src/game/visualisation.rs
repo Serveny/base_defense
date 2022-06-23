@@ -1,14 +1,14 @@
 use super::{ActionBoard, GameScreen};
-use crate::utils::{get_tile_color, get_tile_size_px};
+use crate::utils::{get_tile_color, get_tile_size_px, road_end_shape, Vec2Board};
 use bevy::{prelude::*, sprite::Anchor};
-use bevy_prototype_lyon::prelude::*;
+use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
-#[derive(Debug, Clone)]
 pub(super) struct Visualisation {
     // fm = from mid
-    board_start_fm: Vec2,
-    tile_size: f32,
+    board_start_fm: Vec3,
+    pub tile_size: f32,
     tile_size_vec: Vec2,
+    pub half_tile_vec3: Vec3,
 }
 
 #[derive(Component)]
@@ -23,9 +23,10 @@ impl Visualisation {
             tile_size * board.height as f32,
         );
         Visualisation {
-            board_start_fm: Vec2::new(-board_size.x / 2., (board_size.y - margin_top) / 2.),
+            board_start_fm: Vec3::new(-board_size.x / 2., (board_size.y - margin_top) / 2., 0.),
             tile_size,
             tile_size_vec: Vec2::new(tile_size, tile_size),
+            half_tile_vec3: Vec3::new(tile_size / 2., -tile_size / 2., 0.),
         }
     }
 
@@ -40,7 +41,9 @@ impl Visualisation {
                         ..Default::default()
                     },
                     transform: Transform {
-                        translation: self.pos_to_px(Vec2::new(x as f32, y as f32), 0.),
+                        translation: self
+                            .pos_to_px(Vec2Board::new(x as f32, y as f32), 0.)
+                            .into(),
                         ..Default::default()
                     },
 
@@ -49,6 +52,12 @@ impl Visualisation {
                 .insert(GameScreen);
             }
         }
+        cmds.spawn_bundle(road_end_shape(
+            self.tile_size,
+            self.pos_to_px(action_board.road_end_pos().unwrap().into(), 1.)
+                + Vec3::new(self.tile_size / 2., -self.tile_size / 2., 0.),
+        ))
+        .insert(GameScreen);
     }
 
     pub fn draw_hover_cross(
@@ -57,21 +66,14 @@ impl Visualisation {
         mut query_hover_cross: Query<(Entity, &mut Transform), With<HoverCross>>,
         pos: Vec2,
     ) {
-        let translation = self.pos_to_px(Vec2::new(pos.x.floor(), pos.y.floor()), 1.);
-
-        if let Ok(mut hover_cross_trans) = query_hover_cross.get_single_mut() {
-            hover_cross_trans.1.translation = translation;
+        let translation = self.pos_to_px(Vec2Board::new(pos.x.floor(), pos.y.floor()), 1.);
+        if let Ok(mut hover_cross) = query_hover_cross.get_single_mut() {
+            hover_cross.1.translation = translation.into();
         } else {
-            let shape = GeometryBuilder::build_as(
-                &self.hover_cross_path(),
-                DrawMode::Stroke(StrokeMode::new(Color::SILVER, 10.0)),
-                Transform {
-                    translation,
-                    ..Default::default()
-                },
-            );
-
-            cmds.spawn_bundle(shape).insert(HoverCross);
+            let shape = Self::hover_cross_shape(self.tile_size, translation);
+            cmds.spawn_bundle(shape)
+                .insert(HoverCross)
+                .insert(GameScreen);
         }
     }
 
@@ -84,13 +86,21 @@ impl Visualisation {
         }
     }
 
-    fn pos_to_px(&self, pos: Vec2, z: f32) -> Vec3 {
+    pub fn pos_to_px(&self, pos: Vec2Board, z: f32) -> Vec3 {
         Vec3::new(
             self.board_start_fm.x + (pos.x * self.tile_size),
             self.board_start_fm.y - (pos.y * self.tile_size),
             z,
         )
     }
+
+    // pub fn distance_board_to_px(&self, distance_board: Vec2Board) -> Vec3 {
+    //     Vec3::new(
+    //         distance_board.x * self.tile_size,
+    //         distance_board.y * self.tile_size,
+    //         0.,
+    //     )
+    // }
 
     pub fn cursor_px_to_board_pos(&self, cursor_pos_px: Vec2) -> Vec2 {
         Vec2::new(
@@ -99,32 +109,43 @@ impl Visualisation {
         )
     }
 
-    fn hover_cross_path(&self) -> Path {
-        let ts = self.tile_size;
+    fn hover_cross_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
+        GeometryBuilder::build_as(
+            &Self::hover_cross_path(tile_size),
+            DrawMode::Stroke(StrokeMode::new(Color::SILVER, tile_size / 8.)),
+            Transform {
+                translation,
+                ..Default::default()
+            },
+        )
+    }
+
+    fn hover_cross_path(tile_size: f32) -> Path {
+        let ts = tile_size;
         let eighth = ts / 8.;
         let one_third = ts / 3.;
-        let mut path_builder = PathBuilder::new();
+        let mut pb = PathBuilder::new();
 
         // top left
-        path_builder.move_to(Vec2::new(eighth, -one_third));
-        path_builder.line_to(Vec2::new(eighth, -eighth));
-        path_builder.line_to(Vec2::new(one_third, -eighth));
+        pb.move_to(Vec2::new(eighth, -one_third));
+        pb.line_to(Vec2::new(eighth, -eighth));
+        pb.line_to(Vec2::new(one_third, -eighth));
 
         // top right
-        path_builder.move_to(Vec2::new(ts - eighth, -one_third));
-        path_builder.line_to(Vec2::new(ts - eighth, -eighth));
-        path_builder.line_to(Vec2::new(ts - one_third, -eighth));
+        pb.move_to(Vec2::new(ts - eighth, -one_third));
+        pb.line_to(Vec2::new(ts - eighth, -eighth));
+        pb.line_to(Vec2::new(ts - one_third, -eighth));
 
         // bottom right
-        path_builder.move_to(Vec2::new(ts - eighth, -ts + one_third));
-        path_builder.line_to(Vec2::new(ts - eighth, -ts + eighth));
-        path_builder.line_to(Vec2::new(ts - one_third, -ts + eighth));
+        pb.move_to(Vec2::new(ts - eighth, -ts + one_third));
+        pb.line_to(Vec2::new(ts - eighth, -ts + eighth));
+        pb.line_to(Vec2::new(ts - one_third, -ts + eighth));
 
         // bottom left
-        path_builder.move_to(Vec2::new(eighth, -ts + one_third));
-        path_builder.line_to(Vec2::new(eighth, -ts + eighth));
-        path_builder.line_to(Vec2::new(one_third, -ts + eighth));
+        pb.move_to(Vec2::new(eighth, -ts + one_third));
+        pb.line_to(Vec2::new(eighth, -ts + eighth));
+        pb.line_to(Vec2::new(one_third, -ts + eighth));
 
-        path_builder.build()
+        pb.build()
     }
 }

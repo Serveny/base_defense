@@ -10,7 +10,8 @@ use user::Settings;
 use utils::GameState;
 
 #[cfg(feature = "debug")]
-use bevy_editor_pls::*;
+//use bevy_editor_pls::*;
+use bevy_inspector_egui::*;
 
 mod assets;
 mod board;
@@ -47,9 +48,10 @@ fn main() {
         .add_plugin(board_editor::BoardEditorPlugin);
 
     #[cfg(feature = "debug")]
-    app.add_plugin(EditorPlugin)
-        .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
-        .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin);
+    app.add_plugin(WorldInspectorPlugin::new());
+    //   app.add_plugin(EditorPlugin)
+    //      .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
+    //      .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin);
 
     AssetLoader::new(GameState::Splash)
         .continue_to_state(GameState::Menu)

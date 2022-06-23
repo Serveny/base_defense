@@ -1,8 +1,8 @@
 #![allow(unused)]
-use bevy::prelude::*;
-use serde::{Deserialize, Serialize};
-
 use crate::board::{ActionBoard, Board, Tile};
+use bevy::prelude::*;
+use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use serde::{Deserialize, Serialize};
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -20,15 +20,66 @@ pub enum Difficulty {
     Hard,
 }
 
+pub type Energy = u32;
+pub type Materials = u32;
+
+#[derive(Default, Deref, DerefMut, Clone, Copy, PartialEq, Debug)]
+pub struct Vec2Board(Vec2);
+
+impl Vec2Board {
+    pub fn new(x: f32, y: f32) -> Self {
+        Self(Vec2::new(x, y))
+    }
+    pub fn from_uvec2_middle(uvec2: &UVec2) -> Self {
+        Self::new(uvec2.x as f32 + 0.5, uvec2.y as f32 + 0.5)
+    }
+}
+
+impl From<Vec2> for Vec2Board {
+    fn from(vec2: Vec2) -> Self {
+        Self(vec2)
+    }
+}
+impl From<UVec2> for Vec2Board {
+    fn from(uvec2: UVec2) -> Self {
+        Self(uvec2.as_vec2())
+    }
+}
+
+impl Add for Vec2Board {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self::new(self.x + other.x, self.y + other.y)
+    }
+}
+
+impl Mul for Vec2Board {
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self {
+        Self::new(self.x * other.x, self.y * other.y)
+    }
+}
+
+impl Sub for Vec2Board {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self::new(self.x - other.x, self.y - other.y)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Consumption {
+    energy: Energy,
+    materials: Materials,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Tower {
     tower_type: TowerType,
-}
-
-impl Tower {
-    fn new(tower_type: TowerType) -> Self {
-        Self { tower_type }
-    }
+    shot_con: Consumption,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -70,8 +121,10 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
     }
 }
 
+use std::f32::consts::PI;
 use std::fs::{read_dir, read_to_string, DirEntry, File};
 use std::io::{BufRead, BufReader, Error, Write};
+use std::ops::{Add, Mul, Sub};
 use std::path::Path;
 
 pub fn save_board_to_file(name: &str, board: &Board) -> Result<(), Error> {
@@ -228,4 +281,43 @@ pub fn is_hover(cursor_pos: Vec2, sprite: &Sprite, transform: &Transform) -> boo
     } else {
         false
     }
+}
+
+pub fn road_end_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
+    let shape = shapes::RegularPolygon {
+        sides: 8,
+        feature: shapes::RegularPolygonFeature::Radius(tile_size / 3.),
+        ..shapes::RegularPolygon::default()
+    };
+
+    GeometryBuilder::build_as(
+        &shape,
+        DrawMode::Outlined {
+            fill_mode: FillMode::color(Color::SEA_GREEN),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 8.),
+        },
+        Transform {
+            translation,
+            ..Default::default()
+        },
+    )
+}
+pub fn enemy_normal_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
+    let shape = shapes::RegularPolygon {
+        sides: 5,
+        feature: shapes::RegularPolygonFeature::Radius(tile_size / 8.),
+        ..shapes::RegularPolygon::default()
+    };
+
+    GeometryBuilder::build_as(
+        &shape,
+        DrawMode::Outlined {
+            fill_mode: FillMode::color(Color::MAROON),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
+        },
+        Transform {
+            translation,
+            ..Default::default()
+        },
+    )
 }

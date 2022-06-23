@@ -20,7 +20,6 @@ enum MenuState {
     Main,
     NewGame,
     Settings,
-    Disabled,
 }
 
 pub struct MainMenuPlugin;
@@ -35,7 +34,7 @@ impl Plugin for MainMenuPlugin {
                 SystemSet::on_update(MenuState::NewGame)
                     .with_system(add_new_game_menu.after(startup_menu)),
             )
-            .add_state(MenuState::Disabled);
+            .add_state(MenuState::Main);
     }
 }
 
@@ -55,7 +54,6 @@ fn startup_menu(
 
     match *menu_state.current() {
         MenuState::Settings => add_settings(&mut egui_ctx, settings),
-        MenuState::Disabled => menu_state.set(MenuState::Main).unwrap(),
         _ => (),
     }
 }
@@ -120,6 +118,6 @@ fn leave_menu(
     menu_state: &mut ResMut<State<MenuState>>,
     game_state: &mut ResMut<State<GameState>>,
 ) {
-    menu_state.set(MenuState::Disabled).unwrap();
+    menu_state.set(MenuState::Main).unwrap_or_default();
     game_state.set(to).unwrap();
 }

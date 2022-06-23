@@ -1,13 +1,14 @@
 use super::{tile::Tile, Board, TILE_NEIGHBOR_MATRIX};
-use bevy::{prelude::*, utils::HashSet};
+use bevy::prelude::*;
+use indexmap::IndexSet;
 
 // Board with meta data and edit actions
 #[derive(Default, Clone)]
 pub struct ActionBoard {
     board: Board,
-    tower_tile_posis: HashSet<UVec2>,
-    building_tile_posis: HashSet<UVec2>,
-    road_tile_posis: HashSet<UVec2>,
+    tower_tile_posis: IndexSet<UVec2>,
+    building_tile_posis: IndexSet<UVec2>,
+    road_tile_posis: IndexSet<UVec2>,
     road_start: Option<UVec2>,
     road_end: Option<UVec2>,
 }
@@ -33,9 +34,9 @@ impl ActionBoard {
     pub fn empty(width: u8, height: u8) -> Self {
         Self {
             board: Board::empty(width, height),
-            tower_tile_posis: HashSet::new(),
-            building_tile_posis: HashSet::new(),
-            road_tile_posis: HashSet::new(),
+            tower_tile_posis: IndexSet::new(),
+            building_tile_posis: IndexSet::new(),
+            road_tile_posis: IndexSet::new(),
             road_start: None,
             road_end: None,
         }
@@ -125,6 +126,7 @@ impl ActionBoard {
             new_posis.remove(pos);
         }
     }
+
     fn insert_tile_pos(&mut self, pos: UVec2, tile: &Tile) {
         if let Some(new_posis) = self.get_tile_posis_mut(tile) {
             new_posis.insert(pos);
@@ -138,7 +140,7 @@ impl ActionBoard {
 
     // is tile at one edge of the board and has only one road neighbor, it is the starting point
     fn road_start_pos_from(
-        road_tile_posis: &HashSet<UVec2>,
+        road_tile_posis: &IndexSet<UVec2>,
         board_width: u8,
         board_heigt: u8,
     ) -> Option<UVec2> {
@@ -160,8 +162,8 @@ impl ActionBoard {
 
     // if tile is surrounded by three building tiles, it is the ending point
     pub fn road_end_pos_from(
-        road_tile_posis: &HashSet<UVec2>,
-        building_tile_posis: &HashSet<UVec2>,
+        road_tile_posis: &IndexSet<UVec2>,
+        building_tile_posis: &IndexSet<UVec2>,
     ) -> Option<UVec2> {
         for pos in road_tile_posis {
             if Self::get_neighbors(pos, building_tile_posis).len() == 3 {
@@ -177,19 +179,19 @@ impl ActionBoard {
         self.road_tile_posis = self.board.get_tiles(Tile::Road);
     }
 
-    pub fn tower_tile_posis(&self) -> &HashSet<UVec2> {
+    pub fn tower_tile_posis(&self) -> &IndexSet<UVec2> {
         &self.tower_tile_posis
     }
 
-    pub fn building_tile_posis(&self) -> &HashSet<UVec2> {
+    pub fn building_tile_posis(&self) -> &IndexSet<UVec2> {
         &self.building_tile_posis
     }
 
-    pub fn road_tile_posis(&self) -> &HashSet<UVec2> {
+    pub fn road_tile_posis(&self) -> &IndexSet<UVec2> {
         &self.road_tile_posis
     }
 
-    fn get_tile_posis_mut(&mut self, tile: &Tile) -> Option<&mut HashSet<UVec2>> {
+    fn get_tile_posis_mut(&mut self, tile: &Tile) -> Option<&mut IndexSet<UVec2>> {
         match tile {
             Tile::TowerGround(_) => Some(&mut self.tower_tile_posis),
             Tile::BuildingGround(_) => Some(&mut self.building_tile_posis),
@@ -198,7 +200,7 @@ impl ActionBoard {
         }
     }
 
-    pub fn validate(&self) -> Result<(), &str> {
+    pub fn validate(&mut self) -> Result<(), &str> {
         if self.tower_tile_posis.len() < 1 {
             return Err("Need tower tiles");
         }
@@ -208,14 +210,23 @@ impl ActionBoard {
         if self.road_tile_posis.len() < 2 {
             return Err("Need minimal two road tiles");
         }
-
-        if self.road_start_pos().is_none() {
+        if let Some(start) = self.road_start_pos() {
+            if let Some(sorted_posis) =
+                Self::are_tiles_connected(&self.road_tile_posis, start.clone())
+            {
+                self.road_tile_posis = sorted_posis;
+            } else {
+                return Err("All road tiles must be connected to each other");
+            }
+        } else {
             return Err("Need road starting point at the board edge");
         }
-        if !Self::are_tiles_connected(&self.road_tile_posis) {
-            return Err("All road tiles must be connected to each other");
-        }
-        if !Self::are_tiles_connected(&self.building_tile_posis) {
+        if let Some(sorted_posis) = Self::are_tiles_connected(
+            &self.building_tile_posis,
+            self.building_tile_posis.first().unwrap().clone(),
+        ) {
+            self.building_tile_posis = sorted_posis;
+        } else {
             return Err("All building tiles must be connected to each other");
         }
         if Self::have_tiles_more_than_max_neighbors(2, &self.road_tile_posis) {
@@ -228,7 +239,7 @@ impl ActionBoard {
         Ok(())
     }
 
-    fn check_neighbors(pos: UVec2, tiles: &HashSet<UVec2>, linked: &mut HashSet<UVec2>) {
+    fn check_neighbors(pos: UVec2, tiles: &IndexSet<UVec2>, linked: &mut IndexSet<UVec2>) {
         linked.insert(pos);
         for neighbor in Self::get_neighbors(&pos, &tiles) {
             if tiles.get(&neighbor).is_some() && linked.get(&neighbor).is_none() {
@@ -237,14 +248,14 @@ impl ActionBoard {
         }
     }
 
-    fn get_neighbors(pos: &UVec2, tiles: &HashSet<UVec2>) -> Vec<UVec2> {
+    fn get_neighbors(pos: &UVec2, tiles: &IndexSet<UVec2>) -> Vec<UVec2> {
         let mut neighbors = Vec::new();
         for additor in TILE_NEIGHBOR_MATRIX {
             let x = pos.x as i32 + additor.0;
             let y = pos.y as i32 + additor.1;
             if x >= 0 && y >= 0 {
                 let neighbor = UVec2::new(x as u32, y as u32);
-                if tiles.get(&neighbor).is_some() {
+                if tiles.contains(&neighbor) {
                     neighbors.push(neighbor);
                 }
             }
@@ -252,7 +263,7 @@ impl ActionBoard {
         neighbors
     }
 
-    fn have_tiles_more_than_max_neighbors(max: usize, tiles: &HashSet<UVec2>) -> bool {
+    fn have_tiles_more_than_max_neighbors(max: usize, tiles: &IndexSet<UVec2>) -> bool {
         for tile in tiles {
             if Self::get_neighbors(tile, tiles).len() > max {
                 return true;
@@ -261,11 +272,13 @@ impl ActionBoard {
         false
     }
 
-    fn are_tiles_connected(tiles: &HashSet<UVec2>) -> bool {
-        let mut connected_tiles: HashSet<UVec2> = HashSet::new();
-        if let Some(start) = tiles.iter().last() {
-            Self::check_neighbors(start.clone(), tiles, &mut connected_tiles);
+    fn are_tiles_connected(tile_posis: &IndexSet<UVec2>, start: UVec2) -> Option<IndexSet<UVec2>> {
+        let mut connected_tiles: IndexSet<UVec2> = IndexSet::new();
+        Self::check_neighbors(start.clone(), tile_posis, &mut connected_tiles);
+        if tile_posis.len() == connected_tiles.len() {
+            Some(connected_tiles)
+        } else {
+            None
         }
-        tiles.len() == connected_tiles.len()
     }
 }

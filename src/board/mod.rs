@@ -1,6 +1,7 @@
 pub use self::tile::Tile;
 pub use action_board::ActionBoard;
-use bevy::{prelude::*, utils::HashSet};
+use bevy::prelude::*;
+use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
 
 pub(crate) mod action_board;
@@ -29,16 +30,16 @@ impl Board {
         }
     }
 
-    pub fn get_tiles(&self, filter: Tile) -> HashSet<UVec2> {
-        let mut building_tiles: HashSet<UVec2> = HashSet::new();
+    pub fn get_tiles(&self, filter: Tile) -> IndexSet<UVec2> {
+        let mut tiles: IndexSet<UVec2> = IndexSet::new();
         for (y, row) in self.tiles.iter().enumerate() {
             for (x, tile) in row.iter().enumerate() {
                 if *tile == filter {
-                    building_tiles.insert(UVec2::new(x as u32, y as u32));
+                    tiles.insert(UVec2::new(x as u32, y as u32));
                 }
             }
         }
-        building_tiles
+        tiles
     }
 }
 

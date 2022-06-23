@@ -1,7 +1,7 @@
 use self::{
     actions::editor_click_actions,
     editor_tiles::spawn_tiles,
-    markers::{spawn_end_marker, spawn_start_marker},
+    markers::spawn_end_marker,
     popups::{
         add_edit_board_window, add_load_board_window, add_new_board_window, add_save_board_window,
         Popups,
@@ -104,9 +104,6 @@ fn repaint(
     );
     spawn_tiles(commands, &rs_params, &mut state.current_map.board());
 
-    if let Some(start_mark) = state.current_map.road_start_pos() {
-        spawn_start_marker(commands, &rs_params, start_mark.clone());
-    }
     if let Some(end_mark) = state.current_map.road_end_pos() {
         spawn_end_marker(commands, &rs_params, end_mark.clone());
     }
