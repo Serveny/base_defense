@@ -1,13 +1,12 @@
+pub use self::cache::BoardCache;
 pub use self::tile::Tile;
-pub use action_board::ActionBoard;
 use bevy::prelude::*;
 use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
 
-pub(crate) mod action_board;
+mod cache;
 mod tile;
-
-const TILE_NEIGHBOR_MATRIX: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
+pub mod visualisation;
 
 // Struct only for holding data, which can be de/serialized
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,6 +29,21 @@ impl Board {
         }
     }
 
+    pub fn tile_mut(&mut self, pos: UVec2) -> Option<&mut Tile> {
+        if self.get_tile(pos).is_some() {
+            Some(&mut self.tiles[pos.y as usize][pos.x as usize])
+        } else {
+            None
+        }
+    }
+
+    pub fn get_tile(&self, pos: UVec2) -> Option<&Tile> {
+        if let Some(row) = self.tiles.get(pos.y as usize) {
+            return row.get(pos.x as usize);
+        }
+        None
+    }
+
     pub fn get_tiles(&self, filter: Tile) -> IndexSet<UVec2> {
         let mut tiles: IndexSet<UVec2> = IndexSet::new();
         for (y, row) in self.tiles.iter().enumerate() {
@@ -40,6 +54,45 @@ impl Board {
             }
         }
         tiles
+    }
+
+    pub fn change_size(&mut self, new_width: u8, new_heigth: u8) {
+        // Add/reduce width
+        if new_width > self.width {
+            let to_add = new_width - self.width;
+            for row in &mut self.tiles {
+                for _ in 0..to_add {
+                    row.push(Tile::Empty);
+                }
+            }
+        } else if new_width < self.width {
+            let to_del = self.width - new_width;
+            for row in &mut self.tiles {
+                for _ in 0..to_del {
+                    row.pop();
+                }
+            }
+        }
+
+        // Add/reduce height
+        if new_heigth > self.height {
+            let to_add = new_heigth - self.height;
+            for _ in 0..to_add {
+                let mut row = Vec::new();
+                for _ in 0..self.width {
+                    row.push(Tile::Empty);
+                }
+                self.tiles.push(row);
+            }
+        } else if new_heigth < self.height {
+            let to_del = self.height - new_heigth;
+            for _ in 0..to_del {
+                self.tiles.pop();
+            }
+        }
+
+        self.width = new_width;
+        self.height = new_heigth;
     }
 }
 

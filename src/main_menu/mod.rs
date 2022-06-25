@@ -1,3 +1,7 @@
+use self::{
+    actions::{menu_actions, MenuActionEvent},
+    new_game_menu::{add_new_game_menu, new_game_menu_setup},
+};
 use crate::{
     utils::{add_row, GameState},
     TITLE,
@@ -8,8 +12,7 @@ use bevy_egui::{
     EguiContext,
 };
 
-use self::new_game_menu::{add_new_game_menu, new_game_menu_setup};
-
+mod actions;
 mod new_game_menu;
 
 const SIDE_BAR_WIDTH: f32 = 300.0;
@@ -26,7 +29,12 @@ pub struct MainMenuPlugin;
 
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_update(GameState::Menu).with_system(startup_menu))
+        app.add_event::<MenuActionEvent>()
+            .add_system_set(
+                SystemSet::on_update(GameState::Menu)
+                    .with_system(startup_menu)
+                    .with_system(menu_actions),
+            )
             .add_system_set(
                 SystemSet::on_enter(MenuState::NewGame).with_system(new_game_menu_setup),
             )
@@ -39,17 +47,17 @@ impl Plugin for MainMenuPlugin {
 }
 
 fn startup_menu(
-    mut game_state: ResMut<State<GameState>>,
     mut menu_state: ResMut<State<MenuState>>,
     mut egui_ctx: ResMut<EguiContext>,
     mut app_exit_events: EventWriter<AppExit>,
+    actions: EventWriter<MenuActionEvent>,
     settings: ResMut<crate::user::Settings>,
 ) {
     add_main_menu(
-        &mut game_state,
         &mut menu_state,
         &mut egui_ctx,
         &mut app_exit_events,
+        actions,
     );
 
     match *menu_state.current() {
@@ -59,10 +67,10 @@ fn startup_menu(
 }
 
 fn add_main_menu(
-    game_state: &mut ResMut<State<GameState>>,
     menu_state: &mut ResMut<State<MenuState>>,
     egui_ctx: &mut ResMut<EguiContext>,
     app_exit_events: &mut EventWriter<AppExit>,
+    mut actions: EventWriter<MenuActionEvent>,
 ) {
     SidePanel::left("left_panel")
         .resizable(false)
@@ -82,7 +90,7 @@ fn add_main_menu(
             }
 
             if add_menu_button("Map Editor", ui).clicked() {
-                leave_menu(GameState::MapEditor, menu_state, game_state);
+                actions.send(MenuActionEvent::LeaveMenu(GameState::MapEditor));
             }
 
             if add_menu_button("Settings", ui).clicked() {
@@ -111,13 +119,4 @@ fn add_settings(egui_ctx: &mut ResMut<EguiContext>, mut settings: ResMut<crate::
             add_row("Volume", volume_silder, ui);
         });
     });
-}
-
-fn leave_menu(
-    to: GameState,
-    menu_state: &mut ResMut<State<MenuState>>,
-    game_state: &mut ResMut<State<GameState>>,
-) {
-    menu_state.set(MenuState::Main).unwrap_or_default();
-    game_state.set(to).unwrap();
 }

@@ -3,10 +3,9 @@ use std::time::Duration;
 use self::{
     controls::{keyboard_input, mouse_input},
     enemies::{enemies_walk_until_wave_end, Enemy},
-    visualisation::Visualisation,
 };
 use crate::{
-    board::ActionBoard,
+    board::{visualisation::BoardVisualisation, Board, BoardCache},
     game::enemies::spawn_enemies,
     utils::{despawn_all_of, Difficulty, Energy, Materials},
     GameState,
@@ -15,7 +14,8 @@ use bevy::{prelude::*, utils::Instant};
 
 mod controls;
 mod enemies;
-mod visualisation;
+
+type Visu = BoardVisualisation<GameScreen>;
 
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
@@ -36,6 +36,7 @@ impl Plugin for GamePlugin {
     }
 }
 
+#[derive(Clone)]
 struct Wave {
     wave_no: u32,
     next_wave_time: Option<Instant>,
@@ -64,8 +65,8 @@ impl Wave {
 }
 
 #[allow(dead_code)]
+#[derive(Clone)]
 pub(crate) struct Game {
-    action_board: ActionBoard,
     difficulty: Difficulty,
     energy: Energy,
     materials: Materials,
@@ -73,9 +74,8 @@ pub(crate) struct Game {
 }
 
 impl Game {
-    pub fn new(board: ActionBoard, difficulty: Difficulty) -> Self {
+    pub fn new(difficulty: Difficulty) -> Self {
         Self {
-            action_board: board,
             difficulty,
             energy: 100,
             materials: 100,
@@ -85,13 +85,18 @@ impl Game {
 }
 
 // Tag component used to tag entities added on the game screen
-#[derive(Component)]
+#[derive(Component, Clone)]
 struct GameScreen;
 
-fn game_setup(mut cmds: Commands, windows: Res<Windows>, game: Res<Game>) {
+fn game_setup(
+    mut cmds: Commands,
+    windows: Res<Windows>,
+    board: Res<Board>,
+    board_cache: Res<BoardCache>,
+) {
     let win = windows.get_primary().unwrap();
-    let visu = Visualisation::new(win, &game.action_board, 0.);
-    visu.draw_board(&mut cmds, &game.action_board);
+    let visu = Visu::new(win, &board, 0., 0., 0., GameScreen);
+    visu.draw_board(&mut cmds, &board, &board_cache);
     cmds.insert_resource(visu);
 }
 
@@ -99,9 +104,10 @@ fn game_setup(mut cmds: Commands, windows: Res<Windows>, game: Res<Game>) {
 fn game(
     mut cmds: Commands,
     mut game: ResMut<Game>,
-    visu: Res<Visualisation>,
+    visu: Res<Visu>,
     time: Res<Time>,
     query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
+    board_cache: Res<BoardCache>,
 ) {
     if let Some(last_update) = time.last_update() {
         if let Some(next_wave_time) = game.wave.next_wave_time {
@@ -109,13 +115,13 @@ fn game(
                 game.wave.start();
             }
         } else {
-            spawn_enemies(&mut cmds, &mut game, &visu, last_update);
+            spawn_enemies(&mut cmds, &mut game, &visu, last_update, &board_cache);
             if enemies_walk_until_wave_end(
                 &mut cmds,
                 time.delta(),
                 query,
                 &visu,
-                game.action_board.road_tile_posis(),
+                &board_cache.road_tile_posis,
             ) && game.wave.enemies_spawned >= game.wave.wave_no * 4
             {
                 game.wave.end(Some(Instant::now() + Duration::from_secs(1)));

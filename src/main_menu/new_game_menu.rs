@@ -1,7 +1,10 @@
+use std::io::Error;
+
+use super::actions::MenuActionEvent;
 use crate::{
-    board::ActionBoard,
+    board::{Board, BoardCache},
     game::Game,
-    utils::{add_error_box, get_all_boards_in_folder, Difficulty, GameState},
+    utils::{add_error_box, get_all_boards_in_folder, Difficulty},
 };
 use bevy::prelude::*;
 use bevy_egui::{
@@ -9,63 +12,63 @@ use bevy_egui::{
     EguiContext,
 };
 
-use super::{leave_menu, MenuState};
-
 pub(super) struct NewGameMenu {
-    boards: Vec<ActionBoard>,
+    boards: Vec<(Board, BoardCache)>,
     selected_board_index: usize,
     difficulty: Difficulty,
     err_text: Option<String>,
 }
 
 impl NewGameMenu {
-    fn get_selected_board(&self) -> &ActionBoard {
+    fn selected_board(&self) -> &(Board, BoardCache) {
         &self.boards[self.selected_board_index]
+    }
+
+    fn new(boards: Vec<Board>) -> Self {
+        Self {
+            boards: boards
+                .into_iter()
+                .filter_map(|board| {
+                    let cache = BoardCache::new(&board);
+                    if cache.validate().is_ok() {
+                        return Some((board, cache));
+                    }
+                    None
+                })
+                .collect(),
+            selected_board_index: 0,
+            difficulty: Difficulty::Easy,
+            err_text: None,
+        }
+    }
+
+    fn new_error(err: Error) -> Self {
+        Self {
+            boards: Vec::new(),
+            selected_board_index: 0,
+            difficulty: Difficulty::Easy,
+            err_text: Some(err.to_string()),
+        }
     }
 }
 
 impl Default for NewGameMenu {
     fn default() -> Self {
         match get_all_boards_in_folder() {
-            Ok(boards) => {
-                let mut boards: Vec<ActionBoard> = boards
-                    .into_iter()
-                    .map(|board| ActionBoard::new(board))
-                    .collect();
-                let mut validated_boards = Vec::new();
-                for board in boards.iter_mut() {
-                    if let Ok(_) = board.validate() {
-                        validated_boards.push(board.clone());
-                    }
-                }
-                Self {
-                    boards: validated_boards,
-                    selected_board_index: 0,
-                    difficulty: Difficulty::Easy,
-                    err_text: None,
-                }
-            }
-            Err(err) => Self {
-                boards: Vec::new(),
-                selected_board_index: 0,
-                difficulty: Difficulty::Easy,
-                err_text: Some(err.to_string()),
-            },
+            Ok(boards) => Self::new(boards),
+            Err(err) => Self::new_error(err),
         }
     }
 }
 
 pub(super) fn new_game_menu_setup(mut commands: Commands) {
-    let resource = NewGameMenu::default();
-    commands.insert_resource(resource);
+    commands.init_resource::<NewGameMenu>();
 }
 
 pub(super) fn add_new_game_menu(
-    mut cmds: Commands,
     mut egui_ctx: ResMut<EguiContext>,
-    mut game_state: ResMut<State<GameState>>,
-    mut menu_state: ResMut<State<MenuState>>,
     mut new_game_menu: ResMut<NewGameMenu>,
+    actions: EventWriter<MenuActionEvent>,
 ) {
     CentralPanel::default().show(egui_ctx.ctx_mut(), |ui| {
         ui.set_height(ui.available_height());
@@ -76,54 +79,79 @@ pub(super) fn add_new_game_menu(
             if let Some(err_text) = &new_game_menu.err_text {
                 add_error_box(err_text, ui);
             }
-            ui.horizontal(|ui| {
-                ui.add_sized([200., 60.], bevy_egui::egui::Label::new("Map"));
-                let selected = new_game_menu.boards[new_game_menu.selected_board_index].name();
-                egui::containers::ComboBox::from_label("")
-                    .selected_text(selected)
-                    .show_ui(ui, |ui| {
-                        ui.set_width(400.);
-                        let boards = &new_game_menu.boards;
-                        let mut selected_i = new_game_menu.selected_board_index;
-
-                        for (i, board) in boards.iter().enumerate() {
-                            ui.selectable_value(&mut selected_i, i, board.name());
-                        }
-                        new_game_menu.selected_board_index = selected_i;
-                    });
-            });
-            ui.horizontal(|ui| {
-                ui.add_sized([200., 60.], bevy_egui::egui::Label::new("Difficulty"));
-                enum_as_radio_select(ui, &mut new_game_menu.difficulty);
-            })
+            board_select(ui, &mut new_game_menu);
+            difficulty_select(ui, &mut new_game_menu);
         });
-        egui::TopBottomPanel::bottom("bottom_panel")
-            .resizable(false)
-            .default_height(60.)
-            .frame(egui::Frame {
-                stroke: egui::Stroke {
-                    width: 0.,
-                    ..Default::default()
-                },
-                ..Default::default()
-            })
-            .show_inside(ui, |ui| {
-                ui.vertical_centered(|ui| {
-                    if ui
-                        .add_sized([400., 60.], bevy_egui::egui::widgets::Button::new("Play"))
-                        .clicked()
-                    {
-                        cmds.insert_resource(Game::new(
-                            new_game_menu.get_selected_board().clone(),
-                            new_game_menu.difficulty,
-                        ));
-                        leave_menu(GameState::Game, &mut menu_state, &mut game_state);
-                    }
-                });
+        bottom_panel(ui, &mut new_game_menu, actions);
+    });
+}
+
+fn board_select(ui: &mut egui::Ui, new_game_menu: &mut NewGameMenu) {
+    ui.horizontal(|ui| {
+        ui.add_sized([200., 60.], bevy_egui::egui::Label::new("Map"));
+        let selected = &new_game_menu.selected_board().0.name;
+        egui::containers::ComboBox::from_label("")
+            .selected_text(selected)
+            .show_ui(ui, |ui| {
+                ui.set_width(400.);
+                let boards = &new_game_menu.boards;
+                let mut selected_i = new_game_menu.selected_board_index;
+
+                for (i, board) in boards.iter().enumerate() {
+                    ui.selectable_value(&mut selected_i, i, &board.0.name);
+                }
+                new_game_menu.selected_board_index = selected_i;
             });
     });
 }
-pub fn enum_as_radio_select<T: std::fmt::Display + strum::IntoEnumIterator + PartialEq>(
+
+fn difficulty_select(ui: &mut egui::Ui, new_game_menu: &mut NewGameMenu) {
+    ui.horizontal(|ui| {
+        ui.add_sized([200., 60.], bevy_egui::egui::Label::new("Difficulty"));
+        enum_as_radio_select(ui, &mut new_game_menu.difficulty);
+    });
+}
+fn bottom_panel(
+    ui: &mut egui::Ui,
+    new_game_menu: &mut NewGameMenu,
+    actions: EventWriter<MenuActionEvent>,
+) {
+    egui::TopBottomPanel::bottom("bottom_panel")
+        .resizable(false)
+        .default_height(60.)
+        .frame(egui::Frame {
+            stroke: egui::Stroke {
+                width: 0.,
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .show_inside(ui, |ui| {
+            ui.vertical_centered(|ui| play_button(ui, new_game_menu, actions));
+        });
+}
+
+fn play_button(
+    ui: &mut egui::Ui,
+    new_game_menu: &mut NewGameMenu,
+    mut actions: EventWriter<MenuActionEvent>,
+) {
+    if ui
+        .add_sized([400., 60.], bevy_egui::egui::widgets::Button::new("Play"))
+        .clicked()
+    {
+        let (board, board_cache) = new_game_menu
+            .boards
+            .remove(new_game_menu.selected_board_index);
+        actions.send(MenuActionEvent::StartNewGame(
+            Game::new(new_game_menu.difficulty),
+            board,
+            board_cache,
+        ));
+    }
+}
+
+fn enum_as_radio_select<T: std::fmt::Display + strum::IntoEnumIterator + PartialEq>(
     ui: &mut bevy_egui::egui::Ui,
     selected: &mut T,
 ) {
@@ -135,6 +163,7 @@ pub fn enum_as_radio_select<T: std::fmt::Display + strum::IntoEnumIterator + Par
         }
     }
 }
+
 fn add_selectable_label(ui: &mut bevy_egui::egui::Ui, is_selected: bool, text: &str) -> bool {
     ui.add_sized(
         [200., 60.],

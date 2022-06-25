@@ -12,6 +12,15 @@ pub(super) enum SettileState {
     BuildingGround,
     Road,
 }
+impl SettileState {
+    pub fn as_tile(&self) -> Tile {
+        match self {
+            SettileState::TowerGround => Tile::TowerGround(None),
+            SettileState::BuildingGround => Tile::BuildingGround(None),
+            SettileState::Road => Tile::Road,
+        }
+    }
+}
 
 pub(super) fn add_side_bar(
     mut egui_ctx: ResMut<EguiContext>,
@@ -44,13 +53,5 @@ fn add_tile_radio_button(
         .clicked()
     {
         current_state.set(state).unwrap_or_default();
-    }
-}
-
-pub(super) fn settile_state_to_tile(settile_state: SettileState) -> Tile {
-    match settile_state {
-        SettileState::TowerGround => Tile::TowerGround(None),
-        SettileState::BuildingGround => Tile::BuildingGround(None),
-        SettileState::Road => Tile::Road,
     }
 }

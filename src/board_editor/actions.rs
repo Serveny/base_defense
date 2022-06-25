@@ -1,74 +1,183 @@
-use super::{
-    editor_tiles::{set_tile, EditorTile},
-    markers::{set_mark, BoardEditorRoadEndMark, BoardEditorRoadStartMark},
-    popups::Popups,
-    side_bar::{settile_state_to_tile, SettileState},
-    BoardEditorState, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
+use super::{create_visu, popups::Popups, BoardEditorScreen, BoardEditorState, Visu};
+use crate::{
+    board::{
+        visualisation::{BoardRoadEndMark, BoardVisualTile},
+        Board, BoardCache, Tile,
+    },
+    utils::{save_board_to_file, GameState},
 };
-use crate::{board::Tile, utils::TileResizeParams};
 use bevy::prelude::*;
 
-pub(super) fn editor_click_actions(
-    commands: Commands,
-    mouse_button_input: Res<Input<MouseButton>>,
-    windows: Res<Windows>,
-    popups: Res<Popups>,
-    set_tile_state: Res<State<SettileState>>,
-    state: ResMut<BoardEditorState>,
-    queries: ParamSet<(
-        Query<(&mut Sprite, &Transform, &EditorTile), With<EditorTile>>,
-        Query<(Entity, &mut Transform), With<BoardEditorRoadStartMark>>,
-        Query<(Entity, &mut Transform), With<BoardEditorRoadEndMark>>,
-    )>,
-) {
-    if popups.is_open() {
-        return;
-    }
-    if mouse_button_input.pressed(MouseButton::Left) {
-        let tile = settile_state_to_tile(set_tile_state.current().clone());
-        on_tile_click(commands, windows, queries, state, tile);
-    } else if mouse_button_input.pressed(MouseButton::Right) {
-        on_tile_click(commands, windows, queries, state, Tile::Empty);
-    }
+pub(super) enum EditorActionEvent {
+    SetTile(UVec2, Tile),
+    Resize,
+    Load(Board),
+    Save,
+    New((u8, u8)),
+    Edit((u8, u8)),
+    Leave,
 }
 
-fn on_tile_click(
-    mut commands: Commands,
-    windows: Res<Windows>,
+struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu> {
+    cmds: Commands<'w, 's>,
+    game_state: &'gs mut State<GameState>,
+    editor_state: &'es mut BoardEditorState,
+    visu: &'visu mut Visu,
+    board: &'b mut Board,
+    board_cache: &'bc mut BoardCache,
+    windows: &'win Windows,
+    popups: &'pu mut Popups,
+}
+
+pub(super) fn board_editor_actions(
+    cmds: Commands,
+    mut game_state: ResMut<State<GameState>>,
+    mut editor_state: ResMut<BoardEditorState>,
+    mut visu: ResMut<Visu>,
+    mut board: ResMut<Board>,
+    mut board_cache: ResMut<BoardCache>,
     mut queries: ParamSet<(
-        Query<(&mut Sprite, &Transform, &EditorTile), With<EditorTile>>,
-        Query<(Entity, &mut Transform), With<BoardEditorRoadStartMark>>,
-        Query<(Entity, &mut Transform), With<BoardEditorRoadEndMark>>,
+        Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
+        Query<(Entity, &mut Transform), With<BoardRoadEndMark>>,
+        Query<Entity, With<BoardEditorScreen>>,
     )>,
-    mut state: ResMut<BoardEditorState>,
-    tile_to: Tile,
+    mut popups: ResMut<Popups>,
+    mut editor_actions: EventReader<EditorActionEvent>,
+    windows: Res<Windows>,
 ) {
-    let window = windows.get_primary().unwrap();
-    let rs_params = TileResizeParams::from_start_to_win_end(
-        window,
-        state.current_map.board(),
-        Vec2::new(LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX),
+    if !editor_actions.is_empty() {
+        let mut ea_params = EditorActionParams {
+            cmds: cmds,
+            game_state: &mut game_state,
+            editor_state: &mut editor_state,
+            visu: &mut visu,
+            board: &mut board,
+            board_cache: &mut board_cache,
+            windows: &windows,
+            popups: &mut popups,
+        };
+        for event in editor_actions.iter() {
+            match event {
+                EditorActionEvent::SetTile(pos, tile_to) => {
+                    set_tile_and_update_mark(&mut ea_params, &mut queries, pos, tile_to)
+                }
+                EditorActionEvent::Resize => repaint(&mut ea_params, queries.p2()),
+                EditorActionEvent::Save => save_board(&mut ea_params),
+                EditorActionEvent::Load(board) => {
+                    load_board(&mut ea_params, queries.p2(), board.clone())
+                }
+                EditorActionEvent::New(size) => new_board(&mut ea_params, queries.p2(), *size),
+                EditorActionEvent::Edit(size) => edit_board(&mut ea_params, queries.p2(), *size),
+                EditorActionEvent::Leave => leave(&mut ea_params),
+            }
+        }
+    }
+}
+
+fn set_tile_and_update_mark(
+    ea_params: &mut EditorActionParams,
+    queries: &mut ParamSet<(
+        Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
+        Query<(Entity, &mut Transform), With<BoardRoadEndMark>>,
+        Query<Entity, With<BoardEditorScreen>>,
+    )>,
+    pos: &UVec2,
+    tile_to: &Tile,
+) {
+    set_tile(
+        ea_params.board,
+        ea_params.board_cache,
+        pos.clone(),
+        tile_to.clone(),
     );
-    set_tile(window, &mut state, queries.p0(), tile_to);
-    set_mark(
-        &mut commands,
-        queries.p1().get_single_mut().ok(),
-        state.current_map.road_start_pos().clone(),
-        &rs_params,
-        true,
-    );
-    set_mark(
-        &mut commands,
-        queries.p2().get_single_mut().ok(),
-        state.current_map.road_end_pos().clone(),
-        &rs_params,
-        false,
+    validate_board(ea_params);
+    Visu::change_tile(pos, tile_to, queries.p0());
+    ea_params.visu.set_road_end_mark(
+        &mut ea_params.cmds,
+        ea_params.board_cache.road_end_pos,
+        Some(queries.p1()),
     );
 }
 
-pub(super) fn cursor_pos_to_transform_pos(cursor_pos: Vec2, window: &Window) -> Vec2 {
-    Vec2::new(
-        cursor_pos.x - (window.width() / 2.),
-        cursor_pos.y - (window.height() / 2.),
-    )
+fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to: Tile) {
+    if let Some(tile) = board.tile_mut(pos) {
+        board_cache.remove_tile_pos(&pos, tile);
+        board_cache.insert_tile_pos(pos, &tile_to);
+        *tile = tile_to;
+        board_cache.calc_road_data(board);
+    }
+}
+
+fn repaint(ea_params: &mut EditorActionParams, query: Query<Entity, With<BoardEditorScreen>>) {
+    *ea_params.visu = create_visu(ea_params.windows, ea_params.board);
+    ea_params.visu.repaint(
+        &mut ea_params.cmds,
+        query,
+        ea_params.board,
+        ea_params.board_cache,
+    );
+}
+
+fn save_board(ea_params: &mut EditorActionParams) {
+    if let Popups::Save(save_win) = ea_params.popups {
+        save_win.err_text = None;
+        ea_params.board.name = save_win.map_file_name.clone();
+        match save_board_to_file(&save_win.map_file_name, ea_params.board) {
+            Ok(()) => *ea_params.popups = Popups::None,
+            Err(error) => save_win.err_text = Some(error.to_string()),
+        }
+    }
+}
+
+fn load_board(
+    ea_params: &mut EditorActionParams,
+    query: Query<Entity, With<BoardEditorScreen>>,
+    new_board: Board,
+) {
+    if let Popups::Load(_) = ea_params.popups {
+        *ea_params.board_cache = BoardCache::new(&new_board);
+        *ea_params.board = new_board;
+        *ea_params.popups = Popups::None;
+        validate_board(ea_params);
+        repaint(ea_params, query);
+    }
+}
+
+fn new_board(
+    ea_params: &mut EditorActionParams,
+    query: Query<Entity, With<BoardEditorScreen>>,
+    size: (u8, u8),
+) {
+    if let Popups::New(_) = ea_params.popups {
+        let new_board = Board::empty(size.0, size.1);
+        *ea_params.board_cache = BoardCache::new(&new_board);
+        *ea_params.board = new_board;
+        *ea_params.popups = Popups::None;
+        repaint(ea_params, query);
+    }
+}
+
+fn edit_board(
+    ea_params: &mut EditorActionParams,
+    query: Query<Entity, With<BoardEditorScreen>>,
+    size: (u8, u8),
+) {
+    if let Popups::Edit(_) = ea_params.popups {
+        ea_params.board.change_size(size.0, size.1);
+        *ea_params.board_cache = BoardCache::new(ea_params.board);
+        *ea_params.popups = Popups::None;
+        validate_board(ea_params);
+        repaint(ea_params, query);
+    }
+}
+
+fn leave(ea_params: &mut EditorActionParams) {
+    ea_params.game_state.set(GameState::Menu).unwrap();
+}
+
+fn validate_board(ea_params: &mut EditorActionParams) {
+    ea_params.editor_state.err_text = match ea_params.board_cache.validate() {
+        Ok(_) => None,
+        Err(err) => Some(String::from(err)),
+    };
 }

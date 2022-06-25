@@ -1,5 +1,5 @@
-#![allow(unused)]
-use crate::board::{ActionBoard, Board, Tile};
+// #![allow(unused)]
+use crate::board::Board;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -30,6 +30,7 @@ impl Vec2Board {
     pub fn new(x: f32, y: f32) -> Self {
         Self(Vec2::new(x, y))
     }
+
     pub fn from_uvec2_middle(uvec2: &UVec2) -> Self {
         Self::new(uvec2.x as f32 + 0.5, uvec2.y as f32 + 0.5)
     }
@@ -40,6 +41,7 @@ impl From<Vec2> for Vec2Board {
         Self(vec2)
     }
 }
+
 impl From<UVec2> for Vec2Board {
     fn from(uvec2: UVec2) -> Self {
         Self(uvec2.as_vec2())
@@ -97,11 +99,13 @@ pub enum TowerType {
     Grenade,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Building {
     building_type: BuildingType,
 }
 
+#[allow(dead_code)]
 impl Building {
     fn new(building_type: BuildingType) -> Self {
         Self { building_type }
@@ -121,9 +125,8 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
     }
 }
 
-use std::f32::consts::PI;
-use std::fs::{read_dir, read_to_string, DirEntry, File};
-use std::io::{BufRead, BufReader, Error, Write};
+use std::fs::{read_dir, read_to_string, File};
+use std::io::{Error, Write};
 use std::ops::{Add, Mul, Sub};
 use std::path::Path;
 
@@ -207,51 +210,6 @@ pub fn add_popup_window<R>(
         });
 }
 
-pub fn clone_opt_ref<T: Clone>(opt: Option<&T>) -> Option<T> {
-    match opt {
-        Some(t) => Some(t.clone()),
-        None => None,
-    }
-}
-
-pub struct TileResizeParams {
-    pub tile_size: f32,
-    pub tile_size_vec: Vec2,
-    pub tile_inner_size: Vec2,
-    pub board_start_x: f32,
-    pub board_start_y: f32,
-    pub board_size: Vec2,
-}
-
-impl TileResizeParams {
-    pub fn new(board: &Board, start: Vec2, end: Vec2) -> Self {
-        let board_width_px = end.x - start.x;
-        let board_height_px = end.y - start.y;
-
-        // the tiles are quadratic, so use the smaller size
-        let tile_size = get_tile_size_px(board_width_px, board_height_px, board);
-        let tile_inner_size = Vec2::new(tile_size - 10., tile_size - 10.);
-
-        Self {
-            tile_size,
-            tile_size_vec: Vec2::new(tile_size, tile_size),
-            tile_inner_size,
-
-            // Think from the middle of the sceen
-            board_start_x: (start.x - board_width_px) / 2.,
-            board_start_y: (board_height_px - start.y) / 2.,
-            board_size: Vec2::new(
-                tile_size * board.width as f32,
-                tile_size * board.height as f32,
-            ),
-        }
-    }
-
-    pub fn from_start_to_win_end(window: &Window, board: &Board, start: Vec2) -> Self {
-        Self::new(board, start, Vec2::new(window.width(), window.height()))
-    }
-}
-
 pub fn get_tile_size_px(available_width_px: f32, available_height_px: f32, board: &Board) -> f32 {
     let tile_width_px = available_width_px / board.width as f32;
     let tile_height_px = available_height_px / board.height as f32;
@@ -260,26 +218,6 @@ pub fn get_tile_size_px(available_width_px: f32, available_height_px: f32, board
         tile_width_px
     } else {
         tile_height_px
-    }
-}
-
-pub fn get_tile_color(tile: &Tile) -> Color {
-    match tile {
-        Tile::TowerGround(_) => Color::GOLD,
-        Tile::BuildingGround(_) => Color::ANTIQUE_WHITE,
-        Tile::Road => Color::GRAY,
-        Tile::Empty => Color::DARK_GRAY,
-    }
-}
-
-pub fn is_hover(cursor_pos: Vec2, sprite: &Sprite, transform: &Transform) -> bool {
-    if let Some(size) = sprite.custom_size {
-        cursor_pos.x >= transform.translation.x
-            && cursor_pos.x <= transform.translation.x + size.x
-            && cursor_pos.y >= transform.translation.y - size.y
-            && cursor_pos.y <= transform.translation.y
-    } else {
-        false
     }
 }
 

@@ -1,14 +1,9 @@
-use bevy::prelude::*;
-
+use super::{GameScreen, Visu};
 use crate::{
-    board::Tile,
-    utils::{despawn_all_of, GameState},
+    board::{visualisation::BoardHoverCross, Board, Tile},
+    utils::{despawn_all_of, GameState, Vec2Board},
 };
-
-use super::{
-    visualisation::{HoverCross, Visualisation},
-    Game, GameScreen,
-};
+use bevy::prelude::*;
 
 pub(super) fn keyboard_input(
     cmds: Commands,
@@ -33,31 +28,26 @@ fn end_game(
 pub(super) fn mouse_input(
     mut cmds: Commands,
     windows: Res<Windows>,
-    visu: Res<Visualisation>,
-    game: Res<Game>,
-    query_hover_cross: Query<(Entity, &mut Transform), With<HoverCross>>,
+    visu: Res<Visu>,
+    query_hover_cross: Query<(Entity, &mut Transform), With<BoardHoverCross>>,
+    board: Res<Board>,
 ) {
     let win = windows.get_primary().unwrap();
-    if let Some((pos, tile)) = get_hover_pos_and_tile(win, &visu, &game) {
-        //println!("{:?}{:?}{:?}", pos, pos.as_uvec2(), tile);
+    if let Some((pos, tile)) = get_hover_pos_and_tile(win, &visu, &board) {
         match tile {
             Tile::TowerGround(_) => visu.draw_hover_cross(&mut cmds, query_hover_cross, pos),
             Tile::BuildingGround(_) => visu.draw_hover_cross(&mut cmds, query_hover_cross, pos),
-            _ => Visualisation::delete_hover_cross(&mut cmds, query_hover_cross),
+            _ => Visu::delete_hover_cross(&mut cmds, query_hover_cross),
         }
     } else {
-        Visualisation::delete_hover_cross(&mut cmds, query_hover_cross);
+        Visu::delete_hover_cross(&mut cmds, query_hover_cross);
     }
 }
 
-fn get_hover_pos_and_tile(win: &Window, visu: &Visualisation, game: &Game) -> Option<(Vec2, Tile)> {
-    if let Some(cursor_pos) = win.cursor_position() {
-        let pos = visu.cursor_px_to_board_pos(Vec2::new(
-            cursor_pos.x - win.width() / 2.,
-            cursor_pos.y - win.height() / 2.,
-        ));
+fn get_hover_pos_and_tile(win: &Window, visu: &Visu, board: &Board) -> Option<(Vec2Board, Tile)> {
+    if let Some(pos) = visu.get_hover_pos(win) {
         if pos.x >= 0. && pos.y >= 0. {
-            if let Some(tile) = game.action_board.try_get_tile(pos.as_uvec2()) {
+            if let Some(tile) = board.get_tile(pos.as_uvec2()) {
                 return Some((pos, tile.clone()));
             }
         }

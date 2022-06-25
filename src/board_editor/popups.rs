@@ -1,9 +1,8 @@
-use super::{repaint, BoardEditorScreen, BoardEditorState};
+use super::actions::EditorActionEvent;
 use crate::{
-    board::{ActionBoard, Board},
+    board::Board,
     utils::{
         add_error_box, add_ok_cancel_row, add_popup_window, add_row, get_all_boards_in_folder,
-        save_board_to_file,
     },
 };
 use bevy::prelude::*;
@@ -79,21 +78,21 @@ impl Default for LoadBoardWindow {
 
 #[derive(Default)]
 pub(super) struct SaveBoardWindow {
-    map_file_name: String,
-    err_text: Option<String>,
+    pub map_file_name: String,
+    pub err_text: Option<String>,
 }
 
 pub(super) fn add_save_board_window(
     mut egui_ctx: ResMut<EguiContext>,
-    mut editor_state: ResMut<BoardEditorState>,
     mut popup: ResMut<Popups>,
+    mut actions: EventWriter<EditorActionEvent>,
 ) {
     let mut is_close = false;
-    if let Popups::Save(save_win) = &mut *popup {
+    if let Popups::Save(popup) = &mut *popup {
         add_popup_window(&mut egui_ctx, "Save map", |ui| {
             add_row(
                 "Map name",
-                TextEdit::singleline(&mut save_win.map_file_name).margin(egui::Vec2::new(10., 16.)),
+                TextEdit::singleline(&mut popup.map_file_name).margin(egui::Vec2::new(10., 16.)),
                 ui,
             );
             ui.add_space(10.);
@@ -103,19 +102,13 @@ pub(super) fn add_save_board_window(
             let (is_ok, is_cancel) = add_ok_cancel_row(ui);
 
             if is_ok {
-                save_win.err_text = None;
-                *editor_state.current_map.name_mut() = save_win.map_file_name.clone();
-                match save_board_to_file(&save_win.map_file_name, editor_state.current_map.board())
-                {
-                    Ok(()) => is_close = true,
-                    Err(error) => add_error_box(&error.to_string(), ui),
-                }
+                actions.send(EditorActionEvent::Save);
             } else if is_cancel {
                 is_close = true;
             }
 
             // Error container
-            if let Some(err_text) = &save_win.err_text {
+            if let Some(err_text) = &popup.err_text {
                 add_error_box(err_text, ui);
             }
         });
@@ -126,36 +119,14 @@ pub(super) fn add_save_board_window(
 }
 
 pub(super) fn add_load_board_window(
-    mut commands: Commands,
     mut egui_ctx: ResMut<EguiContext>,
-    mut editor_state: ResMut<BoardEditorState>,
     mut popup: ResMut<Popups>,
-    query: Query<Entity, With<BoardEditorScreen>>,
-    windows: Res<Windows>,
+    actions: EventWriter<EditorActionEvent>,
 ) {
     let mut is_close = false;
-    if let Popups::Load(load_win) = &mut *popup {
+    if let Popups::Load(popup) = &mut *popup {
         add_popup_window(&mut egui_ctx, "Load map", |ui| {
-            egui::containers::ScrollArea::vertical().show(ui, |ui| {
-                for board in &load_win.boards {
-                    if ui
-                        .add_sized(
-                            [400., 60.],
-                            bevy_egui::egui::widgets::Button::new(&board.name),
-                        )
-                        .clicked()
-                    {
-                        editor_state.current_map = ActionBoard::new(board.clone());
-                        repaint(&mut commands, query, &windows, &mut editor_state);
-                        editor_state.err_text = match editor_state.current_map.validate() {
-                            Ok(_) => None,
-                            Err(err) => Some(String::from(err)),
-                        };
-                        is_close = true;
-                        break;
-                    }
-                }
-            });
+            add_load_board_select(ui, popup, actions);
             ui.add_space(10.);
             if ui
                 .add_sized([400., 60.], bevy_egui::egui::widgets::Button::new("Cancel"))
@@ -163,7 +134,7 @@ pub(super) fn add_load_board_window(
             {
                 is_close = true;
             }
-            if let Some(err_text) = &load_win.err_text {
+            if let Some(err_text) = &popup.err_text {
                 add_error_box(err_text, ui);
             }
         });
@@ -173,24 +144,38 @@ pub(super) fn add_load_board_window(
     }
 }
 
+fn add_load_board_select(
+    ui: &mut egui::Ui,
+    load_win: &mut LoadBoardWindow,
+    mut actions: EventWriter<EditorActionEvent>,
+) {
+    egui::containers::ScrollArea::vertical().show(ui, |ui| {
+        for board in &load_win.boards {
+            if ui
+                .add_sized(
+                    [400., 60.],
+                    bevy_egui::egui::widgets::Button::new(&board.name),
+                )
+                .clicked()
+            {
+                actions.send(EditorActionEvent::Load(board.clone()));
+                break;
+            }
+        }
+    });
+}
+
 pub(super) fn add_new_board_window(
-    mut commands: Commands,
     egui_ctx: ResMut<EguiContext>,
-    mut state: ResMut<BoardEditorState>,
     mut popup: ResMut<Popups>,
-    query: Query<Entity, With<BoardEditorScreen>>,
-    windows: Res<Windows>,
+    mut actions: EventWriter<EditorActionEvent>,
 ) {
     let mut is_close = false;
-    if let Popups::New(new_win) = &mut *popup {
+    if let Popups::New(popup) = &mut *popup {
         let (is_ok, is_cancel) =
-            add_new_edit_popup(egui_ctx, &mut new_win.width, &mut new_win.height, "New map");
-
+            add_new_edit_popup(egui_ctx, &mut popup.width, &mut popup.height, "New map");
         if is_ok {
-            state.current_map = ActionBoard::empty(new_win.width, new_win.height);
-            state.err_text = None;
-            repaint(&mut commands, query, &windows, &mut state);
-            is_close = true;
+            actions.send(EditorActionEvent::New((popup.width, popup.height)));
         } else if is_cancel {
             is_close = true;
         }
@@ -201,28 +186,16 @@ pub(super) fn add_new_board_window(
 }
 
 pub(super) fn add_edit_board_window(
-    mut commands: Commands,
     egui_ctx: ResMut<EguiContext>,
-    mut state: ResMut<BoardEditorState>,
     mut popup: ResMut<Popups>,
-    query: Query<Entity, With<BoardEditorScreen>>,
-    windows: Res<Windows>,
+    mut actions: EventWriter<EditorActionEvent>,
 ) {
     let mut is_close = false;
-    if let Popups::Edit(edit_win) = &mut *popup {
-        let (is_ok, is_cancel) = add_new_edit_popup(
-            egui_ctx,
-            &mut edit_win.width,
-            &mut edit_win.height,
-            "Edit size",
-        );
-
+    if let Popups::Edit(popup) = &mut *popup {
+        let (is_ok, is_cancel) =
+            add_new_edit_popup(egui_ctx, &mut popup.width, &mut popup.height, "Edit size");
         if is_ok {
-            state
-                .current_map
-                .change_size(edit_win.width, edit_win.height);
-            repaint(&mut commands, query, &windows, &mut state);
-            is_close = true;
+            actions.send(EditorActionEvent::Edit((popup.width, popup.height)));
         } else if is_cancel {
             is_close = true;
         }

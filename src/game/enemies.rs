@@ -1,15 +1,12 @@
 #![allow(unused)]
-use std::time::{Duration, Instant};
-
-use bevy::prelude::*;
-use indexmap::IndexSet;
-
+use super::{Game, GameScreen, Visu, Wave};
 use crate::{
-    board::ActionBoard,
+    board::BoardCache,
     utils::{enemy_normal_shape, Vec2Board},
 };
-
-use super::{visualisation::Visualisation, Game, GameScreen, Wave};
+use bevy::prelude::*;
+use indexmap::IndexSet;
+use std::time::{Duration, Instant};
 
 pub enum EnemyType {
     Normal,
@@ -119,12 +116,13 @@ impl Enemy {
 pub(super) fn spawn_enemies(
     cmds: &mut Commands,
     game: &mut Game,
-    visu: &Visualisation,
+    visu: &Visu,
     last_update: Instant,
+    board_cache: &BoardCache,
 ) {
     if let Some(next) = &mut game.wave.next_enemy_spawn {
         if last_update >= *next {
-            spawn_enemy(cmds, &game.action_board, visu, EnemyType::Normal);
+            spawn_enemy(cmds, board_cache, visu, EnemyType::Normal);
             game.wave.enemies_spawned += 1;
             if game.wave.enemies_spawned < game.wave.wave_no * 4 {
                 *next += Duration::from_secs_f32(2. / game.wave.wave_no as f32);
@@ -135,24 +133,19 @@ pub(super) fn spawn_enemies(
     }
 }
 
-fn spawn_enemy(
-    cmds: &mut Commands,
-    action_board: &ActionBoard,
-    visu: &Visualisation,
-    enemy_type: EnemyType,
-) {
+fn spawn_enemy(cmds: &mut Commands, board_cache: &BoardCache, visu: &Visu, enemy_type: EnemyType) {
     cmds.spawn_bundle(enemy_normal_shape(
         visu.tile_size,
-        visu.pos_to_px(action_board.road_start_pos().unwrap().into(), 1.) + visu.half_tile_vec3,
+        visu.pos_to_px(board_cache.road_start_pos.unwrap().into(), 1.) + visu.half_tile_vec3,
     ))
-    .insert(Enemy::new(enemy_type, action_board.road_tile_posis()))
+    .insert(Enemy::new(enemy_type, &board_cache.road_tile_posis))
     .insert(GameScreen);
 }
 pub(super) fn enemies_walk_until_wave_end(
     cmds: &mut Commands,
     dur: Duration,
     mut query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
-    visu: &Visualisation,
+    visu: &Visu,
     road_tile_posis: &IndexSet<UVec2>,
 ) -> bool {
     query.for_each_mut(|(mut entity, mut enemy, mut transform)| {
