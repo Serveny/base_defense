@@ -28,7 +28,6 @@ fn send_set_tile_event(
 ) {
     let win = windows.get_primary().unwrap();
     if let Some(pos) = visu.get_hover_pos(win) {
-        println!("{:?}", pos);
         if pos.x >= 0. && pos.y >= 0. {
             actions.send(EditorActionEvent::SetTile(pos.as_uvec2(), tile));
         }

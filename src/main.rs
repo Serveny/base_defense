@@ -42,6 +42,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
         .add_plugin(ShapePlugin)
+        .add_plugin(bevy_screen_diags::ScreenDiagsPlugin)
         .add_plugin(splash::SplashPlugin)
         .add_plugin(main_menu::MainMenuPlugin)
         .add_plugin(game::GamePlugin)
@@ -66,7 +67,13 @@ fn main() {
 }
 
 fn setup_cameras(mut commands: Commands) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    // let win = windows.get_primary().unwrap();
+    let cam = OrthographicCameraBundle::new_2d();
+    // cam.transform = Transform {
+    // translation: Vec3::new(win.width() / 2., win.height() / 2., 0.),
+    // ..Default::default()
+    // };
+    commands.spawn_bundle(cam);
     commands.spawn_bundle(UiCameraBundle::default());
 }
 

@@ -206,6 +206,7 @@ dependencies = [
  "bevy_asset_loader",
  "bevy_egui",
  "bevy_prototype_lyon",
+ "bevy_screen_diags",
  "indexmap",
  "serde",
  "serde_json",
@@ -727,6 +728,15 @@ dependencies = [
  "serde",
  "thiserror",
  "uuid",
+]
+
+[[package]]
+name = "bevy_screen_diags"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "00d2b66ba0c86e892747506bea761a37c0e79d5efacc93b1980fcf7710e1f8b8"
+dependencies = [
+ "bevy",
 ]
 
 [[package]]

@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use self::{
+    actions::{game_actions, GameActionEvent},
     controls::{keyboard_input, mouse_input},
     enemies::{enemies_walk_until_wave_end, Enemy},
 };
@@ -10,8 +11,9 @@ use crate::{
     utils::{despawn_all_of, Difficulty, Energy, Materials},
     GameState,
 };
-use bevy::{prelude::*, utils::Instant};
+use bevy::{prelude::*, utils::Instant, window::WindowResized};
 
+mod actions;
 mod controls;
 mod enemies;
 
@@ -23,16 +25,25 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
+        app.add_event::<GameActionEvent>()
+            .add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
                     .with_system(keyboard_input)
                     .with_system(mouse_input)
-                    .with_system(game),
+                    .with_system(on_resize)
+                    .with_system(game)
+                    .with_system(game_actions),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Game).with_system(despawn_all_of::<GameScreen>),
             );
+    }
+}
+
+fn on_resize(mut actions: EventWriter<GameActionEvent>, resize_ev: EventReader<WindowResized>) {
+    if !resize_ev.is_empty() {
+        actions.send(GameActionEvent::Resize);
     }
 }
 
