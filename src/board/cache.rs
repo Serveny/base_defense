@@ -1,4 +1,4 @@
-use super::{Board, Tile};
+use super::{step::BoardStep, Board, Tile};
 use crate::utils::Vec2Board;
 use bevy::prelude::*;
 use indexmap::IndexSet;
@@ -12,7 +12,7 @@ pub struct BoardCache {
     pub road_tile_posis: IndexSet<UVec2>,
     pub road_start_pos: Option<UVec2>,
     pub road_end_pos: Option<UVec2>,
-    pub road_path: Vec<Vec2Board>,
+    pub road_path: Vec<BoardStep>,
 }
 
 // Static functions
@@ -23,10 +23,11 @@ impl BoardCache {
         let mut road_tile_posis = board.get_tiles(Tile::Road);
         let road_start = Self::road_start_pos_from(&road_tile_posis, board.width, board.height);
         let road_end = Self::road_end_pos_from(&road_tile_posis, &building_tile_posis);
-
+        let mut road_path = Vec::new();
         if let Some(road_start) = road_start {
             if let Some(posis) = Self::are_tiles_connected(&road_tile_posis, road_start) {
                 road_tile_posis = posis;
+                road_path = Self::calc_road_path(&road_tile_posis);
             }
         }
         Self {
@@ -35,7 +36,7 @@ impl BoardCache {
             road_tile_posis,
             road_start_pos: road_start,
             road_end_pos: road_end,
-            road_path: Vec::new(),
+            road_path: road_path,
         }
     }
 
@@ -70,6 +71,32 @@ impl BoardCache {
         }
         neighbors
     }
+
+    fn calc_road_path(road_tile_posis: &IndexSet<UVec2>) -> Vec<BoardStep> {
+        let mut path = vec![BoardStep::new(
+            0,
+            Vec2Board::from_uvec2_middle(road_tile_posis.get_index(1).unwrap())
+                - Vec2Board::from_uvec2_middle(road_tile_posis.get_index(0).unwrap()),
+        )];
+        for (i, first_pos) in road_tile_posis.iter().enumerate() {
+            if let Some(third_pos) = road_tile_posis.get_index(i + 2) {
+                let second_pos = road_tile_posis.get_index(i + 1).unwrap();
+                let this_vec = Vec2Board::from_uvec2_middle(second_pos)
+                    - Vec2Board::from_uvec2_middle(first_pos);
+                let next_vec = Vec2Board::from_uvec2_middle(third_pos)
+                    - Vec2Board::from_uvec2_middle(second_pos);
+                if this_vec != next_vec {
+                    path.push(BoardStep::new(path.len(), next_vec));
+                } else {
+                    let mut step = path.last_mut().unwrap();
+                    step.distance += 1.;
+                }
+            } else {
+                break;
+            }
+        }
+        path
+    }
 }
 
 // Validation
@@ -81,7 +108,7 @@ impl BoardCache {
         if self.building_tile_posis.len() < 5 {
             return Err("Need minimal five building tiles");
         }
-        if self.road_tile_posis.len() < 2 {
+        if self.road_tile_posis.len() < 3 {
             return Err("Need minimal two road tiles");
         }
         if let Some(start) = self.road_start_pos {

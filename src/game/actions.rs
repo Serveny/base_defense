@@ -3,7 +3,7 @@ use crate::{
     utils::GameState,
 };
 
-use super::{GameScreen, Visu};
+use super::{BoardVisu, GameScreen};
 use bevy::prelude::*;
 
 pub(super) enum GameActionEvent {
@@ -14,7 +14,7 @@ pub(super) enum GameActionEvent {
 struct GameActionParams<'w, 's, 'gs, 'visu, 'b, 'bc, 'win> {
     cmds: Commands<'w, 's>,
     game_state: &'gs mut State<GameState>,
-    visu: &'visu mut Visu,
+    visu: &'visu mut BoardVisu,
     board: &'b mut Board,
     board_cache: &'bc mut BoardCache,
     windows: &'win Windows,
@@ -23,7 +23,7 @@ struct GameActionParams<'w, 's, 'gs, 'visu, 'b, 'bc, 'win> {
 pub(super) fn game_actions(
     cmds: Commands,
     mut game_state: ResMut<State<GameState>>,
-    mut visu: ResMut<Visu>,
+    mut visu: ResMut<BoardVisu>,
     mut board: ResMut<Board>,
     mut board_cache: ResMut<BoardCache>,
     mut queries: ParamSet<(Query<Entity, With<GameScreen>>,)>,
@@ -57,8 +57,8 @@ fn repaint(ga_params: &mut GameActionParams, query: Query<Entity, With<GameScree
     );
 }
 
-fn create_visu(windows: &Windows, board: &Board) -> Visu {
-    Visu::new(
+fn create_visu(windows: &Windows, board: &Board) -> BoardVisu {
+    BoardVisu::new(
         windows.get_primary().unwrap(),
         &board,
         0.,

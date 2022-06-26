@@ -20,7 +20,7 @@ mod popups;
 mod side_bar;
 mod top_bar;
 
-type Visu = BoardVisualisation<BoardEditorScreen>;
+type BoardVisu = BoardVisualisation<BoardEditorScreen>;
 
 #[derive(Component, Clone)]
 struct BoardEditorScreen;
@@ -61,8 +61,8 @@ impl Plugin for BoardEditorPlugin {
             );
     }
 }
-fn create_visu(windows: &Windows, board: &Board) -> Visu {
-    Visu::new(
+fn create_visu(windows: &Windows, board: &Board) -> BoardVisu {
+    BoardVisu::new(
         windows.get_primary().unwrap(),
         &board,
         EDITOR_BOARD_START.0,

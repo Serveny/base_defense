@@ -17,7 +17,7 @@ mod actions;
 mod controls;
 mod enemies;
 
-type Visu = BoardVisualisation<GameScreen>;
+type BoardVisu = BoardVisualisation<GameScreen>;
 
 // This plugin will contain the game. In this case, it's just be a screen that will
 // display the current settings for 5 seconds before returning to the menu
@@ -106,7 +106,7 @@ fn game_setup(
     board_cache: Res<BoardCache>,
 ) {
     let win = windows.get_primary().unwrap();
-    let visu = Visu::new(win, &board, 0., 0., 0., GameScreen);
+    let visu = BoardVisu::new(win, &board, 0., 0., 0., GameScreen);
     visu.draw_board(&mut cmds, &board, &board_cache);
     cmds.insert_resource(visu);
 }
@@ -115,7 +115,7 @@ fn game_setup(
 fn game(
     mut cmds: Commands,
     mut game: ResMut<Game>,
-    visu: Res<Visu>,
+    visu: Res<BoardVisu>,
     time: Res<Time>,
     query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
     board_cache: Res<BoardCache>,
@@ -127,13 +127,8 @@ fn game(
             }
         } else {
             spawn_enemies(&mut cmds, &mut game, &visu, last_update, &board_cache);
-            if enemies_walk_until_wave_end(
-                &mut cmds,
-                time.delta(),
-                query,
-                &visu,
-                &board_cache.road_tile_posis,
-            ) && game.wave.enemies_spawned >= game.wave.wave_no * 4
+            if enemies_walk_until_wave_end(&mut cmds, query, time.delta(), &visu, &board_cache)
+                && game.wave.enemies_spawned >= game.wave.wave_no * 4
             {
                 game.wave.end(Some(Instant::now() + Duration::from_secs(1)));
             }

@@ -1,7 +1,7 @@
 #![allow(unused)]
-use super::{Game, GameScreen, Visu, Wave};
+use super::{BoardVisu, Game, GameScreen, Wave};
 use crate::{
-    board::BoardCache,
+    board::{step::BoardStep, BoardCache},
     utils::{enemy_normal_shape, Vec2Board},
 };
 use bevy::prelude::*;
@@ -20,88 +20,71 @@ pub struct Enemy {
     health: u32,
     pub pos: Vec2Board,
     enemy_type: EnemyType,
-    vec_rel_to_next_road_tile: Vec2Board,
-    next_road_tile: Option<(usize, Vec2Board)>,
+    current_step: BoardStep,
 }
 
 impl Enemy {
-    pub fn new(enemy_type: EnemyType, road_tile_posis: &IndexSet<UVec2>) -> Self {
-        let first_middle = Vec2Board::from_uvec2_middle(road_tile_posis.get_index(0).unwrap());
-        let second_middle = Vec2Board::from_uvec2_middle(road_tile_posis.get_index(1).unwrap());
+    pub fn new(enemy_type: EnemyType, board_cache: &BoardCache) -> Self {
+        let start_pos = Vec2Board::from_uvec2_middle(&board_cache.road_start_pos.unwrap());
+        let first_step = board_cache.road_path.first().unwrap().clone();
         match enemy_type {
-            EnemyType::Normal => Self::new_normal(first_middle, second_middle),
-            EnemyType::Speeder => Self::new_speeder(first_middle, second_middle),
-            EnemyType::Tank => Self::new_tank(first_middle, second_middle),
+            EnemyType::Normal => Self::new_normal(start_pos, first_step),
+            EnemyType::Speeder => Self::new_speeder(start_pos, first_step),
+            EnemyType::Tank => Self::new_tank(start_pos, first_step),
         }
     }
 
-    pub fn new_normal(pos: Vec2Board, next_road_tile: Vec2Board) -> Self {
+    pub fn new_normal(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
             speed: 1.,
             health: 100,
             pos,
             enemy_type: EnemyType::Normal,
-            vec_rel_to_next_road_tile: next_road_tile - pos,
-            next_road_tile: Some((1, next_road_tile)),
+            current_step,
         }
     }
 
-    pub fn new_speeder(pos: Vec2Board, next_road_tile: Vec2Board) -> Self {
+    pub fn new_speeder(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
             speed: 2.,
             health: 10,
             pos,
             enemy_type: EnemyType::Speeder,
-            vec_rel_to_next_road_tile: next_road_tile - pos,
-            next_road_tile: Some((1, next_road_tile)),
+            current_step,
         }
     }
 
-    pub fn new_tank(pos: Vec2Board, next_road_tile: Vec2Board) -> Self {
+    pub fn new_tank(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
             speed: 0.2,
             health: 1000,
             pos,
             enemy_type: EnemyType::Tank,
-            vec_rel_to_next_road_tile: next_road_tile - pos,
-            next_road_tile: Some((1, next_road_tile)),
+            current_step,
         }
     }
 
-    pub fn distance_walked(&self, dur: Duration) -> f64 {
-        self.speed as f64 * dur.as_secs_f64()
+    pub fn distance_walked(speed: f32, dur: Duration) -> f32 {
+        speed * dur.as_secs_f64() as f32
     }
 
     // Return true if end is reached
-    pub fn walk_until_end(&mut self, dur: Duration, road_tiles: &IndexSet<UVec2>) -> bool {
-        if self.is_step_end_reached() {
-            if let Some(new_pos) = self.next_road_tile {
-                self.pos = new_pos.1;
-                self.next_road_tile = Self::get_next_road_tile(new_pos.0 + 1, road_tiles);
-                if let Some(next) = self.next_road_tile {
-                    self.vec_rel_to_next_road_tile = next.1 - self.pos;
-                } else {
-                    return true;
-                }
+    pub fn walk_until_end(&mut self, dur: Duration, board_cache: &BoardCache) -> bool {
+        let mut step = &mut self.current_step;
+        if step.is_end_reached() {
+            if let Some(next) = board_cache.road_path.get(step.road_path_index + 1) {
+                *step = next.clone();
+            } else {
+                return true;
             }
         } else {
-            let dist = self.distance_walked(dur) as f32;
-            let dist_vec = self.vec_rel_to_next_road_tile * Vec2Board::new(dist, dist);
-            // println!("{:?}", x);
-            self.pos = self.pos + dist_vec;
+            let dist = Self::distance_walked(self.speed, dur);
+            step.distance_walked += dist;
+            self.pos.add_in_direction(dist, step.direction);
         }
         false
     }
 
-    fn is_step_end_reached(&self) -> bool {
-        if let Some(next) = self.next_road_tile {
-            return (self.vec_rel_to_next_road_tile.x < 0. && self.pos.x <= next.1.x)
-                || (self.vec_rel_to_next_road_tile.x > 0. && self.pos.x >= next.1.x)
-                || (self.vec_rel_to_next_road_tile.y < 0. && self.pos.y <= next.1.y)
-                || (self.vec_rel_to_next_road_tile.y > 0. && self.pos.y >= next.1.y);
-        }
-        false
-    }
     fn get_next_road_tile(
         index: usize,
         road_tiles: &IndexSet<UVec2>,
@@ -116,7 +99,7 @@ impl Enemy {
 pub(super) fn spawn_enemies(
     cmds: &mut Commands,
     game: &mut Game,
-    visu: &Visu,
+    visu: &BoardVisu,
     last_update: Instant,
     board_cache: &BoardCache,
 ) {
@@ -133,23 +116,29 @@ pub(super) fn spawn_enemies(
     }
 }
 
-fn spawn_enemy(cmds: &mut Commands, board_cache: &BoardCache, visu: &Visu, enemy_type: EnemyType) {
+fn spawn_enemy(
+    cmds: &mut Commands,
+    board_cache: &BoardCache,
+    visu: &BoardVisu,
+    enemy_type: EnemyType,
+) {
     cmds.spawn_bundle(enemy_normal_shape(
         visu.tile_size,
         visu.pos_to_px(board_cache.road_start_pos.unwrap().into(), 1.) + visu.half_tile_vec3,
     ))
-    .insert(Enemy::new(enemy_type, &board_cache.road_tile_posis))
+    .insert(Enemy::new(enemy_type, &board_cache))
     .insert(GameScreen);
 }
+
 pub(super) fn enemies_walk_until_wave_end(
     cmds: &mut Commands,
-    dur: Duration,
     mut query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
-    visu: &Visu,
-    road_tile_posis: &IndexSet<UVec2>,
+    dur: Duration,
+    visu: &BoardVisu,
+    board_cache: &BoardCache,
 ) -> bool {
     query.for_each_mut(|(mut entity, mut enemy, mut transform)| {
-        if enemy.walk_until_end(dur, road_tile_posis) {
+        if enemy.walk_until_end(dur, board_cache) {
             cmds.entity(entity).despawn_recursive();
         } else {
             transform.translation = visu.pos_to_px(enemy.pos, 1.);

@@ -142,7 +142,9 @@ fn play_button(
     {
         let (board, board_cache) = new_game_menu
             .boards
-            .remove(new_game_menu.selected_board_index);
+            .get(new_game_menu.selected_board_index)
+            .unwrap()
+            .clone();
         actions.send(MenuActionEvent::StartNewGame(
             Game::new(new_game_menu.difficulty),
             board,

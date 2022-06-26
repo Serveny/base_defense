@@ -1,4 +1,4 @@
-use super::{create_visu, popups::Popups, BoardEditorScreen, BoardEditorState, Visu};
+use super::{create_visu, popups::Popups, BoardEditorScreen, BoardEditorState, BoardVisu};
 use crate::{
     board::{
         visualisation::{BoardRoadEndMark, BoardVisualTile},
@@ -22,7 +22,7 @@ struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu> {
     cmds: Commands<'w, 's>,
     game_state: &'gs mut State<GameState>,
     editor_state: &'es mut BoardEditorState,
-    visu: &'visu mut Visu,
+    visu: &'visu mut BoardVisu,
     board: &'b mut Board,
     board_cache: &'bc mut BoardCache,
     windows: &'win Windows,
@@ -33,7 +33,7 @@ pub(super) fn board_editor_actions(
     cmds: Commands,
     mut game_state: ResMut<State<GameState>>,
     mut editor_state: ResMut<BoardEditorState>,
-    mut visu: ResMut<Visu>,
+    mut visu: ResMut<BoardVisu>,
     mut board: ResMut<Board>,
     mut board_cache: ResMut<BoardCache>,
     mut queries: ParamSet<(
@@ -91,7 +91,7 @@ fn set_tile_and_update_mark(
         tile_to.clone(),
     );
     validate_board(ea_params);
-    Visu::change_tile(pos, tile_to, queries.p0());
+    BoardVisu::change_tile(pos, tile_to, queries.p0());
     ea_params.visu.set_road_end_mark(
         &mut ea_params.cmds,
         ea_params.board_cache.road_end_pos,

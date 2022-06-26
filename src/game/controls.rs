@@ -1,4 +1,4 @@
-use super::{GameScreen, Visu};
+use super::{BoardVisu, GameScreen};
 use crate::{
     board::{visualisation::BoardHoverCross, Board, Tile},
     utils::{despawn_all_of, GameState, Vec2Board},
@@ -28,7 +28,7 @@ fn end_game(
 pub(super) fn mouse_input(
     mut cmds: Commands,
     windows: Res<Windows>,
-    visu: Res<Visu>,
+    visu: Res<BoardVisu>,
     query_hover_cross: Query<(Entity, &mut Transform), With<BoardHoverCross>>,
     board: Res<Board>,
 ) {
@@ -37,14 +37,18 @@ pub(super) fn mouse_input(
         match tile {
             Tile::TowerGround(_) => visu.draw_hover_cross(&mut cmds, query_hover_cross, pos),
             Tile::BuildingGround(_) => visu.draw_hover_cross(&mut cmds, query_hover_cross, pos),
-            _ => Visu::delete_hover_cross(&mut cmds, query_hover_cross),
+            _ => BoardVisu::delete_hover_cross(&mut cmds, query_hover_cross),
         }
     } else {
-        Visu::delete_hover_cross(&mut cmds, query_hover_cross);
+        BoardVisu::delete_hover_cross(&mut cmds, query_hover_cross);
     }
 }
 
-fn get_hover_pos_and_tile(win: &Window, visu: &Visu, board: &Board) -> Option<(Vec2Board, Tile)> {
+fn get_hover_pos_and_tile(
+    win: &Window,
+    visu: &BoardVisu,
+    board: &Board,
+) -> Option<(Vec2Board, Tile)> {
     if let Some(pos) = visu.get_hover_pos(win) {
         if pos.x >= 0. && pos.y >= 0. {
             if let Some(tile) = board.get_tile(pos.as_uvec2()) {

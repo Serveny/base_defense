@@ -1,4 +1,5 @@
 // #![allow(unused)]
+use crate::board::step::BoardDirection;
 use crate::board::Board;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
@@ -34,6 +35,20 @@ impl Vec2Board {
     pub fn from_uvec2_middle(uvec2: &UVec2) -> Self {
         Self::new(uvec2.x as f32 + 0.5, uvec2.y as f32 + 0.5)
     }
+
+    // Only for not diagonal vec2
+    pub fn distance(&self) -> f32 {
+        self.x.abs() + self.y.abs()
+    }
+
+    pub fn add_in_direction(&mut self, distance: f32, direction: BoardDirection) {
+        match direction {
+            BoardDirection::Up => self.0.y -= distance,
+            BoardDirection::Right => self.0.x += distance,
+            BoardDirection::Down => self.0.y += distance,
+            BoardDirection::Left => self.0.x -= distance,
+        };
+    }
 }
 
 impl From<Vec2> for Vec2Board {
@@ -53,6 +68,13 @@ impl Add for Vec2Board {
 
     fn add(self, other: Self) -> Self {
         Self::new(self.x + other.x, self.y + other.y)
+    }
+}
+
+impl AddAssign for Vec2Board {
+    fn add_assign(&mut self, other: Vec2Board) {
+        self.x += other.x;
+        self.y += other.y;
     }
 }
 
@@ -127,7 +149,7 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
 
 use std::fs::{read_dir, read_to_string, File};
 use std::io::{Error, Write};
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, AddAssign, Mul, Sub};
 use std::path::Path;
 
 pub fn save_board_to_file(name: &str, board: &Board) -> Result<(), Error> {

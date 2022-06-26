@@ -1,4 +1,4 @@
-use super::{actions::EditorActionEvent, popups::Popups, side_bar::SettileState, Visu};
+use super::{actions::EditorActionEvent, popups::Popups, side_bar::SettileState, BoardVisu};
 use crate::board::Tile;
 use bevy::prelude::*;
 
@@ -7,7 +7,7 @@ pub(super) fn mouse_input(
     set_tile_state: Res<State<SettileState>>,
     mouse_button_input: Res<Input<MouseButton>>,
     popups: Res<Popups>,
-    visu: Res<Visu>,
+    visu: Res<BoardVisu>,
     windows: Res<Windows>,
 ) {
     if popups.is_open() {
@@ -23,7 +23,7 @@ pub(super) fn mouse_input(
 fn send_set_tile_event(
     mut actions: EventWriter<EditorActionEvent>,
     windows: Res<Windows>,
-    visu: Res<Visu>,
+    visu: Res<BoardVisu>,
     tile: Tile,
 ) {
     let win = windows.get_primary().unwrap();

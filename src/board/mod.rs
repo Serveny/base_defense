@@ -5,6 +5,7 @@ use indexmap::IndexSet;
 use serde::{Deserialize, Serialize};
 
 mod cache;
+pub mod step;
 mod tile;
 pub mod visualisation;
 
