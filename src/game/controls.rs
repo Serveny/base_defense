@@ -11,7 +11,7 @@ pub(super) fn keyboard_input(
     game_state: ResMut<State<GameState>>,
     query: Query<Entity, With<GameScreen>>,
 ) {
-    if keys.just_pressed(KeyCode::Escape) {
+    if keys.just_released(KeyCode::Escape) {
         end_game(cmds, game_state, query);
     }
 }

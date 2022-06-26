@@ -1,20 +1,20 @@
-#![allow(unused)]
-use super::{BoardVisu, Game, GameScreen, Wave};
+use super::{BoardVisu, Game, GameScreen};
 use crate::{
     board::{step::BoardStep, BoardCache},
     utils::{enemy_normal_shape, Vec2Board},
 };
 use bevy::prelude::*;
-use indexmap::IndexSet;
 use std::time::{Duration, Instant};
 
+#[derive(Clone)]
 pub enum EnemyType {
     Normal,
     Speeder,
     Tank,
 }
 
-#[derive(Component)]
+#[allow(dead_code)]
+#[derive(Component, Clone)]
 pub struct Enemy {
     speed: f32,
     health: u32,
@@ -84,16 +84,6 @@ impl Enemy {
         }
         false
     }
-
-    fn get_next_road_tile(
-        index: usize,
-        road_tiles: &IndexSet<UVec2>,
-    ) -> Option<(usize, Vec2Board)> {
-        if let Some(new_next_tile) = road_tiles.get_index(index) {
-            return Some((index, Vec2Board::from_uvec2_middle(new_next_tile)));
-        }
-        None
-    }
 }
 
 pub(super) fn spawn_enemies(
@@ -105,7 +95,7 @@ pub(super) fn spawn_enemies(
 ) {
     if let Some(next) = &mut game.wave.next_enemy_spawn {
         if last_update >= *next {
-            spawn_enemy(cmds, board_cache, visu, EnemyType::Normal);
+            spawn_enemy(cmds, visu, Enemy::new(EnemyType::Normal, &board_cache));
             game.wave.enemies_spawned += 1;
             if game.wave.enemies_spawned < game.wave.wave_no * 4 {
                 *next += Duration::from_secs_f32(2. / game.wave.wave_no as f32);
@@ -116,17 +106,12 @@ pub(super) fn spawn_enemies(
     }
 }
 
-fn spawn_enemy(
-    cmds: &mut Commands,
-    board_cache: &BoardCache,
-    visu: &BoardVisu,
-    enemy_type: EnemyType,
-) {
+fn spawn_enemy(cmds: &mut Commands, visu: &BoardVisu, enemy: Enemy) {
     cmds.spawn_bundle(enemy_normal_shape(
         visu.tile_size,
-        visu.pos_to_px(board_cache.road_start_pos.unwrap().into(), 1.) + visu.half_tile_vec3,
+        visu.pos_to_px(enemy.pos, 1.),
     ))
-    .insert(Enemy::new(enemy_type, &board_cache))
+    .insert(enemy)
     .insert(GameScreen);
 }
 
@@ -137,7 +122,7 @@ pub(super) fn enemies_walk_until_wave_end(
     visu: &BoardVisu,
     board_cache: &BoardCache,
 ) -> bool {
-    query.for_each_mut(|(mut entity, mut enemy, mut transform)| {
+    query.for_each_mut(|(entity, mut enemy, mut transform)| {
         if enemy.walk_until_end(dur, board_cache) {
             cmds.entity(entity).despawn_recursive();
         } else {
@@ -145,4 +130,19 @@ pub(super) fn enemies_walk_until_wave_end(
         }
     });
     query.is_empty()
+}
+
+pub(super) fn resize_enemies(
+    cmds: &mut Commands,
+    visu: &BoardVisu,
+    query: Query<(&Enemy, Entity), With<Enemy>>,
+) {
+    let mut enemies = Vec::<Enemy>::new();
+    query.for_each(|(enemy, entity)| {
+        enemies.push(enemy.clone());
+        cmds.entity(entity).despawn_recursive();
+    });
+    for enemy in enemies {
+        spawn_enemy(cmds, &visu, enemy);
+    }
 }

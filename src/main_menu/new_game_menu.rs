@@ -111,6 +111,7 @@ fn difficulty_select(ui: &mut egui::Ui, new_game_menu: &mut NewGameMenu) {
         enum_as_radio_select(ui, &mut new_game_menu.difficulty);
     });
 }
+
 fn bottom_panel(
     ui: &mut egui::Ui,
     new_game_menu: &mut NewGameMenu,

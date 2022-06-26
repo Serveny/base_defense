@@ -13,6 +13,7 @@ use bevy_egui::{
 };
 
 mod actions;
+// mod controls;
 mod new_game_menu;
 
 const SIDE_BAR_WIDTH: f32 = 300.0;
@@ -33,6 +34,7 @@ impl Plugin for MainMenuPlugin {
             .add_system_set(
                 SystemSet::on_update(GameState::Menu)
                     .with_system(startup_menu)
+                    // .with_system(keyboard_input)
                     .with_system(menu_actions),
             )
             .add_system_set(

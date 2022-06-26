@@ -7,6 +7,7 @@ use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
 use super::Tile;
 
+pub type BoardScreenQuery<'a> = Query<'a, 'a, Entity, With<BoardScreen>>;
 // Ingame Visualisation
 pub struct BoardVisualisation<TScreen: Component + Clone> {
     // fm = from mid
@@ -23,6 +24,9 @@ pub struct BoardHoverCross;
 
 #[derive(Component)]
 pub struct BoardRoadEndMark;
+
+#[derive(Component)]
+pub struct BoardScreen;
 
 #[derive(Component, Debug)]
 pub struct BoardVisualTile {
@@ -89,13 +93,14 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
             ..Default::default()
         })
         .insert(BoardVisualTile::new(pos.as_uvec2()))
+        .insert(BoardScreen)
         .insert(self.screen.clone());
     }
 
     pub fn repaint(
         &self,
         cmds: &mut Commands,
-        mut query: Query<Entity, With<TScreen>>,
+        mut query: Query<Entity, With<BoardScreen>>,
         board: &Board,
         board_cache: &BoardCache,
     ) {
@@ -141,6 +146,7 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
             self.inner_tile_size,
             self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(&pos), 1.),
         ))
+        .insert(BoardScreen)
         .insert(self.screen.clone());
     }
 
@@ -190,6 +196,7 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
             let shape = Self::hover_cross_shape(self.tile_size, translation);
             cmds.spawn_bundle(shape)
                 .insert(BoardHoverCross)
+                .insert(BoardScreen)
                 .insert(self.screen.clone());
         }
     }

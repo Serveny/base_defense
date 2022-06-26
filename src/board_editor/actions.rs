@@ -1,7 +1,7 @@
-use super::{create_visu, popups::Popups, BoardEditorScreen, BoardEditorState, BoardVisu};
+use super::{create_visu, popups::Popups, BoardEditorState, BoardVisu};
 use crate::{
     board::{
-        visualisation::{BoardRoadEndMark, BoardVisualTile},
+        visualisation::{BoardRoadEndMark, BoardScreen, BoardScreenQuery, BoardVisualTile},
         Board, BoardCache, Tile,
     },
     utils::{save_board_to_file, GameState},
@@ -39,7 +39,7 @@ pub(super) fn board_editor_actions(
     mut queries: ParamSet<(
         Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
         Query<(Entity, &mut Transform), With<BoardRoadEndMark>>,
-        Query<Entity, With<BoardEditorScreen>>,
+        Query<Entity, With<BoardScreen>>,
     )>,
     mut popups: ResMut<Popups>,
     mut editor_actions: EventReader<EditorActionEvent>,
@@ -79,7 +79,7 @@ fn set_tile_and_update_mark(
     queries: &mut ParamSet<(
         Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
         Query<(Entity, &mut Transform), With<BoardRoadEndMark>>,
-        Query<Entity, With<BoardEditorScreen>>,
+        Query<Entity, With<BoardScreen>>,
     )>,
     pos: &UVec2,
     tile_to: &Tile,
@@ -108,7 +108,7 @@ fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to
     }
 }
 
-fn repaint(ea_params: &mut EditorActionParams, query: Query<Entity, With<BoardEditorScreen>>) {
+fn repaint(ea_params: &mut EditorActionParams, query: BoardScreenQuery) {
     *ea_params.visu = create_visu(ea_params.windows, ea_params.board);
     ea_params.visu.repaint(
         &mut ea_params.cmds,
@@ -129,11 +129,7 @@ fn save_board(ea_params: &mut EditorActionParams) {
     }
 }
 
-fn load_board(
-    ea_params: &mut EditorActionParams,
-    query: Query<Entity, With<BoardEditorScreen>>,
-    new_board: Board,
-) {
+fn load_board(ea_params: &mut EditorActionParams, query: BoardScreenQuery, new_board: Board) {
     if let Popups::Load(_) = ea_params.popups {
         *ea_params.board_cache = BoardCache::new(&new_board);
         *ea_params.board = new_board;
@@ -143,11 +139,7 @@ fn load_board(
     }
 }
 
-fn new_board(
-    ea_params: &mut EditorActionParams,
-    query: Query<Entity, With<BoardEditorScreen>>,
-    size: (u8, u8),
-) {
+fn new_board(ea_params: &mut EditorActionParams, query: BoardScreenQuery, size: (u8, u8)) {
     if let Popups::New(_) = ea_params.popups {
         let new_board = Board::empty(size.0, size.1);
         *ea_params.board_cache = BoardCache::new(&new_board);
@@ -157,11 +149,7 @@ fn new_board(
     }
 }
 
-fn edit_board(
-    ea_params: &mut EditorActionParams,
-    query: Query<Entity, With<BoardEditorScreen>>,
-    size: (u8, u8),
-) {
+fn edit_board(ea_params: &mut EditorActionParams, query: BoardScreenQuery, size: (u8, u8)) {
     if let Popups::Edit(_) = ea_params.popups {
         ea_params.board.change_size(size.0, size.1);
         *ea_params.board_cache = BoardCache::new(ea_params.board);
