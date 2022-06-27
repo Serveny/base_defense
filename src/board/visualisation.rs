@@ -187,7 +187,7 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
         &self,
         cmds: &mut Commands,
         mut query_hover_cross: Query<(Entity, &mut Transform), With<BoardHoverCross>>,
-        pos: Vec2Board,
+        pos: &Vec2Board,
     ) {
         let translation = self.pos_to_px(Vec2Board::new(pos.x.floor(), pos.y.floor()), 1.);
         if let Ok(mut hover_cross) = query_hover_cross.get_single_mut() {

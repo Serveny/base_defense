@@ -1,10 +1,10 @@
-use super::{BoardVisu, Game, GameScreen};
+use super::{BoardVisu, GameScreen};
 use crate::{
     board::{step::BoardStep, BoardCache},
     utils::{enemy_normal_shape, Vec2Board},
 };
 use bevy::prelude::*;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 #[derive(Clone)]
 pub enum EnemyType {
@@ -86,35 +86,6 @@ impl Enemy {
     }
 }
 
-pub(super) fn spawn_enemies(
-    cmds: &mut Commands,
-    game: &mut Game,
-    visu: &BoardVisu,
-    last_update: Instant,
-    board_cache: &BoardCache,
-) {
-    if let Some(next) = &mut game.wave.next_enemy_spawn {
-        if last_update >= *next {
-            spawn_enemy(cmds, visu, Enemy::new(EnemyType::Normal, &board_cache));
-            game.wave.enemies_spawned += 1;
-            if game.wave.enemies_spawned < game.wave.wave_no * 4 {
-                *next += Duration::from_secs_f32(2. / game.wave.wave_no as f32);
-            } else {
-                game.wave.next_enemy_spawn = None;
-            }
-        }
-    }
-}
-
-fn spawn_enemy(cmds: &mut Commands, visu: &BoardVisu, enemy: Enemy) {
-    cmds.spawn_bundle(enemy_normal_shape(
-        visu.tile_size,
-        visu.pos_to_px(enemy.pos, 1.),
-    ))
-    .insert(enemy)
-    .insert(GameScreen);
-}
-
 pub(super) fn enemies_walk_until_wave_end(
     cmds: &mut Commands,
     mut query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
@@ -132,17 +103,11 @@ pub(super) fn enemies_walk_until_wave_end(
     query.is_empty()
 }
 
-pub(super) fn resize_enemies(
-    cmds: &mut Commands,
-    visu: &BoardVisu,
-    query: Query<(&Enemy, Entity), With<Enemy>>,
-) {
-    let mut enemies = Vec::<Enemy>::new();
-    query.for_each(|(enemy, entity)| {
-        enemies.push(enemy.clone());
-        cmds.entity(entity).despawn_recursive();
-    });
-    for enemy in enemies {
-        spawn_enemy(cmds, &visu, enemy);
-    }
+pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu, enemy: Enemy) {
+    cmds.spawn_bundle(enemy_normal_shape(
+        board_visu.tile_size,
+        board_visu.pos_to_px(enemy.pos, 1.),
+    ))
+    .insert(enemy)
+    .insert(GameScreen);
 }
