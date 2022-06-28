@@ -1,9 +1,11 @@
 use super::{BoardVisu, GameScreen};
 use crate::{
     board::{step::BoardStep, BoardCache},
-    utils::{enemy_normal_shape, Vec2Board},
+    utils::Vec2Board,
 };
 use bevy::prelude::*;
+use bevy_prototype_lyon::entity::ShapeBundle;
+use bevy_prototype_lyon::prelude::*;
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -110,4 +112,24 @@ pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu,
     ))
     .insert(enemy)
     .insert(GameScreen);
+}
+
+fn enemy_normal_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
+    let shape = shapes::RegularPolygon {
+        sides: 5,
+        feature: shapes::RegularPolygonFeature::Radius(tile_size / 8.),
+        ..shapes::RegularPolygon::default()
+    };
+
+    GeometryBuilder::build_as(
+        &shape,
+        DrawMode::Outlined {
+            fill_mode: FillMode::color(Color::MAROON),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
+        },
+        Transform {
+            translation,
+            ..Default::default()
+        },
+    )
 }

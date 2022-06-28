@@ -30,7 +30,7 @@ impl Board {
         }
     }
 
-    pub fn tile_mut(&mut self, pos: UVec2) -> Option<&mut Tile> {
+    pub fn get_tile_mut(&mut self, pos: &UVec2) -> Option<&mut Tile> {
         if self.get_tile(pos).is_some() {
             Some(&mut self.tiles[pos.y as usize][pos.x as usize])
         } else {
@@ -38,7 +38,7 @@ impl Board {
         }
     }
 
-    pub fn get_tile(&self, pos: UVec2) -> Option<&Tile> {
+    pub fn get_tile(&self, pos: &UVec2) -> Option<&Tile> {
         if let Some(row) = self.tiles.get(pos.y as usize) {
             return row.get(pos.x as usize);
         }
@@ -58,23 +58,6 @@ impl Board {
     }
 
     pub fn change_size(&mut self, new_width: u8, new_heigth: u8) {
-        // Add/reduce width
-        if new_width > self.width {
-            let to_add = new_width - self.width;
-            for row in &mut self.tiles {
-                for _ in 0..to_add {
-                    row.push(Tile::Empty);
-                }
-            }
-        } else if new_width < self.width {
-            let to_del = self.width - new_width;
-            for row in &mut self.tiles {
-                for _ in 0..to_del {
-                    row.pop();
-                }
-            }
-        }
-
         // Add/reduce height
         if new_heigth > self.height {
             let to_add = new_heigth - self.height;
@@ -89,6 +72,23 @@ impl Board {
             let to_del = self.height - new_heigth;
             for _ in 0..to_del {
                 self.tiles.pop();
+            }
+        }
+
+        // Add/reduce width
+        if new_width > self.width {
+            let to_add = new_width - self.width;
+            for row in &mut self.tiles {
+                for _ in 0..to_add {
+                    row.push(Tile::Empty);
+                }
+            }
+        } else if new_width < self.width {
+            let to_del = self.width - new_width;
+            for row in &mut self.tiles {
+                for _ in 0..to_del {
+                    row.pop();
+                }
             }
         }
 

@@ -1,5 +1,3 @@
-use std::io::Error;
-
 use super::actions::MenuActionEvent;
 use crate::{
     board::{Board, BoardCache},
@@ -11,6 +9,7 @@ use bevy_egui::{
     egui::{self, CentralPanel},
     EguiContext,
 };
+use std::error::Error;
 
 pub(super) struct NewGameMenu {
     boards: Vec<(Board, BoardCache)>,
@@ -20,8 +19,8 @@ pub(super) struct NewGameMenu {
 }
 
 impl NewGameMenu {
-    fn selected_board(&self) -> &(Board, BoardCache) {
-        &self.boards[self.selected_board_index]
+    fn selected_board(&self) -> Option<&(Board, BoardCache)> {
+        self.boards.get(self.selected_board_index)
     }
 
     fn new(boards: Vec<Board>) -> Self {
@@ -42,7 +41,7 @@ impl NewGameMenu {
         }
     }
 
-    fn new_error(err: Error) -> Self {
+    fn new_error(err: Box<dyn Error>) -> Self {
         Self {
             boards: Vec::new(),
             selected_board_index: 0,
@@ -89,19 +88,25 @@ pub(super) fn add_new_game_menu(
 fn board_select(ui: &mut egui::Ui, new_game_menu: &mut NewGameMenu) {
     ui.horizontal(|ui| {
         ui.add_sized([200., 60.], bevy_egui::egui::Label::new("Map"));
-        let selected = &new_game_menu.selected_board().0.name;
-        egui::containers::ComboBox::from_label("")
-            .selected_text(selected)
-            .show_ui(ui, |ui| {
-                ui.set_width(400.);
-                let boards = &new_game_menu.boards;
-                let mut selected_i = new_game_menu.selected_board_index;
+        if let Some(selected) = new_game_menu.selected_board() {
+            egui::containers::ComboBox::from_label("")
+                .selected_text(&selected.0.name)
+                .show_ui(ui, |ui| {
+                    ui.set_width(400.);
+                    let boards = &new_game_menu.boards;
+                    let mut selected_i = new_game_menu.selected_board_index;
 
-                for (i, board) in boards.iter().enumerate() {
-                    ui.selectable_value(&mut selected_i, i, &board.0.name);
-                }
-                new_game_menu.selected_board_index = selected_i;
-            });
+                    for (i, board) in boards.iter().enumerate() {
+                        ui.selectable_value(&mut selected_i, i, &board.0.name);
+                    }
+                    new_game_menu.selected_board_index = selected_i;
+                });
+        } else {
+            ui.add_sized(
+                [200., 60.],
+                bevy_egui::egui::Label::new("No valid maps found."),
+            );
+        }
     });
 }
 

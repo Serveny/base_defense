@@ -2,8 +2,10 @@
 use crate::board::step::BoardDirection;
 use crate::board::Board;
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use euclid::Angle;
 use serde::{Deserialize, Serialize};
+
+pub mod towers;
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -24,7 +26,7 @@ pub enum Difficulty {
 pub type Energy = u32;
 pub type Materials = u32;
 
-#[derive(Default, Deref, DerefMut, Clone, Copy, PartialEq, Debug)]
+#[derive(Default, Deref, DerefMut, Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Vec2Board(Vec2);
 
 impl Vec2Board {
@@ -37,8 +39,14 @@ impl Vec2Board {
     }
 
     // Only for not diagonal vec2
-    pub fn distance(&self) -> f32 {
+    pub fn distance_from_zero(&self) -> f32 {
         self.x.abs() + self.y.abs()
+    }
+
+    pub fn distance(&self, other: Vec2Board) -> f32 {
+        ((self.x - other.x).powi(2) - (self.y - other.y).powi(2))
+            .sqrt()
+            .abs()
     }
 
     pub fn add_in_direction(&mut self, distance: f32, direction: BoardDirection) {
@@ -49,11 +57,27 @@ impl Vec2Board {
             BoardDirection::Left => self.0.x -= distance,
         };
     }
+
+    pub fn degre_between_y(&self, other: Vec2Board) -> Angle<f32> {
+        let b = self.distance(other);
+        let c = (self.y - other.y).abs();
+        Angle::degrees((b * c).acos())
+    }
+
+    pub fn to_vec3(&self, z: f32) -> Vec3 {
+        Vec3::new(self.x, self.y, z)
+    }
 }
 
 impl From<Vec2> for Vec2Board {
     fn from(vec2: Vec2) -> Self {
         Self(vec2)
+    }
+}
+
+impl From<Vec2Board> for Vec2 {
+    fn from(vec2: Vec2Board) -> Self {
+        Self::new(vec2.x, vec2.y)
     }
 }
 
@@ -100,27 +124,6 @@ pub struct Consumption {
     materials: Materials,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Tower {
-    tower_type: TowerType,
-    shot_con: Consumption,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum TowerType {
-    // Damages enemies, needs energy
-    LaserShot,
-
-    // Slows enemies down, needs energy
-    Microwave,
-
-    // Damages enemies, needs energy and material
-    Rocket,
-
-    // Damages enemies, needs energy and material
-    Grenade,
-}
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Building {
@@ -147,27 +150,37 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
     }
 }
 
-use std::fs::{read_dir, read_to_string, File};
-use std::io::{Error, Write};
+use std::error::Error;
+use std::fs::{read_dir, read_to_string, DirEntry, File};
+use std::io::Write;
 use std::ops::{Add, AddAssign, Mul, Sub};
 use std::path::Path;
 
-pub fn save_board_to_file(name: &str, board: &Board) -> Result<(), Error> {
-    let file_content = serde_json::to_string(board)?;
-    let path_str = format!("./maps/{}_map.json", name);
-    let path = Path::new(&path_str);
-    let mut output = File::create(path)?;
-    write!(output, "{}", file_content)?;
+pub fn save_board_to_file(name: &str, board: &Board) -> Result<(), Box<dyn Error>> {
+    let mut output = File::create(Path::new(&format!("./maps/{}_map.json", name)))?;
+    write!(output, "{}", serde_json::to_string(board)?)?;
     Ok(())
 }
 
-pub fn get_all_boards_in_folder() -> Result<Vec<Board>, Error> {
+pub fn get_all_boards_in_folder() -> Result<Vec<Board>, Box<dyn Error>> {
     let mut boards = Vec::<Board>::new();
     for dir_entry in read_dir("./maps/")? {
-        let input = read_to_string(dir_entry?.path())?;
-        boards.push(serde_json::from_str(&input)?);
+        boards.push(read_map(dir_entry)?);
     }
     Ok(boards)
+}
+
+fn read_map(dir_entry: Result<DirEntry, std::io::Error>) -> Result<Board, Box<dyn Error>> {
+    let dir_entry = dir_entry?;
+    match serde_json::from_str(&read_to_string(dir_entry.path())?) {
+        Ok(board) => Ok(board),
+        Err(err) => Err(format!(
+            "Invalid json in file '{:?}': {}",
+            dir_entry.file_name(),
+            err.to_string()
+        )
+        .into()),
+    }
 }
 
 pub fn add_row(label: &str, widget: impl bevy_egui::egui::Widget, ui: &mut bevy_egui::egui::Ui) {
@@ -230,54 +243,4 @@ pub fn add_popup_window<R>(
             ui.add_space(10.);
             content(ui);
         });
-}
-
-pub fn get_tile_size_px(available_width_px: f32, available_height_px: f32, board: &Board) -> f32 {
-    let tile_width_px = available_width_px / board.width as f32;
-    let tile_height_px = available_height_px / board.height as f32;
-
-    if tile_height_px > tile_width_px {
-        tile_width_px
-    } else {
-        tile_height_px
-    }
-}
-
-pub fn road_end_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
-    let shape = shapes::RegularPolygon {
-        sides: 8,
-        feature: shapes::RegularPolygonFeature::Radius(tile_size / 3.),
-        ..shapes::RegularPolygon::default()
-    };
-
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::SEA_GREEN),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 8.),
-        },
-        Transform {
-            translation,
-            ..Default::default()
-        },
-    )
-}
-pub fn enemy_normal_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
-    let shape = shapes::RegularPolygon {
-        sides: 5,
-        feature: shapes::RegularPolygonFeature::Radius(tile_size / 8.),
-        ..shapes::RegularPolygon::default()
-    };
-
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::MAROON),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
-        },
-        Transform {
-            translation,
-            ..Default::default()
-        },
-    )
 }

@@ -3,14 +3,20 @@ use std::time::Duration;
 use self::{
     actions::{game_actions, GameActionEvent},
     controls::{keyboard_input, mouse_input},
+    enemies::Enemy,
     wave::{wave_actions, WaveState},
 };
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
-    utils::{despawn_all_of, Difficulty, Energy, Materials},
+    utils::{
+        despawn_all_of,
+        towers::{Tower, TowerCannon, TowerValues},
+        Difficulty, Energy, Materials, Vec2Board,
+    },
     GameState,
 };
 use bevy::{prelude::*, utils::Instant, window::WindowResized};
+use euclid::Angle;
 
 mod actions;
 mod controls;
@@ -32,6 +38,7 @@ impl Plugin for GamePlugin {
                     .with_system(mouse_input)
                     .with_system(on_resize)
                     .with_system(wave_spawn_system)
+                    .with_system(tower_system)
                     .with_system(game_actions),
             )
             .add_system_set(
@@ -73,7 +80,7 @@ impl Game {
 }
 
 // Tag component used to tag entities added on the game screen
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Copy)]
 struct GameScreen;
 
 fn game_setup(
@@ -96,6 +103,42 @@ fn wave_spawn_system(game: Res<Game>, time: Res<Time>, mut actions: EventWriter<
             if last_update >= next_wave_spawn {
                 actions.send(GameActionEvent::StartWave);
             }
+        }
+    }
+}
+
+fn tower_system(
+    mut cannon_transforms: Query<&mut Transform, With<TowerCannon>>,
+    towers: Query<(&Tower, &Children), With<Tower>>,
+    enemies: Query<&Enemy, With<Enemy>>,
+) {
+    for (tower, children) in towers.iter() {
+        let tower_vals = tower.values();
+        for enemy in enemies.iter() {
+            if is_enemy_in_tower_range(enemy.pos, tower_vals.pos, tower_vals.range_radius) {
+                rotate_tower_cannon_to_pos(&tower_vals, &enemy, children, &mut cannon_transforms);
+            }
+        }
+    }
+}
+
+fn is_enemy_in_tower_range(enemy_pos: Vec2Board, tower_pos: Vec2Board, radius: f32) -> bool {
+    enemy_pos.distance(tower_pos) <= radius
+}
+
+fn rotate_tower_cannon_to_pos(
+    tower_vals: &TowerValues,
+    enemy: &Enemy,
+    tower_children: &Children,
+    cannon_transforms: &mut Query<&mut Transform, With<TowerCannon>>,
+) {
+    let x = tower_vals.pos.angle_between(enemy.pos.into());
+
+    // println!("{:?}", Angle::radians(x).to_degrees());
+    // Visualisation
+    for child in tower_children.iter() {
+        if let Ok(mut trans) = cannon_transforms.get_mut(*child) {
+            trans.rotate(Quat::from_rotation_z(std::f32::consts::PI / 180.))
         }
     }
 }

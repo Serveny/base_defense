@@ -22,7 +22,7 @@ impl BoardStep {
         Self {
             road_path_index,
             direction: Self::direction(path),
-            distance: path.distance(),
+            distance: path.distance_from_zero(),
             distance_walked: 0.,
         }
     }

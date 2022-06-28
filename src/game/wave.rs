@@ -36,7 +36,7 @@ impl Wave {
     }
 
     pub fn is_wave_end(&self) -> bool {
-        self.enemies_spawned >= self.wave_no * 4
+        self.enemies_spawned >= self.wave_no * 1
     }
 }
 

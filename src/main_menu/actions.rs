@@ -1,4 +1,4 @@
-use super::MenuState;
+use super::{new_game_menu::NewGameMenu, MenuState};
 use crate::{
     board::{Board, BoardCache},
     game::Game,
@@ -7,6 +7,7 @@ use crate::{
 use bevy::prelude::*;
 
 pub(super) enum MenuActionEvent {
+    EnterNewGameMenu,
     StartNewGame(Game, Board, BoardCache),
     LeaveMenu(GameState),
 }
@@ -40,9 +41,21 @@ pub(super) fn menu_actions(
                     );
                 }
                 MenuActionEvent::LeaveMenu(to) => leave_menu(&mut ma_params, to.clone()),
+                MenuActionEvent::EnterNewGameMenu => enter_new_game_menu(&mut ma_params),
             }
         }
     }
+}
+
+fn enter_new_game_menu(ma_params: &mut MenuActionParams) {
+    ma_params.cmds.init_resource::<NewGameMenu>();
+    ma_params
+        .menu_state
+        .set(MenuState::NewGame)
+        .unwrap_or_else(|_| {
+            ma_params.cmds.remove_resource::<NewGameMenu>();
+            ma_params.menu_state.set(MenuState::Main).unwrap();
+        });
 }
 
 fn start_new_game(
@@ -51,6 +64,7 @@ fn start_new_game(
     board: Board,
     board_cache: BoardCache,
 ) {
+    ma_params.cmds.remove_resource::<NewGameMenu>();
     ma_params.cmds.insert_resource(game);
     ma_params.cmds.insert_resource(board);
     ma_params.cmds.insert_resource(board_cache);

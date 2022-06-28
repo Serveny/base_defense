@@ -1,6 +1,6 @@
 use crate::{
     board::{cache::BoardCache, Board},
-    utils::{get_tile_size_px, road_end_shape, Vec2Board},
+    utils::Vec2Board,
 };
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
@@ -8,24 +8,27 @@ use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use super::Tile;
 
 pub type BoardScreenQuery<'a> = Query<'a, 'a, Entity, With<BoardScreen>>;
+pub type RoadEndMarkQuery<'a, 'b, 'c> =
+    Query<'a, 'a, (Entity, &'b mut Transform, &'c mut BoardRoadEndMark), With<BoardRoadEndMark>>;
+
 // Ingame Visualisation
 pub struct BoardVisualisation<TScreen: Component + Clone> {
     // fm = from mid
     board_start_fm: Vec3,
     pub tile_size: f32,
-    inner_tile_size: f32,
+    pub inner_tile_size: f32,
     tile_size_vec: Vec2,
     pub half_tile_vec3: Vec3,
-    screen: TScreen,
+    pub screen: TScreen,
 }
 
 #[derive(Component)]
 pub struct BoardHoverCross;
 
 #[derive(Component)]
-pub struct BoardRoadEndMark;
+pub struct BoardRoadEndMark(UVec2);
 
-#[derive(Component)]
+#[derive(Component, Clone, Copy)]
 pub struct BoardScreen;
 
 #[derive(Component, Debug)]
@@ -38,7 +41,7 @@ impl BoardVisualTile {
         Self { pos }
     }
 }
-impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
+impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
     pub fn new(
         win: &Window,
         board: &Board,
@@ -48,7 +51,7 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
         screen: TScreen,
     ) -> BoardVisualisation<TScreen> {
         let tile_size =
-            get_tile_size_px(win.width() - margin_left, win.height() - margin_top, board);
+            Self::get_tile_size_px(win.width() - margin_left, win.height() - margin_top, board);
         let inner_tile_size = tile_size - (tile_margin * 2.);
         let board_size = Vec2::new(
             tile_size * board.width as f32,
@@ -94,7 +97,7 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
         })
         .insert(BoardVisualTile::new(pos.as_uvec2()))
         .insert(BoardScreen)
-        .insert(self.screen.clone());
+        .insert(self.screen);
     }
 
     pub fn repaint(
@@ -114,21 +117,22 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
         &self,
         cmds: &mut Commands,
         pos: Option<UVec2>,
-        mark_query: Option<Query<(Entity, &mut Transform), With<BoardRoadEndMark>>>,
+        mut mark_query: Option<RoadEndMarkQuery>,
     ) {
+        if let Some(query) = &mut mark_query {
+            if let Ok((entity, _, mark)) = query.get_single_mut() {
+                if pos.is_some() && mark.0 == pos.unwrap() {
+                    return;
+                }
+                cmds.entity(entity).despawn_recursive();
+            }
+        }
         if let Some(pos) = pos {
             self.pos_road_end_mark(cmds, mark_query, pos);
-        } else {
-            Self::despawn_road_end_mark(cmds, mark_query);
         }
     }
 
-    fn pos_road_end_mark(
-        &self,
-        cmds: &mut Commands,
-        mark: Option<Query<(Entity, &mut Transform), With<BoardRoadEndMark>>>,
-        pos: UVec2,
-    ) {
+    fn pos_road_end_mark(&self, cmds: &mut Commands, mark: Option<RoadEndMarkQuery>, pos: UVec2) {
         if let Some(mut mark) = mark {
             if let Ok(mut mark) = mark.get_single_mut() {
                 mark.1.translation =
@@ -142,23 +146,10 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
     }
 
     fn spawn_road_end_mark(&self, cmds: &mut Commands, pos: UVec2) {
-        cmds.spawn_bundle(road_end_shape(
-            self.inner_tile_size,
-            self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(&pos), 1.),
-        ))
-        .insert(BoardScreen)
-        .insert(self.screen.clone());
-    }
-
-    fn despawn_road_end_mark(
-        cmds: &mut Commands,
-        mut mark: Option<Query<(Entity, &mut Transform), With<BoardRoadEndMark>>>,
-    ) {
-        if let Some(mark) = mark.as_mut() {
-            if let Ok(mark) = mark.get_single_mut() {
-                cmds.entity(mark.0).despawn_recursive();
-            }
-        }
+        cmds.spawn_bundle(self.road_end_shape(&pos))
+            .insert(BoardRoadEndMark(pos))
+            .insert(BoardScreen)
+            .insert(self.screen);
     }
 
     pub fn change_tile(
@@ -186,7 +177,7 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
     pub fn draw_hover_cross(
         &self,
         cmds: &mut Commands,
-        mut query_hover_cross: Query<(Entity, &mut Transform), With<BoardHoverCross>>,
+        query_hover_cross: &mut Query<(Entity, &mut Transform), With<BoardHoverCross>>,
         pos: &Vec2Board,
     ) {
         let translation = self.pos_to_px(Vec2Board::new(pos.x.floor(), pos.y.floor()), 1.);
@@ -197,13 +188,13 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
             cmds.spawn_bundle(shape)
                 .insert(BoardHoverCross)
                 .insert(BoardScreen)
-                .insert(self.screen.clone());
+                .insert(self.screen);
         }
     }
 
     pub fn delete_hover_cross(
         cmds: &mut Commands,
-        mut query_hover_cross: Query<(Entity, &mut Transform), With<BoardHoverCross>>,
+        query_hover_cross: &mut Query<(Entity, &mut Transform), With<BoardHoverCross>>,
     ) {
         if let Ok(hover_cross) = query_hover_cross.get_single_mut() {
             cmds.entity(hover_cross.0).despawn_recursive();
@@ -234,7 +225,9 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
         pos_px.y += half_margin;
         pos_px
     }
-
+    pub fn distance_board_to_px(&self, dist_board: f32) -> f32 {
+        dist_board * self.tile_size
+    }
     // pub fn distance_board_to_px(&self, distance_board: Vec2Board) -> Vec3 {
     //     Vec3::new(
     //         distance_board.x * self.tile_size,
@@ -288,5 +281,36 @@ impl<TScreen: Component + Clone> BoardVisualisation<TScreen> {
         pb.line_to(Vec2::new(one_third, -ts + eighth));
 
         pb.build()
+    }
+
+    fn road_end_shape(&self, pos: &UVec2) -> ShapeBundle {
+        let shape = shapes::RegularPolygon {
+            sides: 8,
+            feature: shapes::RegularPolygonFeature::Radius(self.inner_tile_size / 3.),
+            ..shapes::RegularPolygon::default()
+        };
+
+        GeometryBuilder::build_as(
+            &shape,
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::SEA_GREEN),
+                outline_mode: StrokeMode::new(Color::DARK_GRAY, self.inner_tile_size / 8.),
+            },
+            Transform {
+                translation: self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(pos), 1.),
+                ..Default::default()
+            },
+        )
+    }
+
+    fn get_tile_size_px(available_width_px: f32, available_height_px: f32, board: &Board) -> f32 {
+        let tile_width_px = available_width_px / board.width as f32;
+        let tile_height_px = available_height_px / board.height as f32;
+
+        if tile_height_px > tile_width_px {
+            tile_width_px
+        } else {
+            tile_height_px
+        }
     }
 }

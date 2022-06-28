@@ -86,9 +86,7 @@ fn add_main_menu(
             );
 
             if add_menu_button("Play", ui).clicked() {
-                menu_state.set(MenuState::NewGame).unwrap_or_else(|_| {
-                    menu_state.set(MenuState::Main).unwrap();
-                });
+                actions.send(MenuActionEvent::EnterNewGameMenu);
             }
 
             if add_menu_button("Map Editor", ui).clicked() {

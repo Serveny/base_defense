@@ -22,7 +22,7 @@ mod top_bar;
 
 type BoardVisu = BoardVisualisation<BoardEditorScreen>;
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Copy)]
 struct BoardEditorScreen;
 
 const TOP_BAR_HEIGHT_PX: f32 = 40.0;

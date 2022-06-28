@@ -12,6 +12,7 @@ pub(super) enum SettileState {
     BuildingGround,
     Road,
 }
+
 impl SettileState {
     pub fn as_tile(&self) -> Tile {
         match self {

@@ -207,6 +207,7 @@ dependencies = [
  "bevy_egui",
  "bevy_prototype_lyon",
  "bevy_screen_diags",
+ "euclid",
  "indexmap",
  "serde",
  "serde_json",
@@ -1463,6 +1464,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b52c2ef4a78da0ba68fbe1fd920627411096d2ac478f7f4c9f3a54ba6705bade"
 dependencies = [
  "num-traits",
+ "serde",
 ]
 
 [[package]]

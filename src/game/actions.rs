@@ -8,7 +8,10 @@ use crate::{
         visualisation::{BoardHoverCross, BoardScreen},
         Board, BoardCache, Tile,
     },
-    utils::{GameState, Vec2Board},
+    utils::{
+        towers::{delete_range_circle, draw_tower, set_range_cycle, Tower, TowerRangeHoverCircle},
+        GameState, Vec2Board,
+    },
 };
 use bevy::prelude::*;
 use std::time::Duration;
@@ -16,10 +19,11 @@ use std::time::Duration;
 pub enum GameActionEvent {
     Resize,
     HoverTile(Vec2Board, Tile),
-    DeleteHoverCross,
+    UnhoverTile,
     BackToMainMenu,
     StartWave,
     EndWave,
+    TileLeftClick(UVec2),
 }
 
 #[allow(dead_code)]
@@ -29,7 +33,7 @@ struct GameActionParams<'w, 's, 'g, 'gs, 'visu, 'b, 'bc, 'ws, 'win, 't> {
     game_state: &'gs mut State<GameState>,
     board_visu: &'visu mut BoardVisu,
     board: &'b mut Board,
-    board_cache: &'bc mut BoardCache,
+    board_cache: &'bc BoardCache,
     wave_state: &'ws mut State<WaveState>,
     windows: &'win Windows,
     time: &'t Time,
@@ -40,16 +44,17 @@ pub(super) fn game_actions(
     mut game: ResMut<Game>,
     mut game_state: ResMut<State<GameState>>,
     mut visu: ResMut<BoardVisu>,
-    mut board: ResMut<Board>,
-    mut board_cache: ResMut<BoardCache>,
     mut wave_state: ResMut<State<WaveState>>,
     mut queries: ParamSet<(
         Query<Entity, With<BoardScreen>>,
         Query<(&Enemy, Entity), With<Enemy>>,
         Query<(Entity, &mut Transform), With<BoardHoverCross>>,
+        Query<(Entity, &mut Transform, &mut TowerRangeHoverCircle), With<TowerRangeHoverCircle>>,
         Query<Entity, With<GameScreen>>,
     )>,
     mut game_actions: EventReader<GameActionEvent>,
+    mut board: ResMut<Board>,
+    board_cache: Res<BoardCache>,
     windows: Res<Windows>,
     time: Res<Time>,
 ) {
@@ -60,7 +65,7 @@ pub(super) fn game_actions(
             game_state: &mut game_state,
             board_visu: &mut visu,
             board: &mut board,
-            board_cache: &mut board_cache,
+            board_cache: &board_cache,
             wave_state: &mut wave_state,
             windows: &windows,
             time: &time,
@@ -69,14 +74,23 @@ pub(super) fn game_actions(
             match event {
                 GameActionEvent::Resize => repaint(&mut ga_params, &mut queries),
                 GameActionEvent::HoverTile(pos, tile) => {
-                    draw_hover_cross(&mut ga_params, &mut queries, pos, tile)
+                    draw_hover_cross(&mut ga_params, &mut queries.p2(), pos, tile);
+                    set_range_cycle(
+                        &mut ga_params.cmds,
+                        ga_params.board_visu,
+                        pos,
+                        tile,
+                        queries.p3(),
+                    );
                 }
-                GameActionEvent::DeleteHoverCross => {
-                    BoardVisu::delete_hover_cross(&mut ga_params.cmds, queries.p2())
+                GameActionEvent::UnhoverTile => {
+                    BoardVisu::delete_hover_cross(&mut ga_params.cmds, &mut queries.p2());
+                    delete_range_circle(&mut ga_params.cmds, queries.p3());
                 }
-                GameActionEvent::BackToMainMenu => back_to_main_menu(&mut ga_params, queries.p3()),
+                GameActionEvent::BackToMainMenu => back_to_main_menu(&mut ga_params, queries.p4()),
                 GameActionEvent::StartWave => start_wave(&mut ga_params),
                 GameActionEvent::EndWave => end_wave_and_prepare_next(&mut ga_params),
+                GameActionEvent::TileLeftClick(pos) => on_tile_click(&mut ga_params, pos),
             }
         }
     }
@@ -88,6 +102,7 @@ fn repaint(
         Query<Entity, With<BoardScreen>>,
         Query<(&Enemy, Entity), With<Enemy>>,
         Query<(Entity, &mut Transform), With<BoardHoverCross>>,
+        Query<(Entity, &mut Transform, &mut TowerRangeHoverCircle), With<TowerRangeHoverCircle>>,
         Query<Entity, With<GameScreen>>,
     )>,
 ) {
@@ -114,12 +129,7 @@ fn create_visu(windows: &Windows, board: &Board) -> BoardVisu {
 
 fn draw_hover_cross(
     ga_params: &mut GameActionParams,
-    queries: &mut ParamSet<(
-        Query<Entity, With<BoardScreen>>,
-        Query<(&Enemy, Entity), With<Enemy>>,
-        Query<(Entity, &mut Transform), With<BoardHoverCross>>,
-        Query<Entity, With<GameScreen>>,
-    )>,
+    query: &mut Query<(Entity, &mut Transform), With<BoardHoverCross>>,
     pos: &Vec2Board,
     tile: &Tile,
 ) {
@@ -127,14 +137,14 @@ fn draw_hover_cross(
         Tile::TowerGround(_) => {
             ga_params
                 .board_visu
-                .draw_hover_cross(&mut ga_params.cmds, queries.p2(), pos)
+                .draw_hover_cross(&mut ga_params.cmds, query, pos)
         }
         Tile::BuildingGround(_) => {
             ga_params
                 .board_visu
-                .draw_hover_cross(&mut ga_params.cmds, queries.p2(), pos)
+                .draw_hover_cross(&mut ga_params.cmds, query, pos)
         }
-        _ => BoardVisu::delete_hover_cross(&mut ga_params.cmds, queries.p2()),
+        _ => BoardVisu::delete_hover_cross(&mut ga_params.cmds, query),
     }
 }
 
@@ -142,6 +152,7 @@ fn back_to_main_menu(ga_params: &mut GameActionParams, query: Query<Entity, With
     for entity in query.iter() {
         ga_params.cmds.entity(entity).despawn_recursive();
     }
+    ga_params.wave_state.set(WaveState::None).unwrap();
     ga_params.game_state.set(GameState::Menu).unwrap();
 }
 
@@ -170,4 +181,31 @@ fn end_wave_and_prepare_next(ga_params: &mut GameActionParams) {
     ga_params.wave_state.set(WaveState::None).unwrap();
     ga_params.game.next_wave_spawn =
         Some(ga_params.time.last_update().unwrap() + Duration::from_secs(1));
+}
+
+fn on_tile_click(ga_params: &mut GameActionParams, pos: &UVec2) {
+    if let Some(tile) = ga_params.board.get_tile_mut(pos) {
+        match tile {
+            Tile::TowerGround(tower) => {
+                if tower.is_none() {
+                    place_tower(&mut ga_params.cmds, ga_params.board_visu, pos, tower)
+                }
+            }
+            Tile::BuildingGround(_) => todo!(),
+            Tile::Road => todo!(),
+            Tile::Empty => todo!(),
+        }
+    }
+}
+
+fn place_tower(
+    cmds: &mut Commands,
+    board_visu: &BoardVisu,
+    pos: &UVec2,
+    tower: &mut Option<Tower>,
+) {
+    let pos = Vec2Board::from_uvec2_middle(pos);
+    let new_tower = Tower::laser_shot(pos);
+    draw_tower(cmds, board_visu, pos, &new_tower);
+    *tower = Some(new_tower);
 }

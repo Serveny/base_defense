@@ -38,7 +38,7 @@ pub(super) fn board_editor_actions(
     mut board_cache: ResMut<BoardCache>,
     mut queries: ParamSet<(
         Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
-        Query<(Entity, &mut Transform), With<BoardRoadEndMark>>,
+        Query<(Entity, &mut Transform, &mut BoardRoadEndMark), With<BoardRoadEndMark>>,
         Query<Entity, With<BoardScreen>>,
     )>,
     mut popups: ResMut<Popups>,
@@ -78,7 +78,7 @@ fn set_tile_and_update_mark(
     ea_params: &mut EditorActionParams,
     queries: &mut ParamSet<(
         Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
-        Query<(Entity, &mut Transform), With<BoardRoadEndMark>>,
+        Query<(Entity, &mut Transform, &mut BoardRoadEndMark), With<BoardRoadEndMark>>,
         Query<Entity, With<BoardScreen>>,
     )>,
     pos: &UVec2,
@@ -95,12 +95,12 @@ fn set_tile_and_update_mark(
     ea_params.visu.set_road_end_mark(
         &mut ea_params.cmds,
         ea_params.board_cache.road_end_pos,
-        Some(queries.p1()),
+        Some(queries.p1().into()),
     );
 }
 
 fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to: Tile) {
-    if let Some(tile) = board.tile_mut(pos) {
+    if let Some(tile) = board.get_tile_mut(&pos) {
         board_cache.remove_tile_pos(&pos, tile);
         board_cache.insert_tile_pos(pos, &tile_to);
         *tile = tile_to;
