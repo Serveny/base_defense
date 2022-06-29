@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use super::Vec2Board;
-use crate::board::{visualisation::BoardVisualisation, Tile};
+use crate::board::visualisation::BoardVisualisation;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{
     entity::ShapeBundle,
@@ -77,8 +77,8 @@ impl TowerValues {
 #[derive(Component)]
 pub struct TowerCannon;
 
-#[derive(Component)]
-pub struct TowerRangeHoverCircle(UVec2);
+#[derive(Component, Deref, DerefMut)]
+pub struct TowerRangeCircle(UVec2);
 
 pub trait BoardTower {
     fn draw(&self, cmds: &mut Commands);
@@ -90,8 +90,8 @@ pub fn draw_tower<TScreen: Component + Copy>(
     pos: Vec2Board,
     tower: &Tower,
 ) {
-    match *tower {
-        Tower::LaserShot(_) => spawn_laser_shot_tower(cmds, board_visu, pos),
+    match tower {
+        Tower::LaserShot(values) => spawn_laser_shot_tower(cmds, board_visu, pos, values),
         Tower::Microwave(_) => todo!(),
         Tower::Rocket(_) => todo!(),
         Tower::Grenade(_) => todo!(),
@@ -102,18 +102,39 @@ fn spawn_laser_shot_tower<TScreen: Component + Copy>(
     cmds: &mut Commands,
     board_visu: &BoardVisualisation<TScreen>,
     pos: Vec2Board,
+    tower_values: &TowerValues,
 ) {
     let tile_size = board_visu.inner_tile_size;
     let translation = board_visu.pos_to_px_with_tile_margin(pos, 1.);
-    cmds.spawn_bundle(tower_base_shape(tile_size, translation.clone(), Color::RED))
-        .with_children(|children| {
-            children.spawn_bundle(tower_circle_shape(tile_size, Vec3::new(0., 0., 1.2)));
-            children
-                .spawn_bundle(tower_laser_cannon(tile_size, Vec3::new(0., 0., 1.1)))
-                .insert(TowerCannon);
-        })
+    let color = Color::RED;
+    let range_radius_px = board_visu.distance_board_to_px(tower_values.range_radius);
+    cmds.spawn_bundle(tower_base_shape(tile_size, translation.clone(), color))
+        .with_children(|parent| tower_children(parent, tile_size, range_radius_px, &pos, color))
         .insert(Tower::LaserShot(TowerValues::laser_shot(pos)))
         .insert(board_visu.screen);
+}
+
+fn tower_children(
+    parent: &mut ChildBuilder,
+    tile_size: f32,
+    range_radius_px: f32,
+    pos: &Vec2Board,
+    color: Color,
+) {
+    // Tower circle
+    parent.spawn_bundle(tower_circle_shape(tile_size, Vec3::new(0., 0., 0.2)));
+
+    // Tower cannon
+    parent
+        .spawn_bundle(tower_laser_cannon(tile_size, Vec3::new(0., 0., 0.1)))
+        .insert(TowerCannon);
+
+    // Range circle
+    let mut range_circle = tower_range_circle_shape(range_radius_px, Vec3::new(0., 0., 0.2), color);
+    range_circle.visibility.is_visible = false;
+    parent
+        .spawn_bundle(range_circle)
+        .insert(TowerRangeCircle(pos.as_uvec2()));
 }
 
 fn tower_base_shape(tile_size: f32, translation: Vec3, color: Color) -> ShapeBundle {
@@ -153,75 +174,16 @@ fn tower_circle_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
     )
 }
 
-pub fn set_range_cycle<TScreen: Component + Copy>(
-    cmds: &mut Commands,
-    board_visu: &BoardVisualisation<TScreen>,
-    pos: &Vec2Board,
-    tile: &Tile,
-    mut query_range_circle: Query<
-        (Entity, &mut Transform, &mut TowerRangeHoverCircle),
-        With<TowerRangeHoverCircle>,
-    >,
-) {
-    if let Ok((entity, mut trans, mut circle)) = query_range_circle.get_single_mut() {
-        println!("{:?} == {:?}", pos.as_uvec2(), &circle.0);
-        let pos_uvec = pos.as_uvec2();
-        if pos_uvec != circle.0 {
-            if let Tile::TowerGround(tower) = tile {
-                if let Some(tower) = tower {
-                    trans.translation = board_visu.pos_to_px(tower.values().pos, 1.4);
-                    circle.0 = pos_uvec;
-                } else {
-                    cmds.entity(entity).despawn_recursive();
-                }
-            } else {
-                cmds.entity(entity).despawn_recursive();
-            }
-        }
-    } else if let Tile::TowerGround(tower) = tile {
-        if let Some(tower) = tower {
-            draw_range_circle(cmds, board_visu, tower.values());
-        }
-    }
-}
-
-fn draw_range_circle<TScreen: Component + Copy>(
-    cmds: &mut Commands,
-    board_visu: &BoardVisualisation<TScreen>,
-    vals: &TowerValues,
-) {
-    println!("{:?}", vals.pos);
-    cmds.spawn_bundle(tower_range_circle_shape(
-        board_visu.distance_board_to_px(vals.range_radius),
-        board_visu.pos_to_px(vals.pos, 1.4),
-    ))
-    .insert(TowerRangeHoverCircle(vals.pos.as_uvec2()))
-    .insert(board_visu.screen);
-}
-
-pub fn delete_range_circle(
-    cmds: &mut Commands,
-    mut query_range_circle: Query<
-        (Entity, &mut Transform, &mut TowerRangeHoverCircle),
-        With<TowerRangeHoverCircle>,
-    >,
-) {
-    if let Ok(range_cycle) = query_range_circle.get_single_mut() {
-        cmds.entity(range_cycle.0).despawn_recursive();
-    }
-}
-
-fn tower_range_circle_shape(radius: f32, translation: Vec3) -> ShapeBundle {
+fn tower_range_circle_shape(radius: f32, translation: Vec3, color: Color) -> ShapeBundle {
     let shape = Circle {
         center: Vec2::default(),
         radius: radius,
     };
-    println!("{:?}", translation);
     GeometryBuilder::build_as(
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::NONE),
-            outline_mode: StrokeMode::new(Color::RED, 2.),
+            outline_mode: StrokeMode::new(color, 2.),
         },
         Transform {
             translation,

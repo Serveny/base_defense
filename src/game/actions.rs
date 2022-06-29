@@ -9,12 +9,24 @@ use crate::{
         Board, BoardCache, Tile,
     },
     utils::{
-        towers::{delete_range_circle, draw_tower, set_range_cycle, Tower, TowerRangeHoverCircle},
+        towers::{draw_tower, Tower, TowerRangeCircle},
         GameState, Vec2Board,
     },
 };
 use bevy::prelude::*;
 use std::time::Duration;
+
+type GameActionQueries<'w, 's, 'a> = ParamSet<
+    'w,
+    's,
+    (
+        Query<'w, 's, Entity, With<BoardScreen>>,
+        Query<'w, 's, (Entity, &'a Enemy), With<Enemy>>,
+        Query<'w, 's, (Entity, &'a mut Transform), With<BoardHoverCross>>,
+        Query<'w, 's, (&'a mut Visibility, &'a TowerRangeCircle), With<TowerRangeCircle>>,
+        Query<'w, 's, Entity, With<GameScreen>>,
+    ),
+>;
 
 pub enum GameActionEvent {
     Resize,
@@ -24,6 +36,8 @@ pub enum GameActionEvent {
     StartWave,
     EndWave,
     TileLeftClick(UVec2),
+    ActivateOverview,
+    DeactivateOverview,
 }
 
 #[allow(dead_code)]
@@ -45,13 +59,7 @@ pub(super) fn game_actions(
     mut game_state: ResMut<State<GameState>>,
     mut visu: ResMut<BoardVisu>,
     mut wave_state: ResMut<State<WaveState>>,
-    mut queries: ParamSet<(
-        Query<Entity, With<BoardScreen>>,
-        Query<(&Enemy, Entity), With<Enemy>>,
-        Query<(Entity, &mut Transform), With<BoardHoverCross>>,
-        Query<(Entity, &mut Transform, &mut TowerRangeHoverCircle), With<TowerRangeHoverCircle>>,
-        Query<Entity, With<GameScreen>>,
-    )>,
+    mut queries: GameActionQueries,
     mut game_actions: EventReader<GameActionEvent>,
     mut board: ResMut<Board>,
     board_cache: Res<BoardCache>,
@@ -75,37 +83,34 @@ pub(super) fn game_actions(
                 GameActionEvent::Resize => repaint(&mut ga_params, &mut queries),
                 GameActionEvent::HoverTile(pos, tile) => {
                     draw_hover_cross(&mut ga_params, &mut queries.p2(), pos, tile);
-                    set_range_cycle(
-                        &mut ga_params.cmds,
-                        ga_params.board_visu,
-                        pos,
-                        tile,
-                        queries.p3(),
-                    );
+                    if !ga_params.game.is_overview {
+                        show_range_circle(&mut queries, &pos.as_uvec2());
+                    }
                 }
                 GameActionEvent::UnhoverTile => {
                     BoardVisu::delete_hover_cross(&mut ga_params.cmds, &mut queries.p2());
-                    delete_range_circle(&mut ga_params.cmds, queries.p3());
+                    if !ga_params.game.is_overview {
+                        set_range_circles(&mut queries, false);
+                    }
                 }
                 GameActionEvent::BackToMainMenu => back_to_main_menu(&mut ga_params, queries.p4()),
                 GameActionEvent::StartWave => start_wave(&mut ga_params),
                 GameActionEvent::EndWave => end_wave_and_prepare_next(&mut ga_params),
                 GameActionEvent::TileLeftClick(pos) => on_tile_click(&mut ga_params, pos),
+                GameActionEvent::ActivateOverview => {
+                    ga_params.game.is_overview = true;
+                    set_range_circles(&mut queries, true);
+                }
+                GameActionEvent::DeactivateOverview => {
+                    ga_params.game.is_overview = false;
+                    set_range_circles(&mut queries, false);
+                }
             }
         }
     }
 }
 
-fn repaint(
-    ga_params: &mut GameActionParams,
-    queries: &mut ParamSet<(
-        Query<Entity, With<BoardScreen>>,
-        Query<(&Enemy, Entity), With<Enemy>>,
-        Query<(Entity, &mut Transform), With<BoardHoverCross>>,
-        Query<(Entity, &mut Transform, &mut TowerRangeHoverCircle), With<TowerRangeHoverCircle>>,
-        Query<Entity, With<GameScreen>>,
-    )>,
-) {
+fn repaint(ga_params: &mut GameActionParams, queries: &mut GameActionQueries) {
     *ga_params.board_visu = create_visu(ga_params.windows, ga_params.board);
     ga_params.board_visu.repaint(
         &mut ga_params.cmds,
@@ -156,9 +161,9 @@ fn back_to_main_menu(ga_params: &mut GameActionParams, query: Query<Entity, With
     ga_params.game_state.set(GameState::Menu).unwrap();
 }
 
-fn resize_enemies(ga_params: &mut GameActionParams, query: Query<(&Enemy, Entity), With<Enemy>>) {
+fn resize_enemies(ga_params: &mut GameActionParams, query: Query<(Entity, &Enemy), With<Enemy>>) {
     let mut enemies = Vec::<Enemy>::new();
-    query.for_each(|(enemy, entity)| {
+    query.for_each(|(entity, enemy)| {
         enemies.push(enemy.clone());
         ga_params.cmds.entity(entity).despawn_recursive();
     });
@@ -208,4 +213,16 @@ fn place_tower(
     let new_tower = Tower::laser_shot(pos);
     draw_tower(cmds, board_visu, pos, &new_tower);
     *tower = Some(new_tower);
+}
+
+fn set_range_circles(queries: &mut GameActionQueries, is_visible: bool) {
+    queries
+        .p3()
+        .for_each_mut(|(mut visi, _)| visi.is_visible = is_visible);
+}
+
+fn show_range_circle(queries: &mut GameActionQueries, pos: &UVec2) {
+    queries
+        .p3()
+        .for_each_mut(|(mut visi, comp)| visi.is_visible = **comp == *pos);
 }

@@ -16,7 +16,6 @@ use crate::{
     GameState,
 };
 use bevy::{prelude::*, utils::Instant, window::WindowResized};
-use euclid::Angle;
 
 mod actions;
 mod controls;
@@ -65,6 +64,7 @@ pub(crate) struct Game {
     materials: Materials,
     wave_no: u32,
     next_wave_spawn: Option<Instant>,
+    is_overview: bool,
 }
 
 impl Game {
@@ -75,6 +75,7 @@ impl Game {
             materials: 100,
             wave_no: 0,
             next_wave_spawn: Some(Instant::now() + Duration::from_secs(1)),
+            is_overview: false,
         }
     }
 }

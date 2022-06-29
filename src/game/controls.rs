@@ -9,6 +9,13 @@ pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter
     if keys.just_released(KeyCode::Escape) {
         actions.send(GameActionEvent::BackToMainMenu);
     }
+    if keys.just_pressed(KeyCode::LShift) {
+        println!("LShift");
+        actions.send(GameActionEvent::ActivateOverview);
+    }
+    if keys.just_released(KeyCode::LShift) {
+        actions.send(GameActionEvent::DeactivateOverview);
+    }
 }
 
 pub(super) fn mouse_input(
