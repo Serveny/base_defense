@@ -1,11 +1,13 @@
+use euclid::Angle;
+
 use crate::utils::Vec2Board;
 
 #[derive(Copy, Clone, Debug)]
 pub enum BoardDirection {
-    Up,
     Right,
-    Down,
+    Up,
     Left,
+    Down,
 }
 
 #[derive(Clone, Debug)]
@@ -32,6 +34,16 @@ impl BoardStep {
     pub fn is_end_reached(&self) -> bool {
         self.distance_walked >= self.distance
     }
+
+    pub fn angle(&self) -> Angle<f32> {
+        Angle::degrees(match self.direction {
+            BoardDirection::Right => 0.,
+            BoardDirection::Up => 90.,
+            BoardDirection::Left => 180.,
+            BoardDirection::Down => 270.,
+        })
+    }
+
     fn direction(path: Vec2Board) -> BoardDirection {
         if path.x > 0. {
             BoardDirection::Right

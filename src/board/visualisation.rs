@@ -4,6 +4,7 @@ use crate::{
 };
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use euclid::Angle;
 
 use super::Tile;
 
@@ -77,7 +78,7 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
                 self.spawn_tile(cmds, Vec2Board::new(x as f32, y as f32), tile);
             }
         }
-        self.set_road_end_mark(cmds, board_cache.road_end_pos, None);
+        self.set_road_end_mark(cmds, board_cache, None);
     }
 
     fn spawn_tile(&self, cmds: &mut Commands, pos: Vec2Board, tile: &Tile) {
@@ -116,37 +117,45 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
     pub fn set_road_end_mark(
         &self,
         cmds: &mut Commands,
-        pos: Option<UVec2>,
+        board_cache: &BoardCache,
         mut mark_query: Option<RoadEndMarkQuery>,
     ) {
         if let Some(query) = &mut mark_query {
             if let Ok((entity, _, mark)) = query.get_single_mut() {
-                if pos.is_some() && mark.0 == pos.unwrap() {
+                if board_cache.road_end_pos.is_some() && mark.0 == board_cache.road_end_pos.unwrap()
+                {
                     return;
                 }
                 cmds.entity(entity).despawn_recursive();
             }
         }
-        if let Some(pos) = pos {
-            self.pos_road_end_mark(cmds, mark_query, pos);
+        if let Some(pos) = board_cache.road_end_pos {
+            let rotation_angle = board_cache.road_path.last().unwrap().angle();
+            self.pos_road_end_mark(cmds, mark_query, pos, rotation_angle);
         }
     }
 
-    fn pos_road_end_mark(&self, cmds: &mut Commands, mark: Option<RoadEndMarkQuery>, pos: UVec2) {
+    fn pos_road_end_mark(
+        &self,
+        cmds: &mut Commands,
+        mark: Option<RoadEndMarkQuery>,
+        pos: UVec2,
+        rotation_angle: Angle<f32>,
+    ) {
         if let Some(mut mark) = mark {
             if let Ok(mut mark) = mark.get_single_mut() {
                 mark.1.translation =
                     self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(&pos), 1.)
             } else {
-                self.spawn_road_end_mark(cmds, pos);
+                self.spawn_road_end_mark(cmds, pos, rotation_angle);
             }
         } else {
-            self.spawn_road_end_mark(cmds, pos);
+            self.spawn_road_end_mark(cmds, pos, rotation_angle);
         }
     }
 
-    fn spawn_road_end_mark(&self, cmds: &mut Commands, pos: UVec2) {
-        cmds.spawn_bundle(self.road_end_shape(&pos))
+    fn spawn_road_end_mark(&self, cmds: &mut Commands, pos: UVec2, rotation_angle: Angle<f32>) {
+        cmds.spawn_bundle(self.road_end_shape(&pos, rotation_angle))
             .with_children(|parent| {
                 parent.spawn_bundle(self.road_end_entry_shape());
             })
@@ -286,7 +295,7 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
         pb.build()
     }
 
-    fn road_end_shape(&self, pos: &UVec2) -> ShapeBundle {
+    fn road_end_shape(&self, pos: &UVec2, rotation_angle: Angle<f32>) -> ShapeBundle {
         let shape = shapes::RegularPolygon {
             sides: 8,
             feature: shapes::RegularPolygonFeature::Radius(self.inner_tile_size / 3.),
@@ -301,14 +310,18 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
             },
             Transform {
                 translation: self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(pos), 3.),
+                rotation: Quat::from_rotation_z(
+                    Angle::degrees(rotation_angle.to_degrees() + 180.).radians,
+                ),
                 ..Default::default()
             },
         )
     }
+
     fn road_end_entry_shape(&self) -> ShapeBundle {
         let shape = shapes::Rectangle {
             origin: RectangleOrigin::Center,
-            extents: Vec2::new(self.inner_tile_size / 2., self.inner_tile_size / 4.),
+            extents: Vec2::new(self.inner_tile_size / 4., self.inner_tile_size / 2.),
         };
 
         GeometryBuilder::build_as(
@@ -318,7 +331,7 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
                 outline_mode: StrokeMode::new(Color::DARK_GRAY, self.inner_tile_size / 32.),
             },
             Transform {
-                translation: Vec3::new(0., -self.inner_tile_size / 3., -0.1),
+                translation: Vec3::new(self.inner_tile_size / 3., 0., -0.1),
                 ..Default::default()
             },
         )

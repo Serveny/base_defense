@@ -1,6 +1,7 @@
 // #![allow(unused)]
 use crate::board::Board;
 use bevy::prelude::*;
+use euclid::Angle;
 use serde::{Deserialize, Serialize};
 pub use vec2_board::Vec2Board;
 
@@ -98,4 +99,12 @@ pub fn add_error_box(err_text: &str, ui: &mut bevy_egui::egui::Ui) {
         .inner_margin(3.)
         .outer_margin(2.)
         .show(ui, |ui| ui.add(bevy_egui::egui::Label::new(err_text)));
+}
+
+pub fn pos_to_angle(pos: Vec2Board, target: Vec2Board) -> Angle<f32> {
+    Angle::radians((target - pos).angle_between(Vec2::new(0., 1.)))
+}
+
+pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
+    Quat::from_rotation_z(pos_to_angle(pos, target).radians)
 }

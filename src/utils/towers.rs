@@ -222,11 +222,3 @@ fn tower_laser_cannon(tile_size: f32) -> ShapeBundle {
         },
     )
 }
-
-pub fn pos_to_tower_angle(pos: Vec2Board, target: Vec2Board) -> Angle<f32> {
-    Angle::radians((target - pos).angle_between(Vec2::new(0., 1.)))
-}
-
-pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
-    Quat::from_rotation_z(pos_to_tower_angle(pos, target).radians)
-}

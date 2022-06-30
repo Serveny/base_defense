@@ -101,7 +101,7 @@ fn set_tile_and_update_mark(
     BoardVisu::change_tile(pos, tile_to, queries.p0());
     ea_params.visu.set_road_end_mark(
         &mut ea_params.cmds,
-        ea_params.board_cache.road_end_pos,
+        ea_params.board_cache,
         Some(queries.p1().into()),
     );
 }

@@ -1,6 +1,7 @@
 use super::enemies::Enemy;
 use crate::utils::{
-    towers::{pos_to_quat, Tower, TowerCannon, TowerValues},
+    pos_to_quat,
+    towers::{Tower, TowerCannon, TowerValues},
     Vec2Board,
 };
 use bevy::prelude::*;
