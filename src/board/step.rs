@@ -10,7 +10,13 @@ pub enum BoardDirection {
     Down,
 }
 
-#[derive(Clone, Debug)]
+impl Default for BoardDirection {
+    fn default() -> Self {
+        Self::Right
+    }
+}
+
+#[derive(Clone, Debug, Default)]
 pub struct BoardStep {
     pub road_path_index: usize,
     pub direction: BoardDirection,

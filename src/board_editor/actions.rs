@@ -1,7 +1,7 @@
 use super::{create_visu, popups::Popups, BoardEditorState, BoardVisu};
 use crate::{
     board::{
-        visualisation::{BoardRoadEndMark, BoardScreen, BoardScreenQuery, BoardVisualTile},
+        visualisation::{BoardScreen, BoardScreenQuery, BoardVisualTile, RoadEndMarkQuery},
         Board, BoardCache, Tile,
     },
     utils::{save_board_to_file, GameState},
@@ -23,12 +23,7 @@ type EditorActionQueries<'w, 's, 'a> = ParamSet<
     's,
     (
         Query<'w, 's, (&'a mut Sprite, &'a Transform, &'a BoardVisualTile), With<BoardVisualTile>>,
-        Query<
-            'w,
-            's,
-            (Entity, &'a mut Transform, &'a mut BoardRoadEndMark),
-            With<BoardRoadEndMark>,
-        >,
+        RoadEndMarkQuery<'w, 's, 'a>,
         Query<'w, 's, Entity, With<BoardScreen>>,
     ),
 >;
@@ -99,11 +94,9 @@ fn set_tile_and_update_mark(
     );
     validate_board(ea_params);
     BoardVisu::change_tile(pos, tile_to, queries.p0());
-    ea_params.visu.set_road_end_mark(
-        &mut ea_params.cmds,
-        ea_params.board_cache,
-        Some(queries.p1().into()),
-    );
+    ea_params
+        .visu
+        .set_road_end_mark(queries.p1(), ea_params.board_cache);
 }
 
 fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to: Tile) {

@@ -1,3 +1,5 @@
+use self::road_end_mark::spawn_road_end_mark;
+use super::Tile;
 use crate::{
     board::{cache::BoardCache, Board},
     utils::Vec2Board,
@@ -6,11 +8,13 @@ use bevy::{prelude::*, sprite::Anchor};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use euclid::Angle;
 
-use super::Tile;
-
 pub type BoardScreenQuery<'a> = Query<'a, 'a, Entity, With<BoardScreen>>;
-pub type RoadEndMarkQuery<'a, 'b, 'c> =
-    Query<'a, 'a, (Entity, &'b mut Transform, &'c mut BoardRoadEndMark), With<BoardRoadEndMark>>;
+pub type RoadEndMarkQuery<'w, 's, 'a> = Query<
+    'w,
+    's,
+    (&'a mut Visibility, &'a mut Transform, &'a BoardRoadEndMark),
+    With<BoardRoadEndMark>,
+>;
 
 // Ingame Visualisation
 pub struct BoardVisualisation<TScreen: Component + Clone> {
@@ -27,7 +31,18 @@ pub struct BoardVisualisation<TScreen: Component + Clone> {
 pub struct BoardHoverCross;
 
 #[derive(Component)]
-pub struct BoardRoadEndMark(UVec2);
+pub struct BoardRoadEndMark {
+    is_child: bool,
+}
+
+impl BoardRoadEndMark {
+    pub fn child() -> Self {
+        Self { is_child: true }
+    }
+    pub fn parent() -> Self {
+        Self { is_child: false }
+    }
+}
 
 #[derive(Component, Clone, Copy)]
 pub struct BoardScreen;
@@ -73,12 +88,15 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
     }
 
     pub fn draw_board(&self, cmds: &mut Commands, board: &Board, board_cache: &BoardCache) {
+        // Board tiles
         for (y, row) in board.tiles.iter().enumerate() {
             for (x, tile) in row.iter().enumerate() {
                 self.spawn_tile(cmds, Vec2Board::new(x as f32, y as f32), tile);
             }
         }
-        self.set_road_end_mark(cmds, board_cache, None);
+
+        // Road end mark
+        spawn_road_end_mark(cmds, board_cache, self);
     }
 
     fn spawn_tile(&self, cmds: &mut Commands, pos: Vec2Board, tile: &Tile) {
@@ -113,57 +131,6 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
         }
         self.draw_board(cmds, board, board_cache);
     }
-
-    pub fn set_road_end_mark(
-        &self,
-        cmds: &mut Commands,
-        board_cache: &BoardCache,
-        mut mark_query: Option<RoadEndMarkQuery>,
-    ) {
-        if let Some(query) = &mut mark_query {
-            if let Ok((entity, _, mark)) = query.get_single_mut() {
-                if board_cache.road_end_pos.is_some() && mark.0 == board_cache.road_end_pos.unwrap()
-                {
-                    return;
-                }
-                cmds.entity(entity).despawn_recursive();
-            }
-        }
-        if let Some(pos) = board_cache.road_end_pos {
-            let rotation_angle = board_cache.road_path.last().unwrap().angle();
-            self.pos_road_end_mark(cmds, mark_query, pos, rotation_angle);
-        }
-    }
-
-    fn pos_road_end_mark(
-        &self,
-        cmds: &mut Commands,
-        mark: Option<RoadEndMarkQuery>,
-        pos: UVec2,
-        rotation_angle: Angle<f32>,
-    ) {
-        if let Some(mut mark) = mark {
-            if let Ok(mut mark) = mark.get_single_mut() {
-                mark.1.translation =
-                    self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(&pos), 1.)
-            } else {
-                self.spawn_road_end_mark(cmds, pos, rotation_angle);
-            }
-        } else {
-            self.spawn_road_end_mark(cmds, pos, rotation_angle);
-        }
-    }
-
-    fn spawn_road_end_mark(&self, cmds: &mut Commands, pos: UVec2, rotation_angle: Angle<f32>) {
-        cmds.spawn_bundle(self.road_end_shape(&pos, rotation_angle))
-            .with_children(|parent| {
-                parent.spawn_bundle(self.road_end_entry_shape());
-            })
-            .insert(BoardRoadEndMark(pos))
-            .insert(BoardScreen)
-            .insert(self.screen);
-    }
-
     pub fn change_tile(
         pos: &UVec2,
         to: &Tile,
@@ -223,6 +190,25 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
         None
     }
 
+    pub fn set_road_end_mark(&self, mut query: RoadEndMarkQuery, board_cache: &BoardCache) {
+        if let Some(end_pos) = board_cache.road_end_pos {
+            if let Some(last_step) = board_cache.road_path.last() {
+                query.for_each_mut(|(mut visi, mut transform, comp)| {
+                    if !comp.is_child {
+                        transform.translation =
+                            self.pos_to_px(Vec2Board::from_uvec2_middle(&end_pos), 3.);
+                        transform.rotation = Quat::from_rotation_z(
+                            Angle::degrees(last_step.angle().to_degrees() + 180.).radians,
+                        );
+                    }
+                    visi.is_visible = true;
+                });
+                return;
+            }
+        }
+        query.for_each_mut(|(mut visi, _, _)| visi.is_visible = false);
+    }
+
     pub fn pos_to_px(&self, pos: Vec2Board, z: f32) -> Vec3 {
         Vec3::new(
             self.board_start_fm.x + (pos.x * self.tile_size),
@@ -230,6 +216,7 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
             z,
         )
     }
+
     pub fn pos_to_px_with_tile_margin(&self, pos: Vec2Board, z: f32) -> Vec3 {
         let half_margin = (self.tile_size - self.inner_tile_size) / 2.;
         let mut pos_px = self.pos_to_px(pos, z);
@@ -294,49 +281,6 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
 
         pb.build()
     }
-
-    fn road_end_shape(&self, pos: &UVec2, rotation_angle: Angle<f32>) -> ShapeBundle {
-        let shape = shapes::RegularPolygon {
-            sides: 8,
-            feature: shapes::RegularPolygonFeature::Radius(self.inner_tile_size / 3.),
-            ..shapes::RegularPolygon::default()
-        };
-
-        GeometryBuilder::build_as(
-            &shape,
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::SEA_GREEN),
-                outline_mode: StrokeMode::new(Color::DARK_GRAY, self.inner_tile_size / 8.),
-            },
-            Transform {
-                translation: self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(pos), 3.),
-                rotation: Quat::from_rotation_z(
-                    Angle::degrees(rotation_angle.to_degrees() + 180.).radians,
-                ),
-                ..Default::default()
-            },
-        )
-    }
-
-    fn road_end_entry_shape(&self) -> ShapeBundle {
-        let shape = shapes::Rectangle {
-            origin: RectangleOrigin::Center,
-            extents: Vec2::new(self.inner_tile_size / 4., self.inner_tile_size / 2.),
-        };
-
-        GeometryBuilder::build_as(
-            &shape,
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::SEA_GREEN),
-                outline_mode: StrokeMode::new(Color::DARK_GRAY, self.inner_tile_size / 32.),
-            },
-            Transform {
-                translation: Vec3::new(self.inner_tile_size / 3., 0., -0.1),
-                ..Default::default()
-            },
-        )
-    }
-
     fn get_tile_size_px(available_width_px: f32, available_height_px: f32, board: &Board) -> f32 {
         let tile_width_px = available_width_px / board.width as f32;
         let tile_height_px = available_height_px / board.height as f32;
@@ -346,5 +290,91 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
         } else {
             tile_height_px
         }
+    }
+}
+
+mod road_end_mark {
+    use bevy::prelude::*;
+    use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+    use euclid::Angle;
+
+    use super::{BoardRoadEndMark, BoardScreen, BoardVisualisation};
+    use crate::{board::BoardCache, utils::Vec2Board};
+
+    pub fn spawn_road_end_mark<TScreen: Component + Copy>(
+        cmds: &mut Commands,
+        board_cache: &BoardCache,
+        board_visu: &BoardVisualisation<TScreen>,
+    ) {
+        let is_visible =
+            board_cache.road_path.last().is_some() && board_cache.road_end_pos.is_some();
+        let pos = board_cache.road_end_pos.unwrap_or_default();
+
+        let angle = if let Some(last_step) = board_cache.road_path.last() {
+            Angle::degrees(last_step.angle().to_degrees() + 180.)
+        } else {
+            Angle::default()
+        };
+
+        cmds.spawn_bundle(road_end_shape(
+            board_visu.inner_tile_size,
+            Transform {
+                translation: board_visu
+                    .pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(&pos), 3.),
+                rotation: Quat::from_rotation_z(angle.radians),
+                ..Default::default()
+            },
+            is_visible,
+        ))
+        .with_children(|parent| {
+            parent
+                .spawn_bundle(road_end_entry_shape(board_visu.inner_tile_size, is_visible))
+                .insert(BoardRoadEndMark::child())
+                .insert(BoardScreen)
+                .insert(board_visu.screen);
+        })
+        .insert(BoardRoadEndMark::parent())
+        .insert(BoardScreen)
+        .insert(board_visu.screen);
+    }
+
+    fn road_end_shape(size_px: f32, transform: Transform, is_visible: bool) -> ShapeBundle {
+        let shape = shapes::RegularPolygon {
+            sides: 8,
+            feature: shapes::RegularPolygonFeature::Radius(size_px / 3.),
+            ..shapes::RegularPolygon::default()
+        };
+
+        let mut shape_bundle = GeometryBuilder::build_as(
+            &shape,
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::SEA_GREEN),
+                outline_mode: StrokeMode::new(Color::DARK_GRAY, size_px / 8.),
+            },
+            transform,
+        );
+        shape_bundle.visibility = Visibility { is_visible };
+        shape_bundle
+    }
+
+    fn road_end_entry_shape(size_px: f32, is_visible: bool) -> ShapeBundle {
+        let shape = shapes::Rectangle {
+            origin: RectangleOrigin::Center,
+            extents: Vec2::new(size_px / 4., size_px / 2.),
+        };
+
+        let mut shape_bundle = GeometryBuilder::build_as(
+            &shape,
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::SEA_GREEN),
+                outline_mode: StrokeMode::new(Color::DARK_GRAY, size_px / 32.),
+            },
+            Transform {
+                translation: Vec3::new(size_px / 3., 0., -0.1),
+                ..Default::default()
+            },
+        );
+        shape_bundle.visibility.is_visible = is_visible;
+        shape_bundle
     }
 }
