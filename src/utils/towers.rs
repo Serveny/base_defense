@@ -38,7 +38,17 @@ impl Tower {
     pub fn laser_shot(pos: Vec2Board) -> Self {
         Self::LaserShot(TowerValues::laser_shot(pos))
     }
-    pub fn values(&self) -> &TowerValues {
+
+    //    pub fn values(&self) -> &TowerValues {
+    //match self {
+    //Tower::LaserShot(values) => values,
+    //Tower::Microwave(values) => values,
+    //Tower::Rocket(values) => values,
+    //Tower::Grenade(values) => values,
+    //}
+    //}
+
+    pub fn values_mut(&mut self) -> &mut TowerValues {
         match self {
             Tower::LaserShot(values) => values,
             Tower::Microwave(values) => values,
@@ -58,6 +68,7 @@ pub struct TowerValues {
 
     // temp values
     pub current_roation: Angle<f32>,
+    pub target_lock: Option<Entity>,
 }
 
 impl TowerValues {
@@ -70,6 +81,7 @@ impl TowerValues {
             rotation_speed: 180.,
 
             current_roation: Angle::default(),
+            target_lock: None,
         }
     }
 }
@@ -122,15 +134,15 @@ fn tower_children(
     color: Color,
 ) {
     // Tower circle
-    parent.spawn_bundle(tower_circle_shape(tile_size, Vec3::new(0., 0., 0.2)));
+    parent.spawn_bundle(tower_circle_shape(tile_size));
 
     // Tower cannon
     parent
-        .spawn_bundle(tower_laser_cannon(tile_size, Vec3::new(0., 0., 0.1)))
+        .spawn_bundle(tower_laser_cannon(tile_size))
         .insert(TowerCannon);
 
     // Range circle
-    let mut range_circle = tower_range_circle_shape(range_radius_px, Vec3::new(0., 0., 0.2), color);
+    let mut range_circle = tower_range_circle_shape(range_radius_px, color);
     range_circle.visibility.is_visible = false;
     parent
         .spawn_bundle(range_circle)
@@ -156,7 +168,7 @@ fn tower_base_shape(tile_size: f32, translation: Vec3, color: Color) -> ShapeBun
     )
 }
 
-fn tower_circle_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
+fn tower_circle_shape(tile_size: f32) -> ShapeBundle {
     let shape = Circle {
         center: Vec2::default(),
         radius: tile_size / 5.,
@@ -168,13 +180,13 @@ fn tower_circle_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
             outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
         },
         Transform {
-            translation,
+            translation: Vec3::new(0., 0., 0.2),
             ..Default::default()
         },
     )
 }
 
-fn tower_range_circle_shape(radius: f32, translation: Vec3, color: Color) -> ShapeBundle {
+fn tower_range_circle_shape(radius: f32, color: Color) -> ShapeBundle {
     let shape = Circle {
         center: Vec2::default(),
         radius: radius,
@@ -186,26 +198,35 @@ fn tower_range_circle_shape(radius: f32, translation: Vec3, color: Color) -> Sha
             outline_mode: StrokeMode::new(color, 2.),
         },
         Transform {
-            translation,
+            translation: Vec3::new(0., 0., 0.3),
             ..Default::default()
         },
     )
 }
 
-fn tower_laser_cannon(tile_size: f32, translation: Vec3) -> ShapeBundle {
+fn tower_laser_cannon(tile_size: f32) -> ShapeBundle {
     let shape = shapes::Rectangle {
-        origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 4.)),
-        extents: Vec2::new(tile_size / 8., tile_size / 2.),
+        origin: RectangleOrigin::CustomCenter(Vec2::new(0., -tile_size / 4.)),
+        extents: Vec2::new(tile_size / 6., tile_size / 2.),
     };
     GeometryBuilder::build_as(
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, 2.),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
         },
         Transform {
-            translation,
+            translation: Vec3::new(0., 0., 0.1),
+            rotation: Quat::from_rotation_z(0.),
             ..Default::default()
         },
     )
+}
+
+pub fn pos_to_tower_angle(pos: Vec2Board, target: Vec2Board) -> Angle<f32> {
+    Angle::radians((target - pos).angle_between(Vec2::new(0., 1.)))
+}
+
+pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
+    Quat::from_rotation_z(pos_to_tower_angle(pos, target).radians)
 }

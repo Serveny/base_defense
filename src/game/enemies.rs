@@ -1,7 +1,7 @@
 use super::{BoardVisu, GameScreen};
 use crate::{
     board::{step::BoardStep, BoardCache},
-    utils::Vec2Board,
+    utils::{health_bar, Vec2Board},
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
@@ -110,6 +110,9 @@ pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu,
         board_visu.tile_size,
         board_visu.pos_to_px(enemy.pos, 1.),
     ))
+    .with_children(|parent| {
+        health_bar(parent, board_visu.inner_tile_size / 5.);
+    })
     .insert(enemy)
     .insert(GameScreen);
 }

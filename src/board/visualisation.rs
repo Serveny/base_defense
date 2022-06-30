@@ -147,6 +147,9 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
 
     fn spawn_road_end_mark(&self, cmds: &mut Commands, pos: UVec2) {
         cmds.spawn_bundle(self.road_end_shape(&pos))
+            .with_children(|parent| {
+                parent.spawn_bundle(self.road_end_entry_shape());
+            })
             .insert(BoardRoadEndMark(pos))
             .insert(BoardScreen)
             .insert(self.screen);
@@ -297,7 +300,25 @@ impl<TScreen: Component + Copy> BoardVisualisation<TScreen> {
                 outline_mode: StrokeMode::new(Color::DARK_GRAY, self.inner_tile_size / 8.),
             },
             Transform {
-                translation: self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(pos), 1.),
+                translation: self.pos_to_px_with_tile_margin(Vec2Board::from_uvec2_middle(pos), 3.),
+                ..Default::default()
+            },
+        )
+    }
+    fn road_end_entry_shape(&self) -> ShapeBundle {
+        let shape = shapes::Rectangle {
+            origin: RectangleOrigin::Center,
+            extents: Vec2::new(self.inner_tile_size / 2., self.inner_tile_size / 4.),
+        };
+
+        GeometryBuilder::build_as(
+            &shape,
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::SEA_GREEN),
+                outline_mode: StrokeMode::new(Color::DARK_GRAY, self.inner_tile_size / 32.),
+            },
+            Transform {
+                translation: Vec3::new(0., -self.inner_tile_size / 3., -0.1),
                 ..Default::default()
             },
         )

@@ -10,7 +10,7 @@ use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
     utils::{
         despawn_all_of,
-        towers::{Tower, TowerCannon, TowerValues},
+        towers::{pos_to_quat, Tower, TowerCannon, TowerValues},
         Difficulty, Energy, Materials, Vec2Board,
     },
     GameState,
@@ -23,6 +23,7 @@ mod enemies;
 mod wave;
 
 type BoardVisu = BoardVisualisation<GameScreen>;
+type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy), With<Enemy>>;
 
 pub struct GamePlugin;
 
@@ -110,36 +111,71 @@ fn wave_spawn_system(game: Res<Game>, time: Res<Time>, mut actions: EventWriter<
 
 fn tower_system(
     mut cannon_transforms: Query<&mut Transform, With<TowerCannon>>,
-    towers: Query<(&Tower, &Children), With<Tower>>,
-    enemies: Query<&Enemy, With<Enemy>>,
+    mut towers: Query<(&mut Tower, &Children), With<Tower>>,
+    enemies: EnemiesQuery,
 ) {
-    for (tower, children) in towers.iter() {
-        let tower_vals = tower.values();
-        for enemy in enemies.iter() {
-            if is_enemy_in_tower_range(enemy.pos, tower_vals.pos, tower_vals.range_radius) {
-                rotate_tower_cannon_to_pos(&tower_vals, &enemy, children, &mut cannon_transforms);
-            }
-        }
+    for (mut tower, children) in towers.iter_mut() {
+        rotate_tower_cannon_to_enemies(&mut cannon_transforms, children, &mut tower, &enemies);
     }
 }
 
+fn rotate_tower_cannon_to_enemies(
+    cannon_transforms: &mut Query<&mut Transform, With<TowerCannon>>,
+    tower_children: &Children,
+    tower: &mut Tower,
+    enemies: &EnemiesQuery,
+) {
+    let tower_vals = tower.values_mut();
+    if let Some(locked_entity) = tower_vals.target_lock {
+        if let Some(locked_enemy) = find_locked_enemy(locked_entity, &enemies) {
+            rotate_tower_cannon_to_pos(
+                cannon_transforms,
+                tower_vals.pos,
+                locked_enemy.pos,
+                tower_children,
+            );
+        } else {
+            tower_vals.target_lock = None;
+        }
+    } else {
+        tower_vals.target_lock = find_first_enemy_entity_in_range(&tower_vals, enemies);
+    }
+}
+
+fn find_first_enemy_entity_in_range<'a>(
+    tower_vals: &TowerValues,
+    enemies: &'a EnemiesQuery,
+) -> Option<Entity> {
+    for (entity, enemy) in enemies.iter() {
+        if is_enemy_in_tower_range(enemy.pos, tower_vals.pos, tower_vals.range_radius) {
+            return Some(entity);
+        }
+    }
+    None
+}
+
+fn find_locked_enemy<'a>(locked_entity: Entity, enemies: &'a EnemiesQuery) -> Option<&'a Enemy> {
+    for (entity, enemy) in enemies.iter() {
+        if entity == locked_entity {
+            return Some(enemy);
+        }
+    }
+    None
+}
+
 fn is_enemy_in_tower_range(enemy_pos: Vec2Board, tower_pos: Vec2Board, radius: f32) -> bool {
-    enemy_pos.distance(tower_pos) <= radius
+    enemy_pos.distance(tower_pos.into()) <= radius
 }
 
 fn rotate_tower_cannon_to_pos(
-    tower_vals: &TowerValues,
-    enemy: &Enemy,
-    tower_children: &Children,
     cannon_transforms: &mut Query<&mut Transform, With<TowerCannon>>,
+    tower_pos: Vec2Board,
+    enemy_pos: Vec2Board,
+    tower_children: &Children,
 ) {
-    let x = tower_vals.pos.angle_between(enemy.pos.into());
-
-    // println!("{:?}", Angle::radians(x).to_degrees());
-    // Visualisation
     for child in tower_children.iter() {
-        if let Ok(mut trans) = cannon_transforms.get_mut(*child) {
-            trans.rotate(Quat::from_rotation_z(std::f32::consts::PI / 180.))
+        if let Ok(mut transform) = cannon_transforms.get_mut(*child) {
+            transform.rotation = pos_to_quat(tower_pos, enemy_pos);
         }
     }
 }

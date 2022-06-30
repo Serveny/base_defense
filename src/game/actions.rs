@@ -157,7 +157,10 @@ fn back_to_main_menu(ga_params: &mut GameActionParams, query: Query<Entity, With
     for entity in query.iter() {
         ga_params.cmds.entity(entity).despawn_recursive();
     }
-    ga_params.wave_state.set(WaveState::None).unwrap();
+    ga_params
+        .wave_state
+        .set(WaveState::None)
+        .unwrap_or_default();
     ga_params.game_state.set(GameState::Menu).unwrap();
 }
 
@@ -196,9 +199,10 @@ fn on_tile_click(ga_params: &mut GameActionParams, pos: &UVec2) {
                     place_tower(&mut ga_params.cmds, ga_params.board_visu, pos, tower)
                 }
             }
-            Tile::BuildingGround(_) => todo!(),
-            Tile::Road => todo!(),
-            Tile::Empty => todo!(),
+            _ => (),
+            //            Tile::BuildingGround(_) => todo!(),
+            //Tile::Road => todo!(),
+            //Tile::Empty => todo!(),
         }
     }
 }

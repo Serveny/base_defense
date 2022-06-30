@@ -2,6 +2,11 @@
 use crate::board::step::BoardDirection;
 use crate::board::Board;
 use bevy::prelude::*;
+use bevy_prototype_lyon::entity::ShapeBundle;
+use bevy_prototype_lyon::prelude::{
+    DrawMode, FillMode, GeometryBuilder, RectangleOrigin, StrokeMode,
+};
+use bevy_prototype_lyon::shapes;
 use euclid::Angle;
 use serde::{Deserialize, Serialize};
 
@@ -43,11 +48,11 @@ impl Vec2Board {
         self.x.abs() + self.y.abs()
     }
 
-    pub fn distance(&self, other: Vec2Board) -> f32 {
-        ((self.x - other.x).powi(2) - (self.y - other.y).powi(2))
-            .sqrt()
-            .abs()
-    }
+    //    pub fn distance(&self, other: Vec2Board) -> f32 {
+    //((self.x - other.x).powi(2) - (self.y - other.y).powi(2))
+    //.sqrt()
+    //.abs()
+    //}
 
     pub fn add_in_direction(&mut self, distance: f32, direction: BoardDirection) {
         match direction {
@@ -59,7 +64,7 @@ impl Vec2Board {
     }
 
     pub fn degre_between_y(&self, other: Vec2Board) -> Angle<f32> {
-        let b = self.distance(other);
+        let b = self.distance(other.into());
         let c = (self.y - other.y).abs();
         Angle::degrees((b * c).acos())
     }
@@ -243,4 +248,57 @@ pub fn add_popup_window<R>(
             ui.add_space(10.);
             content(ui);
         });
+}
+
+#[derive(Component)]
+struct HealthBar;
+
+#[derive(Component)]
+struct HealthBarPercentage;
+
+pub fn health_bar(parent: &mut ChildBuilder, bar_width: f32) {
+    parent
+        .spawn_bundle(health_bar_background_shape(
+            bar_width,
+            Vec3::new(0., 0., 0.1),
+        ))
+        .insert(HealthBar);
+    parent
+        .spawn_bundle(health_bar_percentage_shape(bar_width))
+        .insert(HealthBar)
+        .insert(HealthBarPercentage);
+}
+
+fn health_bar_background_shape(bar_width: f32, translation: Vec3) -> ShapeBundle {
+    let shape = shapes::Rectangle {
+        origin: RectangleOrigin::Center,
+        extents: Vec2::new(bar_width, bar_width / 4.),
+    };
+    GeometryBuilder::build_as(
+        &shape,
+        DrawMode::Outlined {
+            fill_mode: FillMode::color(Color::SILVER),
+            outline_mode: StrokeMode::new(Color::BLACK, 2.),
+        },
+        Transform {
+            translation,
+            ..Default::default()
+        },
+    )
+}
+
+fn health_bar_percentage_shape(bar_width: f32) -> ShapeBundle {
+    let shape = shapes::Rectangle {
+        origin: RectangleOrigin::BottomLeft,
+        extents: Vec2::new(bar_width * 0.75 - 1., bar_width / 4. - 1.),
+    };
+
+    GeometryBuilder::build_as(
+        &shape,
+        DrawMode::Fill(FillMode::color(Color::GREEN)),
+        Transform {
+            translation: Vec3::new(-bar_width / 2. + 1., -bar_width / 8. + 1., 0.2),
+            ..Default::default()
+        },
+    )
 }

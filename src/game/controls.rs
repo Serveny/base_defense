@@ -10,7 +10,6 @@ pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter
         actions.send(GameActionEvent::BackToMainMenu);
     }
     if keys.just_pressed(KeyCode::LShift) {
-        println!("LShift");
         actions.send(GameActionEvent::ActivateOverview);
     }
     if keys.just_released(KeyCode::LShift) {

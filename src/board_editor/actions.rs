@@ -18,6 +18,21 @@ pub(super) enum EditorActionEvent {
     Leave,
 }
 
+type EditorActionQueries<'w, 's, 'a> = ParamSet<
+    'w,
+    's,
+    (
+        Query<'w, 's, (&'a mut Sprite, &'a Transform, &'a BoardVisualTile), With<BoardVisualTile>>,
+        Query<
+            'w,
+            's,
+            (Entity, &'a mut Transform, &'a mut BoardRoadEndMark),
+            With<BoardRoadEndMark>,
+        >,
+        Query<'w, 's, Entity, With<BoardScreen>>,
+    ),
+>;
+
 struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu> {
     cmds: Commands<'w, 's>,
     game_state: &'gs mut State<GameState>,
@@ -36,11 +51,7 @@ pub(super) fn board_editor_actions(
     mut visu: ResMut<BoardVisu>,
     mut board: ResMut<Board>,
     mut board_cache: ResMut<BoardCache>,
-    mut queries: ParamSet<(
-        Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
-        Query<(Entity, &mut Transform, &mut BoardRoadEndMark), With<BoardRoadEndMark>>,
-        Query<Entity, With<BoardScreen>>,
-    )>,
+    mut queries: EditorActionQueries,
     mut popups: ResMut<Popups>,
     mut editor_actions: EventReader<EditorActionEvent>,
     windows: Res<Windows>,
@@ -76,11 +87,7 @@ pub(super) fn board_editor_actions(
 
 fn set_tile_and_update_mark(
     ea_params: &mut EditorActionParams,
-    queries: &mut ParamSet<(
-        Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
-        Query<(Entity, &mut Transform, &mut BoardRoadEndMark), With<BoardRoadEndMark>>,
-        Query<Entity, With<BoardScreen>>,
-    )>,
+    queries: &mut EditorActionQueries,
     pos: &UVec2,
     tile_to: &Tile,
 ) {
