@@ -1,7 +1,7 @@
 use super::{BoardVisu, GameScreen};
 use crate::{
     board::{step::BoardStep, BoardCache},
-    utils::{health_bar, Vec2Board},
+    utils::{health_bar::health_bar, Vec2Board},
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;

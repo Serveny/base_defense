@@ -1,9 +1,7 @@
 use super::actions::EditorActionEvent;
 use crate::{
     board::Board,
-    utils::{
-        add_error_box, add_ok_cancel_row, add_popup_window, add_row, get_all_boards_in_folder,
-    },
+    utils::{add_error_box, add_row, get_all_boards_in_folder},
 };
 use bevy::prelude::*;
 use bevy_egui::{
@@ -230,4 +228,39 @@ pub(super) fn add_new_edit_popup(
         (is_ok, is_cancel) = add_ok_cancel_row(ui);
     });
     (is_ok, is_cancel)
+}
+
+fn add_ok_cancel_row(ui: &mut bevy_egui::egui::Ui) -> (bool, bool) {
+    let mut is_clicked = (false, false);
+    ui.horizontal(|ui| {
+        if ui
+            .add_sized([200., 60.], bevy_egui::egui::widgets::Button::new("Cancel"))
+            .clicked()
+        {
+            is_clicked.1 = true;
+        }
+        if ui
+            .add_sized([200., 60.], bevy_egui::egui::widgets::Button::new("OK"))
+            .clicked()
+        {
+            is_clicked.0 = true;
+        }
+    });
+    is_clicked
+}
+
+fn add_popup_window<R>(
+    egui_ctx: &mut ResMut<bevy_egui::EguiContext>,
+    title: &str,
+    content: impl FnOnce(&mut bevy_egui::egui::Ui) -> R,
+) {
+    bevy_egui::egui::Window::new(title)
+        .fixed_size((400., 200.))
+        .collapsible(false)
+        .anchor(bevy_egui::egui::Align2::CENTER_CENTER, (0., 0.))
+        .show(egui_ctx.ctx_mut(), |ui| {
+            // Content
+            ui.add_space(10.);
+            content(ui);
+        });
 }

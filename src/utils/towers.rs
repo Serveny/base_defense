@@ -1,6 +1,3 @@
-use std::time::Duration;
-
-use super::Vec2Board;
 use crate::board::visualisation::BoardVisualisation;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{
@@ -13,6 +10,9 @@ use bevy_prototype_lyon::{
 };
 use euclid::Angle;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
+
+use super::Vec2Board;
 
 //pub struct Tower {
 //tower_type: TowerType,

@@ -1,4 +1,4 @@
-use crate::utils::{towers::Tower, Building};
+use crate::utils::{buildings::Building, towers::Tower};
 use serde::{Deserialize, Serialize};
 
 // Place on the board
