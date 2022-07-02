@@ -1,5 +1,6 @@
 // #![allow(unused)]
 use crate::board::Board;
+use bevy::core::Stopwatch;
 use bevy::prelude::*;
 use euclid::Angle;
 use serde::{Deserialize, Serialize};
@@ -7,8 +8,40 @@ pub use vec2_board::Vec2Board;
 
 pub mod buildings;
 pub mod health_bar;
+pub mod shots;
 pub mod towers;
 mod vec2_board;
+
+pub type IngameTime = Stopwatch;
+
+#[derive(Deref, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub struct IngameTimestamp(f32);
+
+impl IngameTimestamp {
+    pub fn new(now: f32) -> Self {
+        Self(now)
+    }
+}
+
+impl Add<Duration> for IngameTimestamp {
+    type Output = Self;
+
+    fn add(self, rhs: Duration) -> Self::Output {
+        IngameTimestamp(self.0 + rhs.as_secs_f32())
+    }
+}
+
+impl AddAssign<Duration> for IngameTimestamp {
+    fn add_assign(&mut self, rhs: Duration) {
+        *self = IngameTimestamp(self.0 + rhs.as_secs_f32());
+    }
+}
+
+impl From<f32> for IngameTimestamp {
+    fn from(val: f32) -> Self {
+        Self(val)
+    }
+}
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -45,7 +78,9 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
 use std::error::Error;
 use std::fs::{read_dir, read_to_string, DirEntry, File};
 use std::io::Write;
+use std::ops::{Add, AddAssign};
 use std::path::Path;
+use std::time::Duration;
 
 pub fn save_board_to_file(name: &str, board: &Board) -> Result<(), Box<dyn Error>> {
     let mut output = File::create(Path::new(&format!("./maps/{}_map.json", name)))?;

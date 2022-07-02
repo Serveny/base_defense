@@ -5,6 +5,7 @@ use crate::{
         Board, BoardCache, Tile,
     },
     utils::{save_board_to_file, GameState},
+    zoom_cam_to_board, CamQuery,
 };
 use bevy::prelude::*;
 
@@ -25,6 +26,7 @@ type EditorActionQueries<'w, 's, 'a> = ParamSet<
         Query<'w, 's, (&'a mut Sprite, &'a Transform, &'a BoardVisualTile), With<BoardVisualTile>>,
         RoadEndMarkQuery<'w, 's, 'a>,
         Query<'w, 's, Entity, With<BoardScreen>>,
+        CamQuery<'w, 's, 'a>,
     ),
 >;
 
@@ -70,10 +72,10 @@ pub(super) fn board_editor_actions(
                 EditorActionEvent::Resize => repaint(&mut ea_params, queries.p2()),
                 EditorActionEvent::Save => save_board(&mut ea_params),
                 EditorActionEvent::Load(board) => {
-                    load_board(&mut ea_params, queries.p2(), board.clone())
+                    load_board(&mut ea_params, &mut queries, board.clone())
                 }
-                EditorActionEvent::New(size) => new_board(&mut ea_params, queries.p2(), *size),
-                EditorActionEvent::Edit(size) => edit_board(&mut ea_params, queries.p2(), *size),
+                EditorActionEvent::New(size) => new_board(&mut ea_params, &mut queries, *size),
+                EditorActionEvent::Edit(size) => edit_board(&mut ea_params, &mut queries, *size),
                 EditorActionEvent::Leave => leave(&mut ea_params),
             }
         }
@@ -129,33 +131,48 @@ fn save_board(ea_params: &mut EditorActionParams) {
     }
 }
 
-fn load_board(ea_params: &mut EditorActionParams, query: BoardScreenQuery, new_board: Board) {
+fn load_board(
+    ea_params: &mut EditorActionParams,
+    queries: &mut EditorActionQueries,
+    new_board: Board,
+) {
     if let Popups::Load(_) = ea_params.popups {
         *ea_params.board_cache = BoardCache::new(&new_board);
         *ea_params.board = new_board;
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
-        repaint(ea_params, query);
+        repaint(ea_params, queries.p2());
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }
 
-fn new_board(ea_params: &mut EditorActionParams, query: BoardScreenQuery, size: (u8, u8)) {
+fn new_board(
+    ea_params: &mut EditorActionParams,
+    queries: &mut EditorActionQueries,
+    size: (u8, u8),
+) {
     if let Popups::New(_) = ea_params.popups {
         let new_board = Board::empty(size.0, size.1);
         *ea_params.board_cache = BoardCache::new(&new_board);
         *ea_params.board = new_board;
         *ea_params.popups = Popups::None;
-        repaint(ea_params, query);
+        repaint(ea_params, queries.p2());
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }
 
-fn edit_board(ea_params: &mut EditorActionParams, query: BoardScreenQuery, size: (u8, u8)) {
+fn edit_board(
+    ea_params: &mut EditorActionParams,
+    queries: &mut EditorActionQueries,
+    size: (u8, u8),
+) {
     if let Popups::Edit(_) = ea_params.popups {
         ea_params.board.change_size(size.0, size.1);
         *ea_params.board_cache = BoardCache::new(ea_params.board);
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
-        repaint(ea_params, query);
+        repaint(ea_params, queries.p2());
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }
 

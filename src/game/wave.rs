@@ -1,8 +1,8 @@
 use bevy::prelude::*;
-use bevy::utils::Instant;
 use std::time::Duration;
 
 use crate::board::BoardCache;
+use crate::utils::{IngameTime, IngameTimestamp};
 
 use super::actions::GameActionEvent;
 use super::enemies::{enemies_walk_until_wave_end, spawn_enemy_component, Enemy, EnemyType};
@@ -17,12 +17,12 @@ pub enum WaveState {
 #[derive(Clone)]
 pub struct Wave {
     wave_no: u32,
-    pub next_enemy_spawn: Instant,
+    pub next_enemy_spawn: IngameTimestamp,
     enemies_spawned: u32,
 }
 
 impl Wave {
-    pub fn new(wave_no: u32, next_enemy_spawn: Instant) -> Self {
+    pub fn new(wave_no: u32, next_enemy_spawn: IngameTimestamp) -> Self {
         Self {
             wave_no,
             enemies_spawned: 0,
@@ -46,22 +46,23 @@ pub(super) fn wave_actions(
     query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
     mut wave: ResMut<Wave>,
     time: Res<Time>,
+    ingame_time: Res<IngameTime>,
     board_cache: Res<BoardCache>,
     board_visu: Res<BoardVisu>,
 ) {
-    if let Some(last_update) = time.last_update() {
-        let is_wave_end = wave.is_wave_end();
-        // Let enemies walk
-        if enemies_walk_until_wave_end(&mut cmds, query, time.delta(), &board_visu, &board_cache)
-            && is_wave_end
-        {
-            actions.send(GameActionEvent::EndWave);
-        }
+    let is_wave_end = wave.is_wave_end();
+    let now = IngameTimestamp::new(ingame_time.elapsed_secs());
 
-        // Spawn enemy on next spawn time point
-        if last_update >= wave.next_enemy_spawn && !is_wave_end {
-            spawn_enemy_and_prepare_next(&mut cmds, &mut wave, &board_cache, &board_visu);
-        }
+    // Let enemies walk
+    if enemies_walk_until_wave_end(&mut cmds, query, time.delta(), &board_visu, &board_cache)
+        && is_wave_end
+    {
+        actions.send(GameActionEvent::EndWave);
+    }
+
+    // Spawn enemy on next spawn time point
+    if now >= wave.next_enemy_spawn && !is_wave_end {
+        spawn_enemy_and_prepare_next(&mut cmds, &mut wave, &board_cache, &board_visu);
     }
 }
 

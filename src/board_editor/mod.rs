@@ -11,8 +11,9 @@ use self::{
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
     utils::{despawn_all_of, GameState},
+    zoom_cam_to_board,
 };
-use bevy::{prelude::*, window::WindowResized};
+use bevy::{prelude::*, render::camera::Camera2d, window::WindowResized};
 
 mod actions;
 mod controls;
@@ -22,7 +23,7 @@ mod top_bar;
 
 type BoardVisu = BoardVisualisation<BoardEditorScreen>;
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, Default)]
 struct BoardEditorScreen;
 
 const TOP_BAR_HEIGHT_PX: f32 = 40.0;
@@ -45,7 +46,6 @@ impl Plugin for BoardEditorPlugin {
             .add_system_set(
                 SystemSet::on_update(GameState::MapEditor)
                     .with_system(mouse_input)
-                    .with_system(on_resize)
                     .with_system(add_top_menu_bar.before(add_side_bar))
                     .with_system(add_side_bar)
                     .with_system(add_load_board_window)
@@ -62,19 +62,18 @@ impl Plugin for BoardEditorPlugin {
     }
 }
 fn create_visu(windows: &Windows, board: &Board) -> BoardVisu {
-    BoardVisu::new(
-        windows.get_primary().unwrap(),
-        &board,
-        EDITOR_BOARD_START.0,
-        EDITOR_BOARD_START.1,
-        5.,
-        BoardEditorScreen,
-    )
+    BoardVisu::new(0.9)
 }
 
-fn editor_setup(mut cmds: Commands, windows: Res<Windows>) {
+fn editor_setup(
+    mut cmds: Commands,
+    windows: Res<Windows>,
+    cam_query: Query<&mut OrthographicProjection, With<Camera2d>>,
+) {
     let board = Board::default();
     let board_cache = BoardCache::new(&board);
+
+    zoom_cam_to_board(&board, cam_query, &windows);
     let visu = create_visu(&windows, &board);
     visu.draw_board(&mut cmds, &board, &board_cache);
     cmds.insert_resource(visu);
@@ -82,12 +81,6 @@ fn editor_setup(mut cmds: Commands, windows: Res<Windows>) {
     cmds.insert_resource(board_cache);
     cmds.init_resource::<BoardEditorState>();
     cmds.insert_resource(Popups::None);
-}
-
-fn on_resize(mut actions: EventWriter<EditorActionEvent>, resize_ev: EventReader<WindowResized>) {
-    if !resize_ev.is_empty() {
-        actions.send(EditorActionEvent::Resize);
-    }
 }
 
 fn clean_up_editor(mut commands: Commands) {

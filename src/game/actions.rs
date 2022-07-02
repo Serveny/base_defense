@@ -1,16 +1,17 @@
 use super::{
     enemies::{spawn_enemy_component, Enemy},
     wave::{Wave, WaveState},
-    BoardVisu, Game, GameScreen,
+    BoardVisu, Game, GameScreen, IngameTime,
 };
 use crate::{
     board::{
-        visualisation::{BoardHoverCross, BoardScreen},
+        visualisation::{BoardScreen, HoverCrossQuery},
         Board, BoardCache, Tile,
     },
     utils::{
+        shots::{laser_shape, Shot},
         towers::{draw_tower, Tower, TowerRangeCircle},
-        GameState, Vec2Board,
+        GameState, IngameTimestamp, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -22,7 +23,7 @@ type GameActionQueries<'w, 's, 'a> = ParamSet<
     (
         Query<'w, 's, Entity, With<BoardScreen>>,
         Query<'w, 's, (Entity, &'a Enemy), With<Enemy>>,
-        Query<'w, 's, (Entity, &'a mut Transform), With<BoardHoverCross>>,
+        HoverCrossQuery<'w, 's, 'a>,
         Query<'w, 's, (&'a mut Visibility, &'a TowerRangeCircle), With<TowerRangeCircle>>,
         Query<'w, 's, Entity, With<GameScreen>>,
     ),
@@ -38,10 +39,11 @@ pub enum GameActionEvent {
     TileLeftClick(UVec2),
     ActivateOverview,
     DeactivateOverview,
+    Shoot(Shot),
 }
 
 #[allow(dead_code)]
-struct GameActionParams<'w, 's, 'g, 'gs, 'visu, 'b, 'bc, 'ws, 'win, 't> {
+struct GameActionParams<'w, 's, 'g, 'gs, 'visu, 'b, 'bc, 'ws, 'win> {
     cmds: Commands<'w, 's>,
     game: &'g mut Game,
     game_state: &'gs mut State<GameState>,
@@ -50,7 +52,7 @@ struct GameActionParams<'w, 's, 'g, 'gs, 'visu, 'b, 'bc, 'ws, 'win, 't> {
     board_cache: &'bc BoardCache,
     wave_state: &'ws mut State<WaveState>,
     windows: &'win Windows,
-    time: &'t Time,
+    now: IngameTimestamp,
 }
 
 pub(super) fn game_actions(
@@ -64,7 +66,7 @@ pub(super) fn game_actions(
     mut board: ResMut<Board>,
     board_cache: Res<BoardCache>,
     windows: Res<Windows>,
-    time: Res<Time>,
+    time: Res<IngameTime>,
 ) {
     if !game_actions.is_empty() {
         let mut ga_params = GameActionParams {
@@ -76,7 +78,7 @@ pub(super) fn game_actions(
             board_cache: &board_cache,
             wave_state: &mut wave_state,
             windows: &windows,
-            time: &time,
+            now: time.elapsed_secs().into(),
         };
         for event in game_actions.iter() {
             match event {
@@ -88,7 +90,7 @@ pub(super) fn game_actions(
                     }
                 }
                 GameActionEvent::UnhoverTile => {
-                    BoardVisu::delete_hover_cross(&mut ga_params.cmds, &mut queries.p2());
+                    BoardVisu::hide_hover_cross(&mut queries.p2());
                     if !ga_params.game.is_overview {
                         set_range_circles(&mut queries, false);
                     }
@@ -105,13 +107,14 @@ pub(super) fn game_actions(
                     ga_params.game.is_overview = false;
                     set_range_circles(&mut queries, false);
                 }
+                GameActionEvent::Shoot(shot) => shoot(&mut ga_params, shot),
             }
         }
     }
 }
 
 fn repaint(ga_params: &mut GameActionParams, queries: &mut GameActionQueries) {
-    *ga_params.board_visu = create_visu(ga_params.windows, ga_params.board);
+    *ga_params.board_visu = create_visu(ga_params.board);
     ga_params.board_visu.repaint(
         &mut ga_params.cmds,
         queries.p0().into(),
@@ -121,35 +124,20 @@ fn repaint(ga_params: &mut GameActionParams, queries: &mut GameActionQueries) {
     resize_enemies(ga_params, queries.p1());
 }
 
-fn create_visu(windows: &Windows, board: &Board) -> BoardVisu {
-    BoardVisu::new(
-        windows.get_primary().unwrap(),
-        &board,
-        0.,
-        0.,
-        0.,
-        GameScreen,
-    )
+fn create_visu(board: &Board) -> BoardVisu {
+    BoardVisu::new(1.)
 }
 
 fn draw_hover_cross(
     ga_params: &mut GameActionParams,
-    query: &mut Query<(Entity, &mut Transform), With<BoardHoverCross>>,
+    query: &mut HoverCrossQuery,
     pos: &Vec2Board,
     tile: &Tile,
 ) {
     match tile {
-        Tile::TowerGround(_) => {
-            ga_params
-                .board_visu
-                .draw_hover_cross(&mut ga_params.cmds, query, pos)
-        }
-        Tile::BuildingGround(_) => {
-            ga_params
-                .board_visu
-                .draw_hover_cross(&mut ga_params.cmds, query, pos)
-        }
-        _ => BoardVisu::delete_hover_cross(&mut ga_params.cmds, query),
+        Tile::TowerGround(_) => ga_params.board_visu.show_hover_cross(query, pos),
+        Tile::BuildingGround(_) => ga_params.board_visu.show_hover_cross(query, pos),
+        _ => BoardVisu::hide_hover_cross(query),
     }
 }
 
@@ -178,17 +166,15 @@ fn resize_enemies(ga_params: &mut GameActionParams, query: Query<(Entity, &Enemy
 fn start_wave(ga_params: &mut GameActionParams) {
     ga_params.game.next_wave_spawn = None;
     ga_params.game.wave_no += 1;
-    ga_params.cmds.insert_resource(Wave::new(
-        ga_params.game.wave_no,
-        ga_params.time.last_update().unwrap(),
-    ));
+    ga_params
+        .cmds
+        .insert_resource(Wave::new(ga_params.game.wave_no, ga_params.now));
     ga_params.wave_state.set(WaveState::WaveRunning).unwrap();
 }
 
 fn end_wave_and_prepare_next(ga_params: &mut GameActionParams) {
     ga_params.wave_state.set(WaveState::None).unwrap();
-    ga_params.game.next_wave_spawn =
-        Some(ga_params.time.last_update().unwrap() + Duration::from_secs(1));
+    ga_params.game.next_wave_spawn = Some(ga_params.now + Duration::from_secs(1));
 }
 
 fn on_tile_click(ga_params: &mut GameActionParams, pos: &UVec2) {
@@ -196,11 +182,17 @@ fn on_tile_click(ga_params: &mut GameActionParams, pos: &UVec2) {
         match tile {
             Tile::TowerGround(tower) => {
                 if tower.is_none() {
-                    place_tower(&mut ga_params.cmds, ga_params.board_visu, pos, tower)
+                    place_tower(
+                        &mut ga_params.cmds,
+                        tower,
+                        ga_params.board_visu,
+                        pos,
+                        ga_params.now,
+                    );
                 }
             }
             _ => (),
-            //            Tile::BuildingGround(_) => todo!(),
+            //Tile::BuildingGround(_) => todo!(),
             //Tile::Road => todo!(),
             //Tile::Empty => todo!(),
         }
@@ -209,13 +201,14 @@ fn on_tile_click(ga_params: &mut GameActionParams, pos: &UVec2) {
 
 fn place_tower(
     cmds: &mut Commands,
+    tower: &mut Option<Tower>,
     board_visu: &BoardVisu,
     pos: &UVec2,
-    tower: &mut Option<Tower>,
+    now: IngameTimestamp,
 ) {
     let pos = Vec2Board::from_uvec2_middle(pos);
-    let new_tower = Tower::laser_shot(pos);
-    draw_tower(cmds, board_visu, pos, &new_tower);
+    let new_tower = Tower::laser_shot(pos, now);
+    draw_tower(cmds, board_visu, pos, &new_tower, now);
     *tower = Some(new_tower);
 }
 
@@ -229,4 +222,12 @@ fn show_range_circle(queries: &mut GameActionQueries, pos: &UVec2) {
     queries
         .p3()
         .for_each_mut(|(mut visi, comp)| visi.is_visible = **comp == *pos);
+}
+
+fn shoot(ga_params: &mut GameActionParams, shot: &Shot) {
+    ga_params
+        .cmds
+        .spawn_bundle(laser_shape(ga_params.board_visu.inner_tile_size))
+        .insert(shot.clone());
+    println!("Shoot: {:?}", shot);
 }

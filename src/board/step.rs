@@ -43,9 +43,9 @@ impl BoardStep {
 
     pub fn angle(&self) -> Angle<f32> {
         Angle::degrees(match self.direction {
-            BoardDirection::Right => 0.,
+            BoardDirection::Left => 0.,
             BoardDirection::Up => 90.,
-            BoardDirection::Left => 180.,
+            BoardDirection::Right => 180.,
             BoardDirection::Down => 270.,
         })
     }

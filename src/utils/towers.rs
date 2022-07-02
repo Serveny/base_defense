@@ -8,11 +8,13 @@ use bevy_prototype_lyon::{
     },
     shapes::{self, Circle},
 };
-use euclid::Angle;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-use super::Vec2Board;
+use super::{
+    shots::{Shot, TowerStatus},
+    IngameTimestamp, Vec2Board,
+};
 
 //pub struct Tower {
 //tower_type: TowerType,
@@ -35,8 +37,8 @@ pub enum Tower {
 }
 
 impl Tower {
-    pub fn laser_shot(pos: Vec2Board) -> Self {
-        Self::LaserShot(TowerValues::laser_shot(pos))
+    pub fn laser_shot(pos: Vec2Board, now: IngameTimestamp) -> Self {
+        Self::LaserShot(TowerValues::laser_shot(pos, now))
     }
 
     //    pub fn values(&self) -> &TowerValues {
@@ -62,27 +64,31 @@ impl Tower {
 pub struct TowerValues {
     pub pos: Vec2Board,
     pub range_radius: f32,
-    pub damage: u32,
+    pub shot: Shot,
     pub reload_duration: Duration,
-    pub rotation_speed: f32,
 
     // temp values
-    pub current_roation: Angle<f32>,
     pub target_lock: Option<Entity>,
+    pub tower_status: TowerStatus,
 }
 
 impl TowerValues {
-    pub fn laser_shot(pos: Vec2Board) -> Self {
+    pub fn laser_shot(pos: Vec2Board, now: IngameTimestamp) -> Self {
+        let reload_duration = Duration::from_secs(1);
         Self {
             pos,
             range_radius: 2.,
-            damage: 1,
-            reload_duration: Duration::from_secs(1),
-            rotation_speed: 180.,
+            shot: Shot::laser(),
+            reload_duration,
 
-            current_roation: Angle::default(),
             target_lock: None,
+            tower_status: TowerStatus::Reloading(now + reload_duration),
         }
+    }
+    pub fn shoot(&self, target: Vec2Board) -> Shot {
+        let mut shot = self.shot.clone();
+        shot.set_target(target);
+        shot
     }
 }
 
@@ -96,37 +102,39 @@ pub trait BoardTower {
     fn draw(&self, cmds: &mut Commands);
 }
 
-pub fn draw_tower<TScreen: Component + Copy>(
+pub fn draw_tower<TScreen: Component + Copy + Default>(
     cmds: &mut Commands,
     board_visu: &BoardVisualisation<TScreen>,
     pos: Vec2Board,
     tower: &Tower,
+    time: IngameTimestamp,
 ) {
     match tower {
-        Tower::LaserShot(values) => spawn_laser_shot_tower(cmds, board_visu, pos, values),
+        Tower::LaserShot(values) => spawn_laser_shot_tower(cmds, board_visu, pos, values, time),
         Tower::Microwave(_) => todo!(),
         Tower::Rocket(_) => todo!(),
         Tower::Grenade(_) => todo!(),
     };
 }
 
-fn spawn_laser_shot_tower<TScreen: Component + Copy>(
+fn spawn_laser_shot_tower<TScreen: Component + Copy + Default>(
     cmds: &mut Commands,
     board_visu: &BoardVisualisation<TScreen>,
     pos: Vec2Board,
     tower_values: &TowerValues,
+    time: IngameTimestamp,
 ) {
     let tile_size = board_visu.inner_tile_size;
-    let translation = board_visu.pos_to_px_with_tile_margin(pos, 1.);
     let color = Color::RED;
-    let range_radius_px = board_visu.distance_board_to_px(tower_values.range_radius);
-    cmds.spawn_bundle(tower_base_shape(tile_size, translation.clone(), color))
-        .with_children(|parent| tower_children(parent, tile_size, range_radius_px, &pos, color))
-        .insert(Tower::LaserShot(TowerValues::laser_shot(pos)))
-        .insert(board_visu.screen);
+    cmds.spawn_bundle(tower_base_shape(tile_size, pos.to_vec3(1.), color))
+        .with_children(|parent| {
+            laser_tower_children(parent, tile_size, tower_values.range_radius, &pos, color);
+        })
+        .insert(Tower::LaserShot(TowerValues::laser_shot(pos, time)))
+        .insert(TScreen::default());
 }
 
-fn tower_children(
+fn laser_tower_children(
     parent: &mut ChildBuilder,
     tile_size: f32,
     range_radius_px: f32,
@@ -147,6 +155,8 @@ fn tower_children(
     parent
         .spawn_bundle(range_circle)
         .insert(TowerRangeCircle(pos.as_uvec2()));
+
+    // Laser
 }
 
 fn tower_base_shape(tile_size: f32, translation: Vec3, color: Color) -> ShapeBundle {

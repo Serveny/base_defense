@@ -19,7 +19,7 @@ pub enum EnemyType {
 #[derive(Component, Clone)]
 pub struct Enemy {
     speed: f32,
-    health: u32,
+    health: f32,
     pub pos: Vec2Board,
     enemy_type: EnemyType,
     current_step: BoardStep,
@@ -39,7 +39,7 @@ impl Enemy {
     pub fn new_normal(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
             speed: 1.,
-            health: 100,
+            health: 100.,
             pos,
             enemy_type: EnemyType::Normal,
             current_step,
@@ -49,7 +49,7 @@ impl Enemy {
     pub fn new_speeder(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
             speed: 2.,
-            health: 10,
+            health: 10.,
             pos,
             enemy_type: EnemyType::Speeder,
             current_step,
@@ -59,7 +59,7 @@ impl Enemy {
     pub fn new_tank(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
             speed: 0.2,
-            health: 1000,
+            health: 1000.,
             pos,
             enemy_type: EnemyType::Tank,
             current_step,
@@ -99,22 +99,19 @@ pub(super) fn enemies_walk_until_wave_end(
         if enemy.walk_until_end(dur, board_cache) {
             cmds.entity(entity).despawn_recursive();
         } else {
-            transform.translation = visu.pos_to_px(enemy.pos, 1.);
+            transform.translation = enemy.pos.to_vec3(1.);
         }
     });
     query.is_empty()
 }
 
 pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu, enemy: Enemy) {
-    cmds.spawn_bundle(enemy_normal_shape(
-        board_visu.tile_size,
-        board_visu.pos_to_px(enemy.pos, 1.),
-    ))
-    .with_children(|parent| {
-        health_bar(parent, board_visu.inner_tile_size / 5.);
-    })
-    .insert(enemy)
-    .insert(GameScreen);
+    cmds.spawn_bundle(enemy_normal_shape(1., enemy.pos.to_vec3(1.1)))
+        .with_children(|parent| {
+            health_bar(parent, board_visu.inner_tile_size / 5.);
+        })
+        .insert(enemy)
+        .insert(GameScreen);
 }
 
 fn enemy_normal_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
