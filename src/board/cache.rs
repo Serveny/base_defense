@@ -36,7 +36,7 @@ impl BoardCache {
             road_tile_posis,
             road_start_pos: road_start,
             road_end_pos: road_end,
-            road_path: road_path,
+            road_path,
         }
     }
 
@@ -51,7 +51,7 @@ impl BoardCache {
             if (x == 0 || y == 0 || x == board_width as u32 - 1 || y == board_heigt as u32 - 1)
                 && Self::get_neighbors(pos, road_tile_posis).len() == 1
             {
-                return Some(pos.clone());
+                return Some(*pos);
             }
         }
         None
@@ -102,7 +102,7 @@ impl BoardCache {
 // Validation
 impl BoardCache {
     pub fn validate(&self) -> Result<(), &str> {
-        if self.tower_tile_posis.len() < 1 {
+        if self.tower_tile_posis.is_empty() {
             return Err("Need tower tiles");
         }
         if self.building_tile_posis.len() < 5 {
@@ -112,14 +112,14 @@ impl BoardCache {
             return Err("Need minimal two road tiles");
         }
         if let Some(start) = self.road_start_pos {
-            if Self::are_tiles_connected(&self.road_tile_posis, start.clone()).is_none() {
+            if Self::are_tiles_connected(&self.road_tile_posis, start).is_none() {
                 return Err("All road tiles must be connected to each other");
             }
         } else {
             return Err("Need road starting point at the board edge");
         }
-        let build_tile = self.building_tile_posis.first().unwrap().clone();
-        if Self::are_tiles_connected(&self.building_tile_posis, build_tile).is_none() {
+        let build_tile = self.building_tile_posis.first().unwrap();
+        if Self::are_tiles_connected(&self.building_tile_posis, *build_tile).is_none() {
             return Err("All building tiles must be connected to each other");
         }
         if Self::have_tiles_more_than_max_neighbors(2, &self.road_tile_posis) {
@@ -134,7 +134,7 @@ impl BoardCache {
 
     fn are_tiles_connected(tile_posis: &IndexSet<UVec2>, start: UVec2) -> Option<IndexSet<UVec2>> {
         let mut connected_tiles: IndexSet<UVec2> = IndexSet::new();
-        Self::check_neighbors(start.clone(), tile_posis, &mut connected_tiles);
+        Self::check_neighbors(start, tile_posis, &mut connected_tiles);
         if tile_posis.len() == connected_tiles.len() {
             Some(connected_tiles)
         } else {
@@ -144,7 +144,7 @@ impl BoardCache {
 
     fn check_neighbors(pos: UVec2, tiles: &IndexSet<UVec2>, linked: &mut IndexSet<UVec2>) {
         linked.insert(pos);
-        for neighbor in Self::get_neighbors(&pos, &tiles) {
+        for neighbor in Self::get_neighbors(&pos, tiles) {
             if tiles.get(&neighbor).is_some() && linked.get(&neighbor).is_none() {
                 Self::check_neighbors(neighbor, tiles, linked);
             }
@@ -198,7 +198,7 @@ impl BoardCache {
     ) -> Option<UVec2> {
         for pos in road_tile_posis {
             if Self::get_neighbors(pos, building_tile_posis).len() == 3 {
-                return Some(pos.clone());
+                return Some(*pos);
             }
         }
         None

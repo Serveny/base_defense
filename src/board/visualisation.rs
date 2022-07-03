@@ -107,13 +107,7 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
     }
 
     fn spawn_road_end_mark(&self, cmds: &mut Commands, board_cache: &BoardCache) {
-        spawn_road_end_mark(
-            cmds,
-            board_cache,
-            self.inner_tile_size,
-            Vec2Board::from_uvec2_middle(&board_cache.road_end_pos.unwrap_or_default()).to_vec3(1.),
-            TScreen::default(),
-        );
+        spawn_road_end_mark(cmds, board_cache, self.inner_tile_size, TScreen::default());
     }
 
     pub fn change_tile(
@@ -123,7 +117,7 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
     ) {
         for (mut sprite, _, vis_tile) in query.iter_mut() {
             if vis_tile.pos == *pos {
-                sprite.color = Self::get_tile_color(&to);
+                sprite.color = Self::get_tile_color(to);
                 break;
             }
         }
@@ -236,17 +230,6 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
 
         pb.build()
     }
-
-    fn get_tile_size_px(available_width_px: f32, available_height_px: f32, board: &Board) -> f32 {
-        let tile_width_px = available_width_px / board.width as f32;
-        let tile_height_px = available_height_px / board.height as f32;
-
-        if tile_height_px > tile_width_px {
-            tile_width_px
-        } else {
-            tile_height_px
-        }
-    }
 }
 
 mod road_end_mark {
@@ -261,7 +244,6 @@ mod road_end_mark {
         cmds: &mut Commands,
         board_cache: &BoardCache,
         tile_size: f32,
-        translation: Vec3,
         screen: TScreen,
     ) {
         let is_visible =
@@ -272,11 +254,12 @@ mod road_end_mark {
         } else {
             Angle::default()
         };
+        let pos = board_cache.road_end_pos.unwrap_or_default();
 
         cmds.spawn_bundle(road_end_shape(
             tile_size,
             Transform {
-                translation,
+                translation: Vec3::new(pos.x as f32 + 0.5, pos.y as f32 + 0.5, 3.),
                 rotation: Quat::from_rotation_z(angle.radians),
                 ..Default::default()
             },

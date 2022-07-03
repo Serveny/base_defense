@@ -92,7 +92,6 @@ pub(super) fn enemies_walk_until_wave_end(
     cmds: &mut Commands,
     mut query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
     dur: Duration,
-    visu: &BoardVisu,
     board_cache: &BoardCache,
 ) -> bool {
     query.for_each_mut(|(entity, mut enemy, mut transform)| {

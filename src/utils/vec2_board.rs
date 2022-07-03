@@ -44,7 +44,7 @@ impl Vec2Board {
         Angle::degrees((b * c).acos())
     }
 
-    pub fn to_vec3(&self, z: f32) -> Vec3 {
+    pub fn to_vec3(self, z: f32) -> Vec3 {
         Vec3::new(self.x, self.y, z)
     }
 }

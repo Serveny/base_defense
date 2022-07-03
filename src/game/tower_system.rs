@@ -23,14 +23,14 @@ pub(super) fn tower_system(
     let now = IngameTimestamp::new(time.elapsed_secs());
     for (mut tower, children) in towers.iter_mut() {
         let mut tower_vals = tower.values_mut();
-        let locked_enemy = lock_tower_to_enemy(&mut tower_vals, &enemies);
+        let locked_enemy = lock_tower_to_enemy(tower_vals, &enemies);
         rotate_cannon_to_enemy(
             &mut cannon_transforms,
             children,
             tower_vals.pos,
             locked_enemy,
         );
-        shoot_or_reload(&mut actions, &mut tower_vals, locked_enemy, now);
+        shoot_or_reload(&mut actions, tower_vals, locked_enemy, now);
     }
 }
 
@@ -40,14 +40,14 @@ fn lock_tower_to_enemy<'a>(
 ) -> Option<&'a Enemy> {
     if let Some(locked_entity) = tower_vals.target_lock {
         if let Some(locked_enemy) =
-            find_locked_enemy_in_tower_range(locked_entity, &enemies, &tower_vals)
+            find_locked_enemy_in_tower_range(locked_entity, enemies, tower_vals)
         {
             return Some(locked_enemy);
         } else {
             tower_vals.target_lock = None;
         }
     } else {
-        tower_vals.target_lock = find_first_enemy_entity_in_range(&tower_vals, enemies);
+        tower_vals.target_lock = find_first_enemy_entity_in_range(tower_vals, enemies);
     }
     None
 }

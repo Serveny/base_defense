@@ -19,10 +19,7 @@ pub(super) enum Popups {
 
 impl Popups {
     pub fn is_open(&self) -> bool {
-        match *self {
-            Popups::None => false,
-            _ => true,
-        }
+        !matches!(self, Popups::None)
     }
 }
 

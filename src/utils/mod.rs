@@ -1,3 +1,4 @@
+use crate::CamQuery;
 // #![allow(unused)]
 use crate::board::Board;
 use bevy::core::Stopwatch;
@@ -142,4 +143,31 @@ pub fn pos_to_angle(pos: Vec2Board, target: Vec2Board) -> Angle<f32> {
 
 pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
     Quat::from_rotation_z(pos_to_angle(pos, target).radians)
+}
+
+pub fn zoom_cam_to_board(
+    board: &Board,
+    mut cam_query: CamQuery,
+    windows: &Windows,
+    margin_left_top_px: Vec2,
+) {
+    let win = windows.get_primary().unwrap();
+    let margin = cam_margin(board, win);
+    let mut cam = cam_query.single_mut();
+    (cam.left, cam.right) = (-margin.x, board.width as f32 + margin.x);
+    (cam.bottom, cam.top) = (-margin.y, board.height as f32 + margin.y);
+}
+
+fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
+    let b_w = board.width as f32;
+    let b_h = board.height as f32;
+
+    let tile_width_px = win.width() / b_w;
+    let tile_height_px = win.height() / b_h;
+
+    if tile_height_px > tile_width_px {
+        Vec2Board::new(0., ((win.height() / tile_width_px) - b_h) / 2.)
+    } else {
+        Vec2Board::new(((win.width() / tile_height_px) - b_w) / 2., 0.)
+    }
 }

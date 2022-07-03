@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 pub use self::cache::BoardCache;
 pub use self::tile::Tile;
 use bevy::prelude::*;
@@ -59,35 +61,43 @@ impl Board {
 
     pub fn change_size(&mut self, new_width: u8, new_heigth: u8) {
         // Add/reduce height
-        if new_heigth > self.height {
-            let to_add = new_heigth - self.height;
-            for _ in 0..to_add {
-                let mut row = Vec::new();
-                for _ in 0..self.width {
-                    row.push(Tile::Empty);
+        match new_heigth.cmp(&self.height) {
+            Ordering::Less => {
+                let to_del = self.height - new_heigth;
+                for _ in 0..to_del {
+                    self.tiles.pop();
                 }
-                self.tiles.push(row);
             }
-        } else if new_heigth < self.height {
-            let to_del = self.height - new_heigth;
-            for _ in 0..to_del {
-                self.tiles.pop();
+            Ordering::Equal => (),
+            Ordering::Greater => {
+                let to_add = new_heigth - self.height;
+                for _ in 0..to_add {
+                    let mut row = Vec::new();
+                    for _ in 0..self.width {
+                        row.push(Tile::Empty);
+                    }
+                    self.tiles.push(row);
+                }
             }
         }
 
         // Add/reduce width
-        if new_width > self.width {
-            let to_add = new_width - self.width;
-            for row in &mut self.tiles {
-                for _ in 0..to_add {
-                    row.push(Tile::Empty);
+        match new_width.cmp(&self.width) {
+            Ordering::Less => {
+                let to_del = self.width - new_width;
+                for row in &mut self.tiles {
+                    for _ in 0..to_del {
+                        row.pop();
+                    }
                 }
             }
-        } else if new_width < self.width {
-            let to_del = self.width - new_width;
-            for row in &mut self.tiles {
-                for _ in 0..to_del {
-                    row.pop();
+            Ordering::Equal => (),
+            Ordering::Greater => {
+                let to_add = new_width - self.width;
+                for row in &mut self.tiles {
+                    for _ in 0..to_add {
+                        row.push(Tile::Empty);
+                    }
                 }
             }
         }

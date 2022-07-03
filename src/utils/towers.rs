@@ -199,7 +199,7 @@ fn tower_circle_shape(tile_size: f32) -> ShapeBundle {
 fn tower_range_circle_shape(radius: f32, color: Color) -> ShapeBundle {
     let shape = Circle {
         center: Vec2::default(),
-        radius: radius,
+        radius,
     };
     GeometryBuilder::build_as(
         &shape,

@@ -1,5 +1,5 @@
 use super::{
-    enemies::{spawn_enemy_component, Enemy},
+    enemies::Enemy,
     wave::{Wave, WaveState},
     BoardVisu, Game, GameScreen, IngameTime,
 };
@@ -30,7 +30,6 @@ type GameActionQueries<'w, 's, 'a> = ParamSet<
 >;
 
 pub enum GameActionEvent {
-    Resize,
     HoverTile(Vec2Board, Tile),
     UnhoverTile,
     BackToMainMenu,
@@ -70,7 +69,7 @@ pub(super) fn game_actions(
 ) {
     if !game_actions.is_empty() {
         let mut ga_params = GameActionParams {
-            cmds: cmds,
+            cmds,
             game: &mut game,
             game_state: &mut game_state,
             board_visu: &mut visu,
@@ -82,7 +81,6 @@ pub(super) fn game_actions(
         };
         for event in game_actions.iter() {
             match event {
-                GameActionEvent::Resize => repaint(&mut ga_params, &mut queries),
                 GameActionEvent::HoverTile(pos, tile) => {
                     draw_hover_cross(&mut ga_params, &mut queries.p2(), pos, tile);
                     if !ga_params.game.is_overview {
@@ -98,7 +96,7 @@ pub(super) fn game_actions(
                 GameActionEvent::BackToMainMenu => back_to_main_menu(&mut ga_params, queries.p4()),
                 GameActionEvent::StartWave => start_wave(&mut ga_params),
                 GameActionEvent::EndWave => end_wave_and_prepare_next(&mut ga_params),
-                GameActionEvent::TileLeftClick(pos) => on_tile_click(&mut ga_params, pos),
+                GameActionEvent::TileLeftClick(pos) => handle_click(&mut ga_params, pos),
                 GameActionEvent::ActivateOverview => {
                     ga_params.game.is_overview = true;
                     set_range_circles(&mut queries, true);
@@ -111,21 +109,6 @@ pub(super) fn game_actions(
             }
         }
     }
-}
-
-fn repaint(ga_params: &mut GameActionParams, queries: &mut GameActionQueries) {
-    *ga_params.board_visu = create_visu(ga_params.board);
-    ga_params.board_visu.repaint(
-        &mut ga_params.cmds,
-        queries.p0().into(),
-        ga_params.board,
-        ga_params.board_cache,
-    );
-    resize_enemies(ga_params, queries.p1());
-}
-
-fn create_visu(board: &Board) -> BoardVisu {
-    BoardVisu::new(1.)
 }
 
 fn draw_hover_cross(
@@ -152,17 +135,6 @@ fn back_to_main_menu(ga_params: &mut GameActionParams, query: Query<Entity, With
     ga_params.game_state.set(GameState::Menu).unwrap();
 }
 
-fn resize_enemies(ga_params: &mut GameActionParams, query: Query<(Entity, &Enemy), With<Enemy>>) {
-    let mut enemies = Vec::<Enemy>::new();
-    query.for_each(|(entity, enemy)| {
-        enemies.push(enemy.clone());
-        ga_params.cmds.entity(entity).despawn_recursive();
-    });
-    for enemy in enemies {
-        spawn_enemy_component(&mut ga_params.cmds, ga_params.board_visu, enemy);
-    }
-}
-
 fn start_wave(ga_params: &mut GameActionParams) {
     ga_params.game.next_wave_spawn = None;
     ga_params.game.wave_no += 1;
@@ -177,25 +149,33 @@ fn end_wave_and_prepare_next(ga_params: &mut GameActionParams) {
     ga_params.game.next_wave_spawn = Some(ga_params.now + Duration::from_secs(1));
 }
 
-fn on_tile_click(ga_params: &mut GameActionParams, pos: &UVec2) {
+fn handle_click(ga_params: &mut GameActionParams, pos: &UVec2) {
     if let Some(tile) = ga_params.board.get_tile_mut(pos) {
-        match tile {
-            Tile::TowerGround(tower) => {
-                if tower.is_none() {
-                    place_tower(
-                        &mut ga_params.cmds,
-                        tower,
-                        ga_params.board_visu,
-                        pos,
-                        ga_params.now,
-                    );
-                }
+        on_tile_click(
+            &mut ga_params.cmds,
+            ga_params.board_visu,
+            ga_params.now,
+            tile,
+            pos,
+        );
+    }
+}
+
+fn on_tile_click(
+    cmds: &mut Commands,
+    board_visu: &BoardVisu,
+    now: IngameTimestamp,
+    tile: &mut Tile,
+    pos: &UVec2,
+) {
+    match tile {
+        Tile::TowerGround(tower) => {
+            if tower.is_none() {
+                place_tower(cmds, tower, board_visu, pos, now);
             }
-            _ => (),
-            //Tile::BuildingGround(_) => todo!(),
-            //Tile::Road => todo!(),
-            //Tile::Empty => todo!(),
         }
+        Tile::BuildingGround(_) => todo!(),
+        _ => (),
     }
 }
 

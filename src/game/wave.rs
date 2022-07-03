@@ -36,7 +36,7 @@ impl Wave {
     }
 
     pub fn is_wave_end(&self) -> bool {
-        self.enemies_spawned >= self.wave_no * 1
+        self.enemies_spawned >= self.wave_no * 4
     }
 }
 
@@ -54,9 +54,7 @@ pub(super) fn wave_actions(
     let now = IngameTimestamp::new(ingame_time.elapsed_secs());
 
     // Let enemies walk
-    if enemies_walk_until_wave_end(&mut cmds, query, time.delta(), &board_visu, &board_cache)
-        && is_wave_end
-    {
+    if enemies_walk_until_wave_end(&mut cmds, query, time.delta(), &board_cache) && is_wave_end {
         actions.send(GameActionEvent::EndWave);
     }
 

@@ -62,9 +62,8 @@ fn startup_menu(
         actions,
     );
 
-    match *menu_state.current() {
-        MenuState::Settings => add_settings(&mut egui_ctx, settings),
-        _ => (),
+    if let MenuState::Settings = *menu_state.current() {
+        add_settings(&mut egui_ctx, settings)
     }
 }
 

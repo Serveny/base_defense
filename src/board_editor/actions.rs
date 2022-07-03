@@ -1,17 +1,16 @@
-use super::{create_visu, popups::Popups, BoardEditorState, BoardVisu};
+use super::{popups::Popups, BoardEditorState, BoardVisu, EDITOR_BOARD_START};
 use crate::{
     board::{
         visualisation::{BoardScreen, BoardScreenQuery, BoardVisualTile, RoadEndMarkQuery},
         Board, BoardCache, Tile,
     },
-    utils::{save_board_to_file, GameState},
-    zoom_cam_to_board, CamQuery,
+    utils::{save_board_to_file, zoom_cam_to_board, GameState},
+    CamQuery,
 };
 use bevy::prelude::*;
 
 pub(super) enum EditorActionEvent {
     SetTile(UVec2, Tile),
-    Resize,
     Load(Board),
     Save,
     New((u8, u8)),
@@ -55,7 +54,7 @@ pub(super) fn board_editor_actions(
 ) {
     if !editor_actions.is_empty() {
         let mut ea_params = EditorActionParams {
-            cmds: cmds,
+            cmds,
             game_state: &mut game_state,
             editor_state: &mut editor_state,
             visu: &mut visu,
@@ -69,7 +68,6 @@ pub(super) fn board_editor_actions(
                 EditorActionEvent::SetTile(pos, tile_to) => {
                     set_tile_and_update_mark(&mut ea_params, &mut queries, pos, tile_to)
                 }
-                EditorActionEvent::Resize => repaint(&mut ea_params, queries.p2()),
                 EditorActionEvent::Save => save_board(&mut ea_params),
                 EditorActionEvent::Load(board) => {
                     load_board(&mut ea_params, &mut queries, board.clone())
@@ -91,7 +89,7 @@ fn set_tile_and_update_mark(
     set_tile(
         ea_params.board,
         ea_params.board_cache,
-        pos.clone(),
+        *pos,
         tile_to.clone(),
     );
     validate_board(ea_params);
@@ -111,7 +109,7 @@ fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to
 }
 
 fn repaint(ea_params: &mut EditorActionParams, query: BoardScreenQuery) {
-    *ea_params.visu = create_visu(ea_params.windows, ea_params.board);
+    *ea_params.visu = BoardVisu::new(0.9);
     ea_params.visu.repaint(
         &mut ea_params.cmds,
         query,
@@ -142,7 +140,12 @@ fn load_board(
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
         repaint(ea_params, queries.p2());
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
+        zoom_cam_to_board(
+            ea_params.board,
+            queries.p3(),
+            ea_params.windows,
+            Vec2::from(EDITOR_BOARD_START),
+        );
     }
 }
 
@@ -157,7 +160,12 @@ fn new_board(
         *ea_params.board = new_board;
         *ea_params.popups = Popups::None;
         repaint(ea_params, queries.p2());
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
+        zoom_cam_to_board(
+            ea_params.board,
+            queries.p3(),
+            ea_params.windows,
+            Vec2::from(EDITOR_BOARD_START),
+        );
     }
 }
 
@@ -172,7 +180,12 @@ fn edit_board(
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
         repaint(ea_params, queries.p2());
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
+        zoom_cam_to_board(
+            ea_params.board,
+            queries.p3(),
+            ea_params.windows,
+            Vec2::from(EDITOR_BOARD_START),
+        );
     }
 }
 

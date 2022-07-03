@@ -2,14 +2,17 @@ use self::{
     actions::{game_actions, GameActionEvent},
     controls::{keyboard_input, mouse_input},
     tower_system::tower_system,
-    wave::{wave_actions, WaveState},
+    wave::{wave_actions, Wave, WaveState},
 };
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
-    utils::{despawn_all_of, Difficulty, Energy, IngameTime, IngameTimestamp, Materials},
-    zoom_cam_to_board, CamQuery, GameState,
+    utils::{
+        despawn_all_of, zoom_cam_to_board, Difficulty, Energy, IngameTime, IngameTimestamp,
+        Materials,
+    },
+    CamQuery, GameState,
 };
-use bevy::{prelude::*, render::camera::Camera2d, window::WindowResized};
+use bevy::{prelude::*, window::WindowResized};
 
 mod actions;
 mod controls;
@@ -41,23 +44,10 @@ impl Plugin for GamePlugin {
                     .with_system(wave_actions.before(game_actions)),
             )
             .add_system_set(
-                SystemSet::on_exit(GameState::Game).with_system(despawn_all_of::<GameScreen>),
+                SystemSet::on_exit(GameState::Game)
+                    .with_system(clean_up_game)
+                    .with_system(despawn_all_of::<GameScreen>),
             );
-    }
-}
-
-fn on_resize(
-    mut resize_ev: EventReader<WindowResized>,
-    windows: Res<Windows>,
-    query: Query<&mut OrthographicProjection, With<Camera2d>>,
-) {
-    if !resize_ev.is_empty() {
-        let win = windows.get_primary().unwrap();
-        for ev in resize_ev.iter() {
-            println!("{:?}\n", win);
-            println!("{:?}\n", ev);
-            println!("\n");
-        }
     }
 }
 
@@ -89,6 +79,12 @@ impl Game {
 #[derive(Component, Clone, Copy, Default)]
 struct GameScreen;
 
+fn on_resize(ev: EventReader<WindowResized>, wins: Res<Windows>, board: Res<Board>, cam: CamQuery) {
+    if !ev.is_empty() {
+        zoom_cam_to_board(&board, cam, &wins, Vec2::default());
+    }
+}
+
 fn game_setup(
     mut cmds: Commands,
     cam_query: CamQuery,
@@ -96,7 +92,7 @@ fn game_setup(
     board: Res<Board>,
     board_cache: Res<BoardCache>,
 ) {
-    zoom_cam_to_board(&board, cam_query, &windows);
+    zoom_cam_to_board(&board, cam_query, &windows, Vec2::default());
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache);
     cmds.insert_resource(visu);
@@ -119,4 +115,13 @@ fn wave_spawn_system(
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>) {
     timer.tick(time.delta());
+}
+
+fn clean_up_game(mut cmds: Commands) {
+    cmds.remove_resource::<Game>();
+    cmds.remove_resource::<Board>();
+    cmds.remove_resource::<BoardCache>();
+    cmds.remove_resource::<BoardVisu>();
+    cmds.remove_resource::<Wave>();
+    cmds.remove_resource::<IngameTime>();
 }

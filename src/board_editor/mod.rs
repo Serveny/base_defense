@@ -10,8 +10,8 @@ use self::{
 };
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
-    utils::{despawn_all_of, GameState},
-    zoom_cam_to_board,
+    utils::{despawn_all_of, zoom_cam_to_board, GameState},
+    CamQuery,
 };
 use bevy::{prelude::*, render::camera::Camera2d, window::WindowResized};
 
@@ -45,6 +45,7 @@ impl Plugin for BoardEditorPlugin {
             .add_system_set(SystemSet::on_enter(GameState::MapEditor).with_system(editor_setup))
             .add_system_set(
                 SystemSet::on_update(GameState::MapEditor)
+                    .with_system(on_resize)
                     .with_system(mouse_input)
                     .with_system(add_top_menu_bar.before(add_side_bar))
                     .with_system(add_side_bar)
@@ -61,9 +62,6 @@ impl Plugin for BoardEditorPlugin {
             );
     }
 }
-fn create_visu(windows: &Windows, board: &Board) -> BoardVisu {
-    BoardVisu::new(0.9)
-}
 
 fn editor_setup(
     mut cmds: Commands,
@@ -73,14 +71,20 @@ fn editor_setup(
     let board = Board::default();
     let board_cache = BoardCache::new(&board);
 
-    zoom_cam_to_board(&board, cam_query, &windows);
-    let visu = create_visu(&windows, &board);
+    zoom_cam_to_board(&board, cam_query, &windows, Vec2::from(EDITOR_BOARD_START));
+    let visu = BoardVisu::new(0.9);
     visu.draw_board(&mut cmds, &board, &board_cache);
     cmds.insert_resource(visu);
     cmds.insert_resource(board);
     cmds.insert_resource(board_cache);
     cmds.init_resource::<BoardEditorState>();
     cmds.insert_resource(Popups::None);
+}
+
+fn on_resize(ev: EventReader<WindowResized>, wins: Res<Windows>, board: Res<Board>, cam: CamQuery) {
+    if !ev.is_empty() {
+        zoom_cam_to_board(&board, cam, &wins, Vec2::from(EDITOR_BOARD_START));
+    }
 }
 
 fn clean_up_editor(mut commands: Commands) {

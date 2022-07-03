@@ -26,7 +26,7 @@ pub(super) fn menu_actions(
 ) {
     if !menu_actions.is_empty() {
         let mut ma_params = MenuActionParams {
-            cmds: cmds,
+            cmds,
             menu_state: &mut menu_state,
             game_state: &mut game_state,
         };
