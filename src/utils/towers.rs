@@ -1,4 +1,4 @@
-use crate::board::visualisation::BoardVisualisation;
+use crate::board::visualisation::{BoardVisualisation, TILE_SIZE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{
     entity::ShapeBundle,
@@ -126,9 +126,15 @@ fn spawn_laser_shot_tower<TScreen: Component + Copy + Default>(
 ) {
     let tile_size = board_visu.inner_tile_size;
     let color = Color::RED;
-    cmds.spawn_bundle(tower_base_shape(tile_size, pos.to_vec3(1.), color))
+    cmds.spawn_bundle(tower_base_shape(tile_size, pos.to_scaled_vec3(1.), color))
         .with_children(|parent| {
-            laser_tower_children(parent, tile_size, tower_values.range_radius, &pos, color);
+            laser_tower_children(
+                parent,
+                tile_size,
+                tower_values.range_radius * TILE_SIZE,
+                &pos,
+                color,
+            );
         })
         .insert(Tower::LaserShot(TowerValues::laser_shot(pos, time)))
         .insert(TScreen::default());
@@ -205,7 +211,7 @@ fn tower_range_circle_shape(radius: f32, color: Color) -> ShapeBundle {
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::NONE),
-            outline_mode: StrokeMode::new(color, 2.),
+            outline_mode: StrokeMode::new(color, 0.025 * TILE_SIZE),
         },
         Transform {
             translation: Vec3::new(0., 0., 0.3),
@@ -216,7 +222,7 @@ fn tower_range_circle_shape(radius: f32, color: Color) -> ShapeBundle {
 
 fn tower_laser_cannon(tile_size: f32) -> ShapeBundle {
     let shape = shapes::Rectangle {
-        origin: RectangleOrigin::CustomCenter(Vec2::new(0., -tile_size / 4.)),
+        origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 4.)),
         extents: Vec2::new(tile_size / 6., tile_size / 2.),
     };
     GeometryBuilder::build_as(

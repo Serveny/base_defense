@@ -1,6 +1,6 @@
 use super::{BoardVisu, GameScreen};
 use crate::{
-    board::{step::BoardStep, BoardCache},
+    board::{step::BoardStep, visualisation::TILE_SIZE, BoardCache},
     utils::{health_bar::health_bar, Vec2Board},
 };
 use bevy::prelude::*;
@@ -98,14 +98,14 @@ pub(super) fn enemies_walk_until_wave_end(
         if enemy.walk_until_end(dur, board_cache) {
             cmds.entity(entity).despawn_recursive();
         } else {
-            transform.translation = enemy.pos.to_vec3(1.);
+            transform.translation = enemy.pos.to_scaled_vec3(1.);
         }
     });
     query.is_empty()
 }
 
 pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu, enemy: Enemy) {
-    cmds.spawn_bundle(enemy_normal_shape(1., enemy.pos.to_vec3(1.1)))
+    cmds.spawn_bundle(enemy_normal_shape(TILE_SIZE, enemy.pos.to_scaled_vec3(1.1)))
         .with_children(|parent| {
             health_bar(parent, board_visu.inner_tile_size / 5.);
         })

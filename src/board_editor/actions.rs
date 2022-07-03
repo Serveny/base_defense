@@ -5,7 +5,7 @@ use crate::{
         Board, BoardCache, Tile,
     },
     utils::{save_board_to_file, zoom_cam_to_board, GameState},
-    CamQuery,
+    CamMutQuery,
 };
 use bevy::prelude::*;
 
@@ -25,7 +25,7 @@ type EditorActionQueries<'w, 's, 'a> = ParamSet<
         Query<'w, 's, (&'a mut Sprite, &'a Transform, &'a BoardVisualTile), With<BoardVisualTile>>,
         RoadEndMarkQuery<'w, 's, 'a>,
         Query<'w, 's, Entity, With<BoardScreen>>,
-        CamQuery<'w, 's, 'a>,
+        CamMutQuery<'w, 's, 'a>,
     ),
 >;
 

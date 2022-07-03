@@ -4,7 +4,7 @@ use bevy::prelude::*;
 use euclid::Angle;
 use serde::{Deserialize, Serialize};
 
-use crate::board::step::BoardDirection;
+use crate::board::{step::BoardDirection, visualisation::TILE_SIZE};
 
 #[derive(Default, Deref, DerefMut, Clone, Copy, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Vec2Board(Vec2);
@@ -16,6 +16,13 @@ impl Vec2Board {
 
     pub fn from_uvec2_middle(uvec2: &UVec2) -> Self {
         Self::new(uvec2.x as f32 + 0.5, uvec2.y as f32 + 0.5)
+    }
+
+    pub fn from_uvec2_tilesize_middle(uvec2: &UVec2, tile_size: f32) -> Self {
+        Self::new(
+            uvec2.x as f32 + tile_size * 0.5,
+            uvec2.y as f32 + tile_size * 0.5,
+        )
     }
 
     // Only for not diagonal vec2
@@ -44,8 +51,8 @@ impl Vec2Board {
         Angle::degrees((b * c).acos())
     }
 
-    pub fn to_vec3(self, z: f32) -> Vec3 {
-        Vec3::new(self.x, self.y, z)
+    pub fn to_scaled_vec3(self, z: f32) -> Vec3 {
+        Vec3::new(self.x * TILE_SIZE, self.y * TILE_SIZE, z)
     }
 }
 

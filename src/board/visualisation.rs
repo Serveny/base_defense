@@ -10,6 +10,9 @@ use bevy::{prelude::*, sprite::Anchor};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use euclid::Angle;
 
+// Tile size factor, because bevy_lyon can't handle to small screen scales
+pub const TILE_SIZE: f32 = 1000.;
+
 pub type BoardScreenQuery<'a> = Query<'a, 'a, Entity, With<BoardScreen>>;
 pub type RoadEndMarkQuery<'w, 's, 'a> = Query<
     'w,
@@ -23,7 +26,7 @@ pub type HoverCrossQuery<'w, 's, 'a> =
 // Ingame Visualisationtile_size
 pub struct BoardVisualisation<TScreen> {
     pub inner_tile_size: f32,
-    tile_size_vec: Vec2Board,
+    tile_size_vec: Vec2,
     pub half_tile_vec3: Vec3,
     screen: PhantomData<TScreen>,
 }
@@ -61,12 +64,12 @@ impl BoardVisualTile {
 
 impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
     pub fn new(tile_scale: f32) -> BoardVisualisation<TScreen> {
-        let inner_tile_size = tile_scale;
+        let inner_tile_size = tile_scale * TILE_SIZE;
 
         Self {
             inner_tile_size,
-            tile_size_vec: Vec2Board::new(inner_tile_size, inner_tile_size),
-            half_tile_vec3: Vec3::new(0.5, 0.5, 0.),
+            tile_size_vec: Vec2::new(inner_tile_size, inner_tile_size),
+            half_tile_vec3: Vec3::new(0.5 * TILE_SIZE, 0.5 * TILE_SIZE, 0.),
             screen: PhantomData,
         }
     }
@@ -89,13 +92,13 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
     fn spawn_tile(&self, cmds: &mut Commands, pos: Vec2Board, tile: &Tile) {
         cmds.spawn_bundle(SpriteBundle {
             sprite: Sprite {
-                custom_size: Some(self.tile_size_vec.into()),
+                custom_size: Some(self.tile_size_vec),
                 color: Self::get_tile_color(tile),
                 anchor: Anchor::BottomLeft,
                 ..Default::default()
             },
             transform: Transform {
-                translation: pos.to_vec3(0.),
+                translation: pos.to_scaled_vec3(0.),
                 ..Default::default()
             },
 
@@ -134,7 +137,7 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
 
     pub fn show_hover_cross(&self, query: &mut HoverCrossQuery, pos: &Vec2Board) {
         let (mut visi, mut transform) = query.single_mut();
-        transform.translation = Vec2Board::new(pos.x.floor(), pos.y.floor()).to_vec3(2.);
+        transform.translation = Vec3::new(pos.x.floor() * TILE_SIZE, pos.y.ceil() * TILE_SIZE, 0.1);
         visi.is_visible = true;
     }
 
@@ -150,22 +153,13 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
             .insert(TScreen::default());
     }
 
-    pub fn get_hover_pos(&self, win: &Window) -> Option<Vec2Board> {
-        if let Some(cursor_pos) = win.cursor_position() {
-            return Some(self.cursor_px_to_board_pos(Vec2::new(
-                cursor_pos.x - win.width() / 2.,
-                cursor_pos.y - win.height() / 2.,
-            )));
-        }
-        None
-    }
-
     pub fn set_road_end_mark(&self, mut query: RoadEndMarkQuery, board_cache: &BoardCache) {
         if let Some(end_pos) = board_cache.road_end_pos {
             if let Some(last_step) = board_cache.road_path.last() {
                 query.for_each_mut(|(mut visi, mut transform, comp)| {
                     if !comp.is_child {
-                        transform.translation = Vec2Board::from_uvec2_middle(&end_pos).to_vec3(3.);
+                        transform.translation =
+                            Vec2Board::from_uvec2_middle(&end_pos).to_scaled_vec3(3.);
                         transform.rotation = Quat::from_rotation_z(
                             Angle::degrees(last_step.angle().to_degrees()).radians,
                         );
@@ -176,9 +170,6 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
             }
         }
         query.for_each_mut(|(mut visi, _, _)| visi.is_visible = false);
-    }
-    pub fn cursor_px_to_board_pos(&self, cursor_pos_px: Vec2) -> Vec2Board {
-        Vec2Board::new(cursor_pos_px.x, cursor_pos_px.y)
     }
 
     pub fn repaint(
@@ -197,13 +188,13 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
     fn hover_cross_shape() -> ShapeBundle {
         GeometryBuilder::build_as(
             &Self::hover_cross_path(),
-            DrawMode::Stroke(StrokeMode::new(Color::SILVER, 1. / 8.)),
+            DrawMode::Stroke(StrokeMode::new(Color::SILVER, TILE_SIZE / 8.)),
             Transform::default(),
         )
     }
 
     fn hover_cross_path() -> Path {
-        let ts = 1.;
+        let ts = TILE_SIZE;
         let eighth = ts / 8.;
         let one_third = ts / 3.;
         let mut pb = PathBuilder::new();
@@ -237,8 +228,8 @@ mod road_end_mark {
     use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
     use euclid::Angle;
 
-    use super::{BoardRoadEndMark, BoardScreen};
-    use crate::board::BoardCache;
+    use super::{BoardRoadEndMark, BoardScreen, TILE_SIZE};
+    use crate::{board::BoardCache, utils::Vec2Board};
 
     pub fn spawn_road_end_mark<TScreen: Component + Copy>(
         cmds: &mut Commands,
@@ -259,7 +250,8 @@ mod road_end_mark {
         cmds.spawn_bundle(road_end_shape(
             tile_size,
             Transform {
-                translation: Vec3::new(pos.x as f32 + 0.5, pos.y as f32 + 0.5, 3.),
+                translation: Vec2Board::from_uvec2_tilesize_middle(&pos, tile_size / TILE_SIZE)
+                    .to_scaled_vec3(3.),
                 rotation: Quat::from_rotation_z(angle.radians),
                 ..Default::default()
             },

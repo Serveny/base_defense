@@ -10,7 +10,7 @@ use crate::{
         despawn_all_of, zoom_cam_to_board, Difficulty, Energy, IngameTime, IngameTimestamp,
         Materials,
     },
-    CamQuery, GameState,
+    CamMutQuery, GameState,
 };
 use bevy::{prelude::*, window::WindowResized};
 
@@ -79,7 +79,12 @@ impl Game {
 #[derive(Component, Clone, Copy, Default)]
 struct GameScreen;
 
-fn on_resize(ev: EventReader<WindowResized>, wins: Res<Windows>, board: Res<Board>, cam: CamQuery) {
+fn on_resize(
+    ev: EventReader<WindowResized>,
+    wins: Res<Windows>,
+    board: Res<Board>,
+    cam: CamMutQuery,
+) {
     if !ev.is_empty() {
         zoom_cam_to_board(&board, cam, &wins, Vec2::default());
     }
@@ -87,7 +92,7 @@ fn on_resize(ev: EventReader<WindowResized>, wins: Res<Windows>, board: Res<Boar
 
 fn game_setup(
     mut cmds: Commands,
-    cam_query: CamQuery,
+    cam_query: CamMutQuery,
     windows: Res<Windows>,
     board: Res<Board>,
     board_cache: Res<BoardCache>,

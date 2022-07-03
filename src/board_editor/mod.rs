@@ -11,7 +11,7 @@ use self::{
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
     utils::{despawn_all_of, zoom_cam_to_board, GameState},
-    CamQuery,
+    CamMutQuery,
 };
 use bevy::{prelude::*, render::camera::Camera2d, window::WindowResized};
 
@@ -81,7 +81,12 @@ fn editor_setup(
     cmds.insert_resource(Popups::None);
 }
 
-fn on_resize(ev: EventReader<WindowResized>, wins: Res<Windows>, board: Res<Board>, cam: CamQuery) {
+fn on_resize(
+    ev: EventReader<WindowResized>,
+    wins: Res<Windows>,
+    board: Res<Board>,
+    cam: CamMutQuery,
+) {
     if !ev.is_empty() {
         zoom_cam_to_board(&board, cam, &wins, Vec2::from(EDITOR_BOARD_START));
     }

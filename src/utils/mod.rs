@@ -1,4 +1,5 @@
-use crate::CamQuery;
+use crate::board::visualisation::TILE_SIZE;
+use crate::{CamMutQuery, CamQuery};
 // #![allow(unused)]
 use crate::board::Board;
 use bevy::core::Stopwatch;
@@ -104,7 +105,7 @@ fn board_from_file(dir_entry: Result<DirEntry, std::io::Error>) -> Result<Board,
         Err(err) => Err(format!(
             "Invalid json in file '{:?}': {}",
             dir_entry.file_name(),
-            err.to_string()
+            err
         )
         .into()),
     }
@@ -142,20 +143,26 @@ pub fn pos_to_angle(pos: Vec2Board, target: Vec2Board) -> Angle<f32> {
 }
 
 pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
-    Quat::from_rotation_z(pos_to_angle(pos, target).radians)
+    Quat::from_rotation_z(-pos_to_angle(pos, target).radians)
 }
 
 pub fn zoom_cam_to_board(
     board: &Board,
-    mut cam_query: CamQuery,
+    mut cam_query: CamMutQuery,
     windows: &Windows,
     margin_left_top_px: Vec2,
 ) {
     let win = windows.get_primary().unwrap();
     let margin = cam_margin(board, win);
     let mut cam = cam_query.single_mut();
-    (cam.left, cam.right) = (-margin.x, board.width as f32 + margin.x);
-    (cam.bottom, cam.top) = (-margin.y, board.height as f32 + margin.y);
+    (cam.left, cam.right) = (
+        -margin.x * TILE_SIZE,
+        (board.width as f32 + margin.x) * TILE_SIZE,
+    );
+    (cam.bottom, cam.top) = (
+        -margin.y * TILE_SIZE,
+        (board.height as f32 + margin.y) * TILE_SIZE,
+    );
 }
 
 fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
@@ -170,4 +177,18 @@ fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
     } else {
         Vec2Board::new(((win.width() / tile_height_px) - b_w) / 2., 0.)
     }
+}
+
+pub fn cursor_pos(wnds: Res<Windows>, q_cam: CamQuery) -> Option<Vec2Board> {
+    let (camera, camera_transform) = q_cam.single();
+    let wnd = wnds.get_primary().unwrap();
+
+    if let Some(screen_pos) = wnd.cursor_position() {
+        let window_size = Vec2::new(wnd.width() as f32, wnd.height() as f32);
+        let ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
+        let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix.inverse();
+        let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
+        return Some((world_pos.truncate() / TILE_SIZE).into());
+    }
+    None
 }
