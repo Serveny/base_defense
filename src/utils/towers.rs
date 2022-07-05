@@ -17,6 +17,7 @@ use super::{
 };
 
 pub const LASER_TOWER_INIT_RANGE_RADIUS: f32 = 2.;
+pub const LASER_TOWER_INIT_SHOT_DURATION_SECS: f32 = 1.;
 
 //pub struct Tower {
 //tower_type: TowerType,
@@ -68,6 +69,7 @@ pub struct TowerValues {
     pub range_radius: f32,
     pub shot: Shot,
     pub reload_duration: Duration,
+    pub shoot_duration: Duration,
 
     // temp values
     pub target_lock: Option<Uuid>,
@@ -82,6 +84,7 @@ impl TowerValues {
             range_radius: LASER_TOWER_INIT_RANGE_RADIUS,
             shot: Shot::laser(pos),
             reload_duration,
+            shoot_duration: Duration::from_secs_f32(LASER_TOWER_INIT_SHOT_DURATION_SECS),
 
             target_lock: None,
             tower_status: TowerStatus::Reloading(now + reload_duration),

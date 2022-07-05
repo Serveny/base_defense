@@ -1,13 +1,11 @@
 use std::time::Duration;
 
-use bevy::prelude::{ParamSet, Query, With};
-
-use bevy::prelude::*;
-use bevy::reflect::Uuid;
+use bevy::prelude::{Query, With};
 
 use crate::game::enemies::Enemy;
 use crate::utils::shots::{DamagePerTimeShot, Shot};
-use crate::utils::{IngameTime, IngameTimestamp};
+use crate::utils::{pos_to_quat, IngameTime, IngameTimestamp};
+use bevy::prelude::*;
 
 type ShotsQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a mut Transform, &'a mut Shot), With<Shot>>;
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a mut Enemy), With<Enemy>>;
@@ -22,13 +20,14 @@ pub(in crate::game) fn shot_system(
     time: Res<Time>,
 ) {
     let now = ingame_time.now();
-    for (shot_entity, transform, mut shot) in shots.iter_mut() {
+    for (shot_entity, mut transform, mut shot) in shots.iter_mut() {
         match shot.as_mut() {
             Shot::Laser(shot) => handle_damage_per_time_shot(
                 &mut cmds,
-                shot_entity,
-                shot,
                 &mut enemies,
+                &mut transform,
+                shot,
+                shot_entity,
                 now,
                 time.delta(),
             ),
@@ -38,9 +37,10 @@ pub(in crate::game) fn shot_system(
 
 fn handle_damage_per_time_shot(
     cmds: &mut Commands,
-    shot_entity: Entity,
-    shot: &mut DamagePerTimeShot,
     enemies: &mut EnemiesQuery,
+    transform: &mut Transform,
+    shot: &mut DamagePerTimeShot,
+    shot_entity: Entity,
     now: IngameTimestamp,
     frame_dur: Duration,
 ) {
@@ -52,13 +52,25 @@ fn handle_damage_per_time_shot(
                 cmds.entity(enemy_entity).despawn_recursive();
             } else {
                 enemy.health -= frame_dur.as_secs_f32() * shot.damage;
+                transform.rotation = pos_to_quat(shot.pos_start, enemy.pos);
+                transform.scale = Vec3::new(
+                    (time_to_die_percent(now, die_time, shot.lifetime) / 4.) + 0.75,
+                    shot.pos_start.distance(enemy.pos.into()),
+                    1.,
+                );
             }
         } else {
             cmds.entity(shot_entity).despawn_recursive();
         }
     } else {
         shot.die_time = Some(now + shot.lifetime);
+        transform.translation = shot.pos_start.to_scaled_vec3(0.9);
     }
+}
+
+fn time_to_die_percent(now: IngameTimestamp, die_time: IngameTimestamp, lifetime: Duration) -> f32 {
+    let elapsed = *die_time - *now;
+    (elapsed / lifetime.as_secs_f32()).abs()
 }
 
 fn find_enemy_in_range_mut<'a>(

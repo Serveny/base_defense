@@ -125,6 +125,11 @@ fn shoot_or_reload(
                 actions.send(TowerActionsEvent::Shoot(
                     tower_vals.shoot(Target::Enemy(enemy.id)),
                 ));
+                tower_vals.tower_status = TowerStatus::Shooting(now + tower_vals.shoot_duration);
+            }
+        }
+        TowerStatus::Shooting(time_finish) => {
+            if now >= time_finish {
                 tower_vals.tower_status = TowerStatus::Reloading(now + tower_vals.reload_duration);
             }
         }

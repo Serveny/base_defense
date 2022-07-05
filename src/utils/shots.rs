@@ -1,6 +1,9 @@
 use std::time::Duration;
 
-use super::{towers::LASER_TOWER_INIT_RANGE_RADIUS, IngameTimestamp, Vec2Board};
+use super::{
+    towers::{LASER_TOWER_INIT_RANGE_RADIUS, LASER_TOWER_INIT_SHOT_DURATION_SECS},
+    IngameTimestamp, Vec2Board,
+};
 use bevy::{prelude::*, reflect::Uuid};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -9,6 +12,7 @@ use serde::{Deserialize, Serialize};
 pub enum TowerStatus {
     Reloading(IngameTimestamp),
     Waiting,
+    Shooting(IngameTimestamp),
 }
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -21,7 +25,6 @@ pub enum Target {
     Enemy(Uuid),
 }
 
-pub type DamageRadiusBoard = f32;
 pub type DamagePerSecond = f32;
 
 impl Shot {
@@ -29,7 +32,7 @@ impl Shot {
         Self::Laser(DamagePerTimeShot {
             target_enemy_id: Uuid::default(),
             damage: 100.,
-            lifetime: Duration::from_secs(1),
+            lifetime: Duration::from_secs_f32(LASER_TOWER_INIT_SHOT_DURATION_SECS),
             die_time: None,
             range_radius: LASER_TOWER_INIT_RANGE_RADIUS,
             pos_start,
@@ -61,8 +64,8 @@ pub struct DamagePerTimeShot {
 
 pub fn laser_shape(tile_size: f32) -> ShapeBundle {
     let shape = shapes::Rectangle {
-        origin: RectangleOrigin::CustomCenter(Vec2::new(0., -tile_size / 2.)),
-        extents: Vec2::new(tile_size / 6., tile_size),
+        origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
+        extents: Vec2::new(tile_size / 10., tile_size),
     };
     GeometryBuilder::build_as(
         &shape,
@@ -80,11 +83,11 @@ pub fn laser_shape(tile_size: f32) -> ShapeBundle {
                     blue: 0.,
                     alpha: 0.6,
                 },
-                tile_size / 16.,
+                tile_size / 20.,
             ),
         },
         Transform {
-            translation: Vec3::new(0., 0., -0.1),
+            scale: Vec3::new(0., 0., 0.),
             ..Default::default()
         },
     )

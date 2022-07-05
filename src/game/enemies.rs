@@ -106,7 +106,7 @@ impl Enemy {
 }
 
 pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu, enemy: Enemy) {
-    cmds.spawn_bundle(enemy_normal_shape(TILE_SIZE, enemy.pos.to_scaled_vec3(1.1)))
+    cmds.spawn_bundle(enemy_normal_shape(TILE_SIZE, enemy.pos.to_scaled_vec3(1.)))
         .with_children(|parent| {
             health_bar(parent, board_visu.inner_tile_size / 5.);
         })

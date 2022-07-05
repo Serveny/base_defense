@@ -1,4 +1,7 @@
-use crate::utils::shots::{laser_shape, Shot};
+use crate::{
+    board::visualisation::TILE_SIZE,
+    utils::shots::{laser_shape, Shot},
+};
 use bevy::prelude::*;
 
 pub enum TowerActionsEvent {
@@ -16,6 +19,8 @@ pub fn on_tower_actions(mut cmds: Commands, mut actions: EventReader<TowerAction
 }
 
 fn shoot(cmds: &mut Commands, shot: &Shot) {
-    cmds.spawn_bundle(laser_shape(1.)).insert(shot.clone());
-    println!("Shoot: {:?}", shot);
+    cmds.spawn_bundle(match shot {
+        Shot::Laser(_) => laser_shape(TILE_SIZE),
+    })
+    .insert(shot.clone());
 }
