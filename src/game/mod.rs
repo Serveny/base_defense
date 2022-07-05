@@ -1,8 +1,18 @@
 use self::{
-    actions::{game_actions, GameActionEvent},
+    actions::{
+        game_actions,
+        tile::{on_tile_actions, TileActionsEvent},
+        tower::{on_tower_actions, TowerActionsEvent},
+        wave::{on_wave_actions, WaveActionsEvent},
+        GameActionEvent,
+    },
     controls::{keyboard_input, mouse_input},
-    tower_system::tower_system,
-    wave::{wave_actions, Wave, WaveState},
+    systems::{
+        health_bar::health_bar_system,
+        shot::shot_system,
+        tower::tower_system,
+        wave::{wave_spawn_system, wave_system, Wave, WaveState},
+    },
 };
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
@@ -17,8 +27,7 @@ use bevy::{prelude::*, window::WindowResized};
 mod actions;
 mod controls;
 mod enemies;
-mod tower_system;
-mod wave;
+mod systems;
 
 type BoardVisu = BoardVisualisation<GameScreen>;
 
@@ -27,6 +36,9 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<GameActionEvent>()
+            .add_event::<TileActionsEvent>()
+            .add_event::<TowerActionsEvent>()
+            .add_event::<WaveActionsEvent>()
             .add_state(WaveState::None)
             .add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
             .add_system_set(
@@ -36,12 +48,17 @@ impl Plugin for GamePlugin {
                     .with_system(mouse_input)
                     .with_system(on_resize)
                     .with_system(wave_spawn_system)
+                    .with_system(shot_system)
                     .with_system(tower_system)
-                    .with_system(game_actions),
+                    .with_system(health_bar_system)
+                    .with_system(game_actions)
+                    .with_system(on_tower_actions)
+                    .with_system(on_wave_actions)
+                    .with_system(on_tile_actions),
             )
             .add_system_set(
-                SystemSet::on_update(WaveState::WaveRunning)
-                    .with_system(wave_actions.before(game_actions)),
+                SystemSet::on_update(WaveState::Running)
+                    .with_system(wave_system.before(game_actions).before(on_wave_actions)),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Game)
@@ -102,20 +119,6 @@ fn game_setup(
     visu.draw_board(&mut cmds, &board, &board_cache);
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
-}
-
-// Tick the timer, and change state when finished
-fn wave_spawn_system(
-    game: Res<Game>,
-    time: Res<IngameTime>,
-    mut actions: EventWriter<GameActionEvent>,
-) {
-    // Start next wave on next wave time point
-    if let Some(next_wave_spawn) = game.next_wave_spawn {
-        if time.elapsed_secs() >= *next_wave_spawn {
-            actions.send(GameActionEvent::StartWave);
-        }
-    }
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>) {

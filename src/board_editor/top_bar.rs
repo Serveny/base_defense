@@ -1,7 +1,7 @@
 use super::{
     actions::EditorActionEvent,
     popups::{EditBoardWindow, LoadBoardWindow, NewBoardWindow, Popups, SaveBoardWindow},
-    BoardEditorState, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
+    BoardEditor, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
 };
 use crate::{board::Board, utils::add_error_box};
 use bevy::prelude::*;
@@ -14,7 +14,7 @@ pub(super) fn add_top_menu_bar(
     mut egui_ctx: ResMut<EguiContext>,
     mut popup: ResMut<Popups>,
     mut actions: EventWriter<EditorActionEvent>,
-    state: Res<BoardEditorState>,
+    state: Res<BoardEditor>,
     board: Res<Board>,
 ) {
     TopBottomPanel::top("map_editor_top_bar").show(egui_ctx.ctx_mut(), |ui| {

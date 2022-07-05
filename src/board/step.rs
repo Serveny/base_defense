@@ -1,8 +1,9 @@
 use euclid::Angle;
+use serde::{Deserialize, Serialize};
 
 use crate::utils::Vec2Board;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum BoardDirection {
     Right,
     Up,
@@ -16,7 +17,7 @@ impl Default for BoardDirection {
     }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct BoardStep {
     pub road_path_index: usize,
     pub direction: BoardDirection,

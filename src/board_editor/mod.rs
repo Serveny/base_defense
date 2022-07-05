@@ -31,7 +31,7 @@ const LEFT_BAR_WIDTH_PX: f32 = 140.0;
 const EDITOR_BOARD_START: (f32, f32) = (LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX + 10.);
 
 #[derive(Default)]
-struct BoardEditorState {
+struct BoardEditor {
     err_text: Option<String>,
 }
 
@@ -77,7 +77,7 @@ fn editor_setup(
     cmds.insert_resource(visu);
     cmds.insert_resource(board);
     cmds.insert_resource(board_cache);
-    cmds.init_resource::<BoardEditorState>();
+    cmds.init_resource::<BoardEditor>();
     cmds.insert_resource(Popups::None);
 }
 
@@ -93,7 +93,7 @@ fn on_resize(
 }
 
 fn clean_up_editor(mut commands: Commands) {
-    commands.remove_resource::<BoardEditorState>();
+    commands.remove_resource::<BoardEditor>();
     commands.remove_resource::<Board>();
     commands.remove_resource::<BoardCache>();
     commands.remove_resource::<Popups>();

@@ -1,4 +1,4 @@
-use super::actions::GameActionEvent;
+use super::actions::{tile::TileActionsEvent, GameActionEvent};
 use crate::{
     board::{Board, Tile},
     utils::{cursor_pos, Vec2Board},
@@ -19,20 +19,20 @@ pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter
 }
 
 pub(super) fn mouse_input(
-    mut actions: EventWriter<GameActionEvent>,
+    mut actions: EventWriter<TileActionsEvent>,
     wnds: Res<Windows>,
     q_cam: CamQuery,
     board: Res<Board>,
     mouse_button_input: Res<Input<MouseButton>>,
 ) {
     if let Some((pos, tile)) = get_hover_pos_and_tile(wnds, q_cam, board) {
-        actions.send(GameActionEvent::HoverTile(pos, tile));
+        actions.send(TileActionsEvent::HoverTile(pos, tile));
 
         if mouse_button_input.pressed(MouseButton::Left) {
-            actions.send(GameActionEvent::TileLeftClick(pos.as_uvec2()));
+            actions.send(TileActionsEvent::TileLeftClick(pos.as_uvec2()));
         }
     } else {
-        actions.send(GameActionEvent::UnhoverTile);
+        actions.send(TileActionsEvent::UnhoverTile);
     }
 }
 

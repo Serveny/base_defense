@@ -3,12 +3,13 @@ use crate::{
     board::{step::BoardStep, visualisation::TILE_SIZE, BoardCache},
     utils::{health_bar::health_bar, Vec2Board},
 };
-use bevy::prelude::*;
+use bevy::{prelude::*, reflect::Uuid};
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum EnemyType {
     Normal,
     Speeder,
@@ -16,10 +17,12 @@ pub enum EnemyType {
 }
 
 #[allow(dead_code)]
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Serialize, Deserialize)]
 pub struct Enemy {
+    pub id: Uuid,
     speed: f32,
-    health: f32,
+    pub health_max: f32,
+    pub health: f32,
     pub pos: Vec2Board,
     enemy_type: EnemyType,
     current_step: BoardStep,
@@ -38,7 +41,9 @@ impl Enemy {
 
     pub fn new_normal(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
+            id: Uuid::new_v4(),
             speed: 1.,
+            health_max: 100.,
             health: 100.,
             pos,
             enemy_type: EnemyType::Normal,
@@ -48,7 +53,9 @@ impl Enemy {
 
     pub fn new_speeder(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
+            id: Uuid::new_v4(),
             speed: 2.,
+            health_max: 10.,
             health: 10.,
             pos,
             enemy_type: EnemyType::Speeder,
@@ -58,7 +65,9 @@ impl Enemy {
 
     pub fn new_tank(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
+            id: Uuid::new_v4(),
             speed: 0.2,
+            health_max: 1000.,
             health: 1000.,
             pos,
             enemy_type: EnemyType::Tank,
@@ -86,22 +95,14 @@ impl Enemy {
         }
         false
     }
-}
 
-pub(super) fn enemies_walk_until_wave_end(
-    cmds: &mut Commands,
-    mut query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
-    dur: Duration,
-    board_cache: &BoardCache,
-) -> bool {
-    query.for_each_mut(|(entity, mut enemy, mut transform)| {
-        if enemy.walk_until_end(dur, board_cache) {
-            cmds.entity(entity).despawn_recursive();
-        } else {
-            transform.translation = enemy.pos.to_scaled_vec3(1.);
-        }
-    });
-    query.is_empty()
+    pub fn is_in_range(&self, tower_pos: Vec2Board, range_radius: f32) -> bool {
+        self.pos.distance(tower_pos.into()) <= range_radius
+    }
+
+    pub fn health_as_percent(&self) -> f32 {
+        self.health / self.health_max
+    }
 }
 
 pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu, enemy: Enemy) {

@@ -14,7 +14,14 @@ pub mod shots;
 pub mod towers;
 mod vec2_board;
 
-pub type IngameTime = Stopwatch;
+#[derive(Deref, DerefMut, Clone, Debug, Default)]
+pub struct IngameTime(Stopwatch);
+
+impl IngameTime {
+    pub fn now(&self) -> IngameTimestamp {
+        self.0.elapsed_secs().into()
+    }
+}
 
 #[derive(Deref, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub struct IngameTimestamp(f32);

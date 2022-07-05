@@ -1,5 +1,5 @@
 use crate::board::visualisation::{BoardVisualisation, TILE_SIZE};
-use bevy::prelude::*;
+use bevy::{prelude::*, reflect::Uuid};
 use bevy_prototype_lyon::{
     entity::ShapeBundle,
     prelude::{
@@ -12,9 +12,11 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 use super::{
-    shots::{Shot, TowerStatus},
+    shots::{Shot, Target, TowerStatus},
     IngameTimestamp, Vec2Board,
 };
+
+pub const LASER_TOWER_INIT_RANGE_RADIUS: f32 = 2.;
 
 //pub struct Tower {
 //tower_type: TowerType,
@@ -41,14 +43,14 @@ impl Tower {
         Self::LaserShot(TowerValues::laser_shot(pos, now))
     }
 
-    //    pub fn values(&self) -> &TowerValues {
-    //match self {
-    //Tower::LaserShot(values) => values,
-    //Tower::Microwave(values) => values,
-    //Tower::Rocket(values) => values,
-    //Tower::Grenade(values) => values,
-    //}
-    //}
+    pub fn values(&self) -> &TowerValues {
+        match self {
+            Tower::LaserShot(values) => values,
+            Tower::Microwave(values) => values,
+            Tower::Rocket(values) => values,
+            Tower::Grenade(values) => values,
+        }
+    }
 
     pub fn values_mut(&mut self) -> &mut TowerValues {
         match self {
@@ -68,7 +70,7 @@ pub struct TowerValues {
     pub reload_duration: Duration,
 
     // temp values
-    pub target_lock: Option<Entity>,
+    pub target_lock: Option<Uuid>,
     pub tower_status: TowerStatus,
 }
 
@@ -77,15 +79,15 @@ impl TowerValues {
         let reload_duration = Duration::from_secs(1);
         Self {
             pos,
-            range_radius: 2.,
-            shot: Shot::laser(),
+            range_radius: LASER_TOWER_INIT_RANGE_RADIUS,
+            shot: Shot::laser(pos),
             reload_duration,
 
             target_lock: None,
             tower_status: TowerStatus::Reloading(now + reload_duration),
         }
     }
-    pub fn shoot(&self, target: Vec2Board) -> Shot {
+    pub fn shoot(&self, target: Target) -> Shot {
         let mut shot = self.shot.clone();
         shot.set_target(target);
         shot

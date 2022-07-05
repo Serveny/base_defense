@@ -1,4 +1,4 @@
-use super::{popups::Popups, BoardEditorState, BoardVisu, EDITOR_BOARD_START};
+use super::{popups::Popups, BoardEditor, BoardVisu, EDITOR_BOARD_START};
 use crate::{
     board::{
         visualisation::{BoardScreen, BoardScreenQuery, BoardVisualTile, RoadEndMarkQuery},
@@ -32,7 +32,7 @@ type EditorActionQueries<'w, 's, 'a> = ParamSet<
 struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu> {
     cmds: Commands<'w, 's>,
     game_state: &'gs mut State<GameState>,
-    editor_state: &'es mut BoardEditorState,
+    editor: &'es mut BoardEditor,
     visu: &'visu mut BoardVisu,
     board: &'b mut Board,
     board_cache: &'bc mut BoardCache,
@@ -40,10 +40,11 @@ struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu> {
     popups: &'pu mut Popups,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn board_editor_actions(
     cmds: Commands,
     mut game_state: ResMut<State<GameState>>,
-    mut editor_state: ResMut<BoardEditorState>,
+    mut editor: ResMut<BoardEditor>,
     mut visu: ResMut<BoardVisu>,
     mut board: ResMut<Board>,
     mut board_cache: ResMut<BoardCache>,
@@ -56,7 +57,7 @@ pub(super) fn board_editor_actions(
         let mut ea_params = EditorActionParams {
             cmds,
             game_state: &mut game_state,
-            editor_state: &mut editor_state,
+            editor: &mut editor,
             visu: &mut visu,
             board: &mut board,
             board_cache: &mut board_cache,
@@ -194,7 +195,7 @@ fn leave(ea_params: &mut EditorActionParams) {
 }
 
 fn validate_board(ea_params: &mut EditorActionParams) {
-    ea_params.editor_state.err_text = match ea_params.board_cache.validate() {
+    ea_params.editor.err_text = match ea_params.board_cache.validate() {
         Ok(_) => None,
         Err(err) => Some(String::from(err)),
     };
