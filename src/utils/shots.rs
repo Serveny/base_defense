@@ -1,5 +1,7 @@
-use super::{IngameTimestamp, Vec2Board};
-use bevy::prelude::*;
+use std::time::Duration;
+
+use super::{towers::LASER_TOWER_INIT_RANGE_RADIUS, IngameTimestamp, Vec2Board};
+use bevy::{prelude::*, reflect::Uuid};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use serde::{Deserialize, Serialize};
 
@@ -11,32 +13,50 @@ pub enum TowerStatus {
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Shot {
-    Laser(LaserShot),
+    Laser(DamagePerTimeShot),
+}
+
+pub enum Target {
+    Pos(Vec2Board),
+    Enemy(Uuid),
 }
 
 pub type DamageRadiusBoard = f32;
 pub type DamagePerSecond = f32;
 
 impl Shot {
-    pub fn laser() -> Self {
-        Self::Laser(LaserShot {
-            target: Vec2Board::default(),
-            damage_radius: 0.1,
-            damage: 10.,
+    pub fn laser(pos_start: Vec2Board) -> Self {
+        Self::Laser(DamagePerTimeShot {
+            target_enemy_id: Uuid::default(),
+            damage: 100.,
+            lifetime: Duration::from_secs(1),
+            die_time: None,
+            range_radius: LASER_TOWER_INIT_RANGE_RADIUS,
+            pos_start,
         })
     }
-    pub fn set_target(&mut self, target: Vec2Board) {
+
+    pub fn set_target(&mut self, target: Target) {
         match self {
-            Shot::Laser(shot) => shot.target = target,
+            Shot::Laser(shot) => {
+                if let Target::Enemy(id) = target {
+                    shot.target_enemy_id = id;
+                } else {
+                    panic!("Wrong target type. Laser tower needs target id.");
+                }
+            }
         }
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct LaserShot {
-    pub target: Vec2Board,
-    pub damage_radius: DamageRadiusBoard,
+pub struct DamagePerTimeShot {
+    pub target_enemy_id: Uuid,
     pub damage: DamagePerSecond,
+    pub lifetime: Duration,
+    pub die_time: Option<IngameTimestamp>,
+    pub range_radius: f32,
+    pub pos_start: Vec2Board,
 }
 
 pub fn laser_shape(tile_size: f32) -> ShapeBundle {
@@ -44,7 +64,7 @@ pub fn laser_shape(tile_size: f32) -> ShapeBundle {
         origin: RectangleOrigin::CustomCenter(Vec2::new(0., -tile_size / 2.)),
         extents: Vec2::new(tile_size / 6., tile_size),
     };
-    let mut shape_bundle = GeometryBuilder::build_as(
+    GeometryBuilder::build_as(
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::Rgba {
@@ -67,7 +87,5 @@ pub fn laser_shape(tile_size: f32) -> ShapeBundle {
             translation: Vec3::new(0., 0., -0.1),
             ..Default::default()
         },
-    );
-    shape_bundle.visibility.is_visible = false;
-    shape_bundle
+    )
 }
