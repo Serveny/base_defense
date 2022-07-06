@@ -1,8 +1,9 @@
 use crate::utils::{buildings::Building, towers::Tower};
 use serde::{Deserialize, Serialize};
+use strum::EnumDiscriminants;
 
 // Place on the board
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumDiscriminants)]
 pub enum Tile {
     // A place where towers can be built
     TowerGround(Option<Tower>),

@@ -2,22 +2,38 @@ use bevy::prelude::*;
 
 use crate::{
     board::{visualisation::HoverCrossQuery, Board, Tile},
-    game::{BoardVisu, Game},
+    game::{
+        tower_build_menu::{TowerBuildMenu, TowerBuildMenuComp},
+        BoardVisu, Game, GameScreen,
+    },
     utils::{
         towers::{draw_tower, Tower},
-        IngameTime, IngameTimestamp, Vec2Board,
+        Vec2Board,
     },
 };
 
 use super::{set_range_circles, RangeCircleQuery};
 
-type TileActionQueries<'w, 's, 'a> =
-    ParamSet<'w, 's, (HoverCrossQuery<'w, 's, 'a>, RangeCircleQuery<'w, 's, 'a>)>;
+type TileActionQueries<'w, 's, 'a> = ParamSet<
+    'w,
+    's,
+    (
+        HoverCrossQuery<'w, 's, 'a>,
+        RangeCircleQuery<'w, 's, 'a>,
+        TowerBuildMenuQuery<'w, 's, 'a>,
+    ),
+>;
+type TowerBuildMenuQuery<'w, 's, 'a> =
+    Query<'w, 's, (&'a mut Visibility, &'a mut Transform), With<TowerBuildMenuComp>>;
 
 pub enum TileActionsEvent {
-    HoverTile(Vec2Board, Tile),
+    HoverTile(Vec2Board),
     UnhoverTile,
     TileLeftClick(UVec2),
+    OpenTowerBuildMenu(UVec2),
+    ScollUpTowerBuildMenu,
+    ScollDownTowerBuildMenu,
+    CloseTowerBuildMenu,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -26,20 +42,23 @@ pub(in crate::game) fn on_tile_actions(
     mut actions: EventReader<TileActionsEvent>,
     mut board: ResMut<Board>,
     mut queries: TileActionQueries,
+    mut tbm: ResMut<TowerBuildMenu>,
     board_visu: Res<BoardVisu>,
     game: Res<Game>,
-    time: Res<IngameTime>,
 ) {
     if !actions.is_empty() {
         for action in actions.iter() {
             match action {
-                TileActionsEvent::HoverTile(pos, tile) => {
+                TileActionsEvent::HoverTile(pos) => {
+                    let tile = board.get_tile(&pos.as_uvec2()).unwrap();
                     on_hover_tile(&mut queries, &board_visu, &game, pos, tile)
                 }
                 TileActionsEvent::UnhoverTile => on_unhover_tile(&mut queries, &game),
-                TileActionsEvent::TileLeftClick(pos) => {
-                    handle_click(&mut cmds, &mut board, &board_visu, time.now(), pos)
-                }
+                TileActionsEvent::TileLeftClick(pos) => handle_click(&mut cmds, &mut board, pos),
+                TileActionsEvent::OpenTowerBuildMenu(pos) => open_tbm(&mut tbm, queries.p2(), pos),
+                TileActionsEvent::CloseTowerBuildMenu => close_tbm(&mut tbm, queries.p2()),
+                TileActionsEvent::ScollUpTowerBuildMenu => todo!(),
+                TileActionsEvent::ScollDownTowerBuildMenu => todo!(),
             }
         }
     }
@@ -82,29 +101,17 @@ fn show_range_circle(query: &mut RangeCircleQuery, pos: &UVec2) {
     query.for_each_mut(|(mut visi, comp)| visi.is_visible = **comp == *pos);
 }
 
-fn handle_click(
-    cmds: &mut Commands,
-    board: &mut Board,
-    board_visu: &BoardVisu,
-    now: IngameTimestamp,
-    pos: &UVec2,
-) {
+fn handle_click(cmds: &mut Commands, board: &mut Board, pos: &UVec2) {
     if let Some(tile) = board.get_tile_mut(pos) {
-        on_tile_click(cmds, board_visu, now, tile, pos);
+        on_tile_click(cmds, tile, pos);
     }
 }
 
-fn on_tile_click(
-    cmds: &mut Commands,
-    board_visu: &BoardVisu,
-    now: IngameTimestamp,
-    tile: &mut Tile,
-    pos: &UVec2,
-) {
+fn on_tile_click(cmds: &mut Commands, tile: &mut Tile, pos: &UVec2) {
     match tile {
         Tile::TowerGround(tower) => {
             if tower.is_none() {
-                place_tower(cmds, tower, board_visu, pos, now);
+                place_tower(cmds, tower, pos);
             }
         }
         Tile::BuildingGround(_) => todo!(),
@@ -112,15 +119,27 @@ fn on_tile_click(
     }
 }
 
-fn place_tower(
-    cmds: &mut Commands,
-    tower: &mut Option<Tower>,
-    board_visu: &BoardVisu,
-    pos: &UVec2,
-    now: IngameTimestamp,
-) {
+fn place_tower(cmds: &mut Commands, tower: &mut Option<Tower>, pos: &UVec2) {
     let pos = Vec2Board::from_uvec2_middle(pos);
-    let new_tower = Tower::laser_shot(pos, now);
-    draw_tower(cmds, board_visu, pos, &new_tower, now);
+    let new_tower = Tower::laser(pos);
+    draw_tower::<GameScreen>(cmds, pos, &new_tower);
     *tower = Some(new_tower);
+}
+
+fn open_tbm(tbm: &mut TowerBuildMenu, q_tbm: TowerBuildMenuQuery, pos: &UVec2) {
+    set_visibility_tbm(q_tbm, true, Vec2Board::from_uvec2_middle(pos));
+    tbm.tile_pos = *pos;
+    tbm.is_open = true;
+}
+
+fn close_tbm(tbm: &mut TowerBuildMenu, q_tbm: TowerBuildMenuQuery) {
+    set_visibility_tbm(q_tbm, false, Vec2Board::default());
+    tbm.is_open = false;
+}
+
+fn set_visibility_tbm(mut q_tbm: TowerBuildMenuQuery, is_visible: bool, pos: Vec2Board) {
+    q_tbm.for_each_mut(|(mut visi, mut transform)| {
+        transform.translation = pos.to_scaled_vec3(3.);
+        visi.is_visible = is_visible;
+    });
 }

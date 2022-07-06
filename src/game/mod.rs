@@ -13,6 +13,7 @@ use self::{
         tower::tower_system,
         wave::{wave_spawn_system, wave_system, Wave, WaveState},
     },
+    tower_build_menu::{draw_tower_build_menu, GameTowerMenuScreen, TowerBuildMenu},
 };
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
@@ -28,8 +29,10 @@ mod actions;
 mod controls;
 mod enemies;
 mod systems;
+mod tower_build_menu;
 
 type BoardVisu = BoardVisualisation<GameScreen>;
+type BaseLevel = u8;
 
 pub struct GamePlugin;
 
@@ -63,7 +66,8 @@ impl Plugin for GamePlugin {
             .add_system_set(
                 SystemSet::on_exit(GameState::Game)
                     .with_system(clean_up_game)
-                    .with_system(despawn_all_of::<GameScreen>),
+                    .with_system(despawn_all_of::<GameScreen>)
+                    .with_system(despawn_all_of::<GameTowerMenuScreen>),
             );
     }
 }
@@ -77,6 +81,7 @@ pub(crate) struct Game {
     wave_no: u32,
     next_wave_spawn: Option<IngameTimestamp>,
     is_overview: bool,
+    base_lvl: BaseLevel,
 }
 
 impl Game {
@@ -88,6 +93,7 @@ impl Game {
             wave_no: 0,
             next_wave_spawn: Some(IngameTimestamp::new(1.)),
             is_overview: false,
+            base_lvl: 1,
         }
     }
 }
@@ -113,12 +119,15 @@ fn game_setup(
     windows: Res<Windows>,
     board: Res<Board>,
     board_cache: Res<BoardCache>,
+    game: Res<Game>,
 ) {
     zoom_cam_to_board(&board, cam_query, &windows, Vec2::default());
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache);
+    draw_tower_build_menu(&mut cmds, game.base_lvl);
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
+    cmds.init_resource::<TowerBuildMenu>();
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>) {
@@ -132,4 +141,5 @@ fn clean_up_game(mut cmds: Commands) {
     cmds.remove_resource::<BoardVisu>();
     cmds.remove_resource::<Wave>();
     cmds.remove_resource::<IngameTime>();
+    cmds.remove_resource::<TowerBuildMenu>();
 }

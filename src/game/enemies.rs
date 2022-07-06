@@ -1,7 +1,7 @@
 use super::{BoardVisu, GameScreen};
 use crate::{
     board::{step::BoardStep, visualisation::TILE_SIZE, BoardCache},
-    utils::{health_bar::health_bar, Vec2Board},
+    utils::{health_bar::health_bar, TilesPerSecond, Vec2Board},
 };
 use bevy::{prelude::*, reflect::Uuid};
 use bevy_prototype_lyon::entity::ShapeBundle;
@@ -20,7 +20,7 @@ pub enum EnemyType {
 #[derive(Component, Clone, Serialize, Deserialize)]
 pub struct Enemy {
     pub id: Uuid,
-    speed: f32,
+    speed: TilesPerSecond,
     pub health_max: f32,
     pub health: f32,
     pub pos: Vec2Board,
@@ -76,7 +76,7 @@ impl Enemy {
     }
 
     pub fn distance_walked(speed: f32, dur: Duration) -> f32 {
-        speed * dur.as_secs_f64() as f32
+        speed * dur.as_secs_f32()
     }
 
     // Return true if end is reached

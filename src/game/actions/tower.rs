@@ -1,6 +1,6 @@
 use crate::{
-    board::visualisation::TILE_SIZE,
-    utils::shots::{laser_shape, Shot},
+    game::GameScreen,
+    utils::shots::{laser::spawn_shot_laser, rocket::spawn_shot_rocket, Shot},
 };
 use bevy::prelude::*;
 
@@ -19,8 +19,8 @@ pub fn on_tower_actions(mut cmds: Commands, mut actions: EventReader<TowerAction
 }
 
 fn shoot(cmds: &mut Commands, shot: &Shot) {
-    cmds.spawn_bundle(match shot {
-        Shot::Laser(_) => laser_shape(TILE_SIZE),
-    })
-    .insert(shot.clone());
+    match shot {
+        Shot::Laser(_) => spawn_shot_laser::<GameScreen>(cmds, shot),
+        Shot::Rocket(_) => spawn_shot_rocket::<GameScreen>(cmds, shot),
+    }
 }

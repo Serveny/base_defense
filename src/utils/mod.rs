@@ -14,6 +14,8 @@ pub mod shots;
 pub mod towers;
 mod vec2_board;
 
+pub type TilesPerSecond = f32;
+
 #[derive(Deref, DerefMut, Clone, Debug, Default)]
 pub struct IngameTime(Stopwatch);
 

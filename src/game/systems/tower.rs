@@ -1,4 +1,7 @@
+use std::time::Duration;
+
 use crate::{
+    board::visualisation::TILE_SIZE,
     game::{actions::tower::TowerActionsEvent, enemies::Enemy},
     utils::{
         pos_to_quat,
@@ -8,26 +11,35 @@ use crate::{
     },
 };
 use bevy::{prelude::*, reflect::Uuid};
+use bevy_prototype_lyon::prelude::*;
 
+type Cannon<'a> = (&'a mut Transform, &'a mut DrawMode);
+type CannonQuery<'w, 's, 'a> = Query<'w, 's, Cannon<'a>, With<TowerCannon>>;
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy, &'a Children), With<Enemy>>;
 
 pub(in crate::game) fn tower_system(
-    mut cannon_transforms: Query<&mut Transform, With<TowerCannon>>,
+    mut cannons: CannonQuery,
     mut towers: Query<(&mut Tower, &Children), With<Tower>>,
     mut actions: EventWriter<TowerActionsEvent>,
     enemies: EnemiesQuery,
     time: Res<IngameTime>,
 ) {
     let now = IngameTimestamp::new(time.elapsed_secs());
-    for (mut tower, children) in towers.iter_mut() {
+    for (mut tower, tower_children) in towers.iter_mut() {
         let tower_vals = tower.values_mut();
         let locked_enemy = lock_tower_to_enemy(tower_vals, &enemies);
-        rotate_cannon_to_enemy(
-            &mut cannon_transforms,
-            children,
-            tower_vals.pos,
-            locked_enemy,
-        );
+        if locked_enemy.is_none() {
+            if let TowerStatus::Shooting(finish) = tower_vals.tower_status {
+                let time_left = 1. - (*finish - *now);
+                println!("{time_left}");
+                let earier_finish = *now + tower_vals.reload_duration.as_secs_f32() - time_left;
+                set_tower_status_reload(tower_vals, earier_finish.into());
+            }
+        }
+        let cannon = cannon_mut(&mut cannons, tower_children).expect("Every tower needs a cannon");
+
+        rotate_cannon_to_enemy(cannon.0.into_inner(), tower_vals, locked_enemy);
+        overheat_cannon(cannon.1.into_inner(), tower_vals, now);
         shoot_or_reload(&mut actions, tower_vals, locked_enemy, now);
     }
 }
@@ -51,18 +63,12 @@ fn lock_tower_to_enemy<'a>(
 }
 
 fn rotate_cannon_to_enemy(
-    cannon_transforms: &mut Query<&mut Transform, With<TowerCannon>>,
-    tower_children: &Children,
-    tower_pos: Vec2Board,
+    transform: &mut Transform,
+    tower_vals: &TowerValues,
     locked_enemy: Option<&Enemy>,
 ) {
     if let Some(locked_enemy) = locked_enemy {
-        rotate_tower_cannon_to_pos(
-            cannon_transforms,
-            tower_pos,
-            locked_enemy.pos,
-            tower_children,
-        );
+        rotate_tower_cannon_to_pos(transform, locked_enemy.pos, tower_vals.pos);
     }
 }
 
@@ -94,18 +100,63 @@ fn find_locked_enemy_in_tower_range<'a>(
     }
     None
 }
-
-fn rotate_tower_cannon_to_pos(
-    cannon_transforms: &mut Query<&mut Transform, With<TowerCannon>>,
-    tower_pos: Vec2Board,
-    enemy_pos: Vec2Board,
+fn cannon_mut<'a>(
+    cannons: &'a mut CannonQuery,
     tower_children: &Children,
-) {
+) -> Option<(Mut<'a, Transform>, Mut<'a, DrawMode>)> {
+    let mut entity = None;
     for child in tower_children.iter() {
-        if let Ok(mut transform) = cannon_transforms.get_mut(*child) {
-            transform.rotation = pos_to_quat(tower_pos, enemy_pos);
+        if cannons.get(*child).is_ok() {
+            entity = Some(*child);
         }
     }
+    if let Some(entity) = entity {
+        return cannons.get_mut(entity).ok();
+    }
+    None
+}
+
+fn rotate_tower_cannon_to_pos(
+    transform: &mut Transform,
+    enemy_pos: Vec2Board,
+    tower_pos: Vec2Board,
+) {
+    transform.rotation = pos_to_quat(tower_pos, enemy_pos);
+}
+
+fn overheat_cannon(draw_mode: &mut DrawMode, tower_vals: &TowerValues, now: IngameTimestamp) {
+    *draw_mode = DrawMode::Outlined {
+        fill_mode: FillMode::color(overheat_color(tower_vals, now)),
+        outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
+    };
+}
+
+fn overheat_color(tower_vals: &TowerValues, now: IngameTimestamp) -> Color {
+    let silver = 0.75;
+    let heat = match tower_vals.tower_status {
+        TowerStatus::Reloading(finish) => {
+            time_to_percent_inverted(now, finish, tower_vals.reload_duration)
+        }
+        TowerStatus::Waiting => 0.,
+        TowerStatus::Shooting(finish) => {
+            1. - time_to_percent_inverted(now, finish, tower_vals.shoot_duration)
+        }
+    };
+    Color::Rgba {
+        red: silver + (heat * 0.25),
+        green: silver - (heat * 0.75),
+        blue: silver - (heat * 0.75),
+        alpha: 1.,
+    }
+}
+
+fn time_to_percent_inverted(
+    now: IngameTimestamp,
+    die_time: IngameTimestamp,
+    lifetime: Duration,
+) -> f32 {
+    let elapsed = *die_time - *now;
+    (elapsed / lifetime.as_secs_f32()).abs()
 }
 
 fn shoot_or_reload(
@@ -130,8 +181,12 @@ fn shoot_or_reload(
         }
         TowerStatus::Shooting(time_finish) => {
             if now >= time_finish {
-                tower_vals.tower_status = TowerStatus::Reloading(now + tower_vals.reload_duration);
+                set_tower_status_reload(tower_vals, now);
             }
         }
     };
+}
+
+fn set_tower_status_reload(tower_vals: &mut TowerValues, finish: IngameTimestamp) {
+    tower_vals.tower_status = TowerStatus::Reloading(finish);
 }

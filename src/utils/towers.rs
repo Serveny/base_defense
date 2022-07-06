@@ -1,33 +1,31 @@
-use crate::board::visualisation::{BoardVisualisation, TILE_SIZE};
-use bevy::{prelude::*, reflect::Uuid};
-use bevy_prototype_lyon::{
-    entity::ShapeBundle,
-    prelude::{
-        DrawMode, FillMode, GeometryBuilder, RectangleOrigin, RegularPolygon,
-        RegularPolygonFeature, StrokeMode,
-    },
-    shapes::{self, Circle},
-};
-use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use crate::board::visualisation::TILE_SIZE;
 
+use self::{laser::spawn_laser_tower, rocket::spawn_rocket_tower};
 use super::{
     shots::{Shot, Target, TowerStatus},
-    IngameTimestamp, Vec2Board,
+    Vec2Board,
 };
+use bevy::prelude::*;
+use bevy::reflect::Uuid;
+use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
+use strum::EnumDiscriminants;
 
-pub const LASER_TOWER_INIT_RANGE_RADIUS: f32 = 2.;
-pub const LASER_TOWER_INIT_SHOT_DURATION_SECS: f32 = 1.;
+mod laser;
+mod rocket;
 
 //pub struct Tower {
 //tower_type: TowerType,
 //shot_con: Consumption,
 //}
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Component)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Component, EnumDiscriminants)]
+#[strum_discriminants(derive(Component))]
+#[strum_discriminants(name(MenuTower))]
 pub enum Tower {
     // Damages enemies, needs energy
-    LaserShot(TowerValues),
+    Laser(TowerValues),
 
     // Slows enemies down, needs energy
     Microwave(TowerValues),
@@ -40,13 +38,9 @@ pub enum Tower {
 }
 
 impl Tower {
-    pub fn laser_shot(pos: Vec2Board, now: IngameTimestamp) -> Self {
-        Self::LaserShot(TowerValues::laser_shot(pos, now))
-    }
-
     pub fn values(&self) -> &TowerValues {
         match self {
-            Tower::LaserShot(values) => values,
+            Tower::Laser(values) => values,
             Tower::Microwave(values) => values,
             Tower::Rocket(values) => values,
             Tower::Grenade(values) => values,
@@ -55,10 +49,20 @@ impl Tower {
 
     pub fn values_mut(&mut self) -> &mut TowerValues {
         match self {
-            Tower::LaserShot(values) => values,
+            Tower::Laser(values) => values,
             Tower::Microwave(values) => values,
             Tower::Rocket(values) => values,
             Tower::Grenade(values) => values,
+        }
+    }
+
+    pub fn draw_default<TScreen: Component + Default>(self, cmds: &mut Commands) {
+        let pos = Vec2Board::default();
+        match self {
+            Tower::Laser(values) => spawn_laser_tower::<TScreen>(cmds, TowerValues::laser(pos)),
+            Tower::Microwave(values) => todo!(),
+            Tower::Rocket(values) => spawn_rocket_tower::<TScreen>(cmds, TowerValues::rocket(pos)),
+            Tower::Grenade(values) => todo!(),
         }
     }
 }
@@ -77,23 +81,42 @@ pub struct TowerValues {
 }
 
 impl TowerValues {
-    pub fn laser_shot(pos: Vec2Board, now: IngameTimestamp) -> Self {
-        let reload_duration = Duration::from_secs(1);
+    pub fn laser(pos: Vec2Board) -> Self {
+        use super::shots::laser;
         Self {
             pos,
-            range_radius: LASER_TOWER_INIT_RANGE_RADIUS,
+            range_radius: laser::INIT_RANGE_RADIUS,
             shot: Shot::laser(pos),
-            reload_duration,
-            shoot_duration: Duration::from_secs_f32(LASER_TOWER_INIT_SHOT_DURATION_SECS),
+            reload_duration: Duration::from_secs(1),
+            shoot_duration: Duration::from_secs_f32(laser::INIT_SHOT_DURATION_SECS),
 
             target_lock: None,
-            tower_status: TowerStatus::Reloading(now + reload_duration),
+            tower_status: TowerStatus::Waiting,
         }
     }
+    pub fn rocket(pos: Vec2Board) -> Self {
+        use super::shots::rocket;
+        Self {
+            pos,
+            range_radius: rocket::INIT_RANGE_RADIUS,
+            shot: Shot::rocket(pos),
+            reload_duration: Duration::from_secs_f32(5.),
+            shoot_duration: Duration::from_secs_f32(1.),
+            target_lock: None,
+            tower_status: TowerStatus::Waiting,
+        }
+    }
+
     pub fn shoot(&self, target: Target) -> Shot {
         let mut shot = self.shot.clone();
         shot.set_target(target);
         shot
+    }
+
+    pub fn clone_with_pos(&self, pos: Vec2Board) -> Self {
+        let mut new_vals = self.clone();
+        new_vals.pos = pos;
+        new_vals
     }
 }
 
@@ -107,80 +130,30 @@ pub trait BoardTower {
     fn draw(&self, cmds: &mut Commands);
 }
 
-pub fn draw_tower<TScreen: Component + Copy + Default>(
+pub fn draw_tower<TScreen: Component + Default>(
     cmds: &mut Commands,
-    board_visu: &BoardVisualisation<TScreen>,
     pos: Vec2Board,
     tower: &Tower,
-    time: IngameTimestamp,
 ) {
     match tower {
-        Tower::LaserShot(values) => spawn_laser_shot_tower(cmds, board_visu, pos, values, time),
-        Tower::Microwave(_) => todo!(),
+        Tower::Laser(vals) => spawn_laser_tower::<TScreen>(cmds, vals.clone_with_pos(pos)),
+        Tower::Microwave(vals) => spawn_rocket_tower::<TScreen>(cmds, vals.clone_with_pos(pos)),
         Tower::Rocket(_) => todo!(),
         Tower::Grenade(_) => todo!(),
     };
 }
 
-fn spawn_laser_shot_tower<TScreen: Component + Copy + Default>(
-    cmds: &mut Commands,
-    board_visu: &BoardVisualisation<TScreen>,
-    pos: Vec2Board,
-    tower_values: &TowerValues,
-    time: IngameTimestamp,
-) {
-    let tile_size = board_visu.inner_tile_size;
-    let color = Color::RED;
-    cmds.spawn_bundle(tower_base_shape(tile_size, pos.to_scaled_vec3(1.), color))
-        .with_children(|parent| {
-            laser_tower_children(
-                parent,
-                tile_size,
-                tower_values.range_radius * TILE_SIZE,
-                &pos,
-                color,
-            );
-        })
-        .insert(Tower::LaserShot(TowerValues::laser_shot(pos, time)))
-        .insert(TScreen::default());
-}
-
-fn laser_tower_children(
-    parent: &mut ChildBuilder,
-    tile_size: f32,
-    range_radius_px: f32,
-    pos: &Vec2Board,
-    color: Color,
-) {
-    // Tower circle
-    parent.spawn_bundle(tower_circle_shape(tile_size));
-
-    // Tower cannon
-    parent
-        .spawn_bundle(tower_laser_cannon(tile_size))
-        .insert(TowerCannon);
-
-    // Range circle
-    let mut range_circle = tower_range_circle_shape(range_radius_px, color);
-    range_circle.visibility.is_visible = false;
-    parent
-        .spawn_bundle(range_circle)
-        .insert(TowerRangeCircle(pos.as_uvec2()));
-
-    // Laser
-}
-
-fn tower_base_shape(tile_size: f32, translation: Vec3, color: Color) -> ShapeBundle {
+fn tower_base_shape(translation: Vec3, color: Color) -> ShapeBundle {
     let shape = RegularPolygon {
         sides: 8,
-        feature: RegularPolygonFeature::Radius(tile_size / 2.4),
+        feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
         ..RegularPolygon::default()
     };
     GeometryBuilder::build_as(
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(color),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
         },
         Transform {
             translation,
@@ -189,16 +162,16 @@ fn tower_base_shape(tile_size: f32, translation: Vec3, color: Color) -> ShapeBun
     )
 }
 
-fn tower_circle_shape(tile_size: f32) -> ShapeBundle {
+fn tower_circle_shape() -> ShapeBundle {
     let shape = Circle {
         center: Vec2::default(),
-        radius: tile_size / 5.,
+        radius: TILE_SIZE / 5.,
     };
     GeometryBuilder::build_as(
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
         },
         Transform {
             translation: Vec3::new(0., 0., 0.2),
@@ -210,7 +183,7 @@ fn tower_circle_shape(tile_size: f32) -> ShapeBundle {
 fn tower_range_circle_shape(radius: f32, color: Color) -> ShapeBundle {
     let shape = Circle {
         center: Vec2::default(),
-        radius,
+        radius: radius * TILE_SIZE,
     };
     GeometryBuilder::build_as(
         &shape,
@@ -220,25 +193,6 @@ fn tower_range_circle_shape(radius: f32, color: Color) -> ShapeBundle {
         },
         Transform {
             translation: Vec3::new(0., 0., 0.3),
-            ..Default::default()
-        },
-    )
-}
-
-fn tower_laser_cannon(tile_size: f32) -> ShapeBundle {
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 4.)),
-        extents: Vec2::new(tile_size / 6., tile_size / 2.),
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
-        },
-        Transform {
-            translation: Vec3::new(0., 0., 0.1),
-            rotation: Quat::from_rotation_z(0.),
             ..Default::default()
         },
     )

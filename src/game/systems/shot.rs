@@ -31,6 +31,7 @@ pub(in crate::game) fn shot_system(
                 now,
                 time.delta(),
             ),
+            Shot::Rocket(shot) => handle_damage_in_radius_enemy_locked_shot(),
         }
     }
 }
@@ -54,7 +55,8 @@ fn handle_damage_per_time_shot(
                 enemy.health -= frame_dur.as_secs_f32() * shot.damage;
                 transform.rotation = pos_to_quat(shot.pos_start, enemy.pos);
                 transform.scale = Vec3::new(
-                    (time_to_die_percent(now, die_time, shot.lifetime) / 4.) + 0.75,
+                    // (time_to_die_percent(now, die_time, shot.lifetime) / 4.) + 0.75,
+                    (*now % 0.2) * 10.,
                     shot.pos_start.distance(enemy.pos.into()),
                     1.,
                 );
@@ -68,10 +70,7 @@ fn handle_damage_per_time_shot(
     }
 }
 
-fn time_to_die_percent(now: IngameTimestamp, die_time: IngameTimestamp, lifetime: Duration) -> f32 {
-    let elapsed = *die_time - *now;
-    (elapsed / lifetime.as_secs_f32()).abs()
-}
+fn handle_damage_in_radius_enemy_locked_shot() {}
 
 fn find_enemy_in_range_mut<'a>(
     query: &'a mut EnemiesQuery,

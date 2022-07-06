@@ -11,5 +11,6 @@ Base defense concept:
   (- Buildings and towers have levels)
 - Base has own defense system and if it got hit by an enemy, it will consume resources to defend. If there are no resources anymore, the game is over.
 - Base consumes energy constantly. If there is a specific time no energy, the game is over
+- Base has level, towers get unlocked with base level
 - Controls:
   - Shift: Show all tower ranges

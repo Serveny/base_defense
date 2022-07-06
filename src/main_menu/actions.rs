@@ -6,6 +6,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
+#[allow(clippy::large_enum_variant)]
 pub(super) enum MenuActionEvent {
     EnterNewGameMenu,
     StartNewGame(Game, Board, BoardCache),
