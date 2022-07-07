@@ -3,6 +3,7 @@ use self::{
         game_actions,
         tile::{on_tile_actions, TileActionsEvent},
         tower::{on_tower_actions, TowerActionsEvent},
+        tower_menu::{on_tower_menu_actions, TowerMenuActionsEvent},
         wave::{on_wave_actions, WaveActionsEvent},
         GameActionEvent,
     },
@@ -13,7 +14,7 @@ use self::{
         tower::tower_system,
         wave::{wave_spawn_system, wave_system, Wave, WaveState},
     },
-    tower_build_menu::{draw_tower_build_menu, TowerBuildMenu, TowerMenuScreen},
+    tower_build_menu::{draw_tower_build_menu, TowerMenu, TowerMenuScreen},
 };
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
@@ -39,9 +40,10 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<GameActionEvent>()
+            .add_event::<WaveActionsEvent>()
             .add_event::<TileActionsEvent>()
             .add_event::<TowerActionsEvent>()
-            .add_event::<WaveActionsEvent>()
+            .add_event::<TowerMenuActionsEvent>()
             .add_state(WaveState::None)
             .add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
             .add_system_set(
@@ -57,6 +59,7 @@ impl Plugin for GamePlugin {
                     .with_system(game_actions)
                     .with_system(on_tower_actions)
                     .with_system(on_wave_actions)
+                    .with_system(on_tower_menu_actions)
                     .with_system(on_tile_actions),
             )
             .add_system_set(
@@ -113,9 +116,10 @@ fn on_resize(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn game_setup(
     mut cmds: Commands,
-    ta_ev: EventWriter<TileActionsEvent>,
+    tm_ev: EventWriter<TowerMenuActionsEvent>,
     cam_query: CamMutQuery,
     windows: Res<Windows>,
     board: Res<Board>,
@@ -125,10 +129,10 @@ fn game_setup(
     zoom_cam_to_board(&board, cam_query, &windows, Vec2::default());
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache);
-    draw_tower_build_menu(&mut cmds, ta_ev, game.base_lvl);
+    draw_tower_build_menu(&mut cmds, tm_ev, game.base_lvl);
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
-    cmds.init_resource::<TowerBuildMenu>();
+    cmds.init_resource::<TowerMenu>();
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>) {
@@ -142,5 +146,5 @@ fn clean_up_game(mut cmds: Commands) {
     cmds.remove_resource::<BoardVisu>();
     cmds.remove_resource::<Wave>();
     cmds.remove_resource::<IngameTime>();
-    cmds.remove_resource::<TowerBuildMenu>();
+    cmds.remove_resource::<TowerMenu>();
 }

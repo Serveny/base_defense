@@ -1,6 +1,6 @@
 use super::{
-    actions::{tile::TileActionsEvent, GameActionEvent},
-    tower_build_menu::TowerBuildMenu,
+    actions::{tile::TileActionsEvent, tower_menu::TowerMenuActionsEvent, GameActionEvent},
+    tower_build_menu::TowerMenu,
 };
 use crate::{
     board::{Board, Tile},
@@ -8,6 +8,8 @@ use crate::{
     CamQuery,
 };
 use bevy::{input::mouse::MouseWheel, prelude::*};
+use TileActionsEvent::*;
+use TowerMenuActionsEvent::*;
 
 pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter<GameActionEvent>) {
     if keys.just_released(KeyCode::Escape) {
@@ -21,53 +23,69 @@ pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn mouse_input(
-    mut actions: EventWriter<TileActionsEvent>,
-    mut ev_scroll: EventReader<MouseWheel>,
+    mut tile_actions: EventWriter<TileActionsEvent>,
+    mut tm_actions: EventWriter<TowerMenuActionsEvent>,
+    ev_scroll: EventReader<MouseWheel>,
     mouse_button_input: Res<Input<MouseButton>>,
     q_cam: CamQuery,
     wnds: Res<Windows>,
     board: Res<Board>,
-    tbm: Res<TowerBuildMenu>,
+    tbm: Res<TowerMenu>,
 ) {
     if let Some((pos, tile)) = get_hover_pos_and_tile(wnds, q_cam, board) {
-        if mouse_button_input.pressed(MouseButton::Left) {
-            actions.send(TileActionsEvent::TileLeftClick(pos.as_uvec2()));
-        }
-        if tbm.is_open && tbm.tile_pos != pos.as_uvec2() {
-            actions.send(if let Tile::TowerGround(_) = tile {
-                TileActionsEvent::OpenTowerBuildMenu(pos.as_uvec2())
+        if mouse_button_input.just_pressed(MouseButton::Left) {
+            if tbm.is_open {
+                tm_actions.send(TowerMenuActionsEvent::PlaceTower);
+                tm_actions.send(Close);
             } else {
-                TileActionsEvent::CloseTowerBuildMenu
-            });
-        }
-
-        for ev in ev_scroll.iter() {
-            println!("{:?}", ev);
-            if let Tile::TowerGround(tile) = &tile {
-                if tile.is_none() {
-                    if tbm.is_open {
-                        send_tbm_scroll_ev(ev, &mut actions);
-                    } else {
-                        actions.send(TileActionsEvent::OpenTowerBuildMenu(pos.as_uvec2()));
-                    }
-                }
+                tm_actions.send(Open(pos.as_uvec2()));
             }
+        } else {
+            if tbm.is_open && tbm.tile_pos != pos.as_uvec2() {
+                tm_actions.send(if let Tile::TowerGround(_) = tile {
+                    Open(pos.as_uvec2())
+                } else {
+                    Close
+                });
+            }
+            mouse_wheel_handler(&mut tm_actions, ev_scroll, &tbm, &pos, &tile);
         }
-
-        actions.send(TileActionsEvent::HoverTile(pos));
+        tile_actions.send(HoverTile(pos));
     } else {
-        actions.send(TileActionsEvent::UnhoverTile);
-        actions.send(TileActionsEvent::CloseTowerBuildMenu);
+        tile_actions.send(UnhoverTile);
+        tm_actions.send(Close);
+    }
+
+    if mouse_button_input.just_pressed(MouseButton::Right) {
+        tm_actions.send(Close);
     }
 }
 
-fn send_tbm_scroll_ev(ev: &MouseWheel, actions: &mut EventWriter<TileActionsEvent>) {
-    actions.send(if ev.y > 0. {
-        TileActionsEvent::ScollUpTowerBuildMenu
-    } else {
-        TileActionsEvent::ScollDownTowerBuildMenu
-    });
+fn mouse_wheel_handler(
+    tm_actions: &mut EventWriter<TowerMenuActionsEvent>,
+    mut ev_scroll: EventReader<MouseWheel>,
+    tbm: &TowerMenu,
+    pos: &Vec2Board,
+    tile: &Tile,
+) {
+    for ev in ev_scroll.iter() {
+        println!("{:?}", ev);
+        if let Tile::TowerGround(tile) = &tile {
+            if tile.is_none() {
+                if tbm.is_open {
+                    send_tbm_scroll_ev(ev, tm_actions);
+                } else {
+                    tm_actions.send(Open(pos.as_uvec2()));
+                }
+            }
+        }
+    }
+}
+
+fn send_tbm_scroll_ev(ev: &MouseWheel, tm_actions: &mut EventWriter<TowerMenuActionsEvent>) {
+    tm_actions.send(if ev.y > 0. { ScollUp } else { ScollDown });
 }
 
 fn get_hover_pos_and_tile(

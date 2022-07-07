@@ -5,6 +5,7 @@ use super::{systems::wave::WaveState, Game, GameScreen};
 
 pub(super) mod tile;
 pub(super) mod tower;
+pub(super) mod tower_menu;
 pub(super) mod wave;
 
 type RangeCircleQuery<'w, 's, 'a> =

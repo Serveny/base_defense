@@ -22,7 +22,7 @@ mod rocket;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Component, EnumDiscriminants)]
 #[strum_discriminants(derive(Component))]
-#[strum_discriminants(name(MenuTower))]
+#[strum_discriminants(name(Towerless))]
 pub enum Tower {
     // Damages enemies, needs energy
     Laser(TowerValues),
@@ -139,8 +139,8 @@ pub fn draw_tower<TScreen: Component + Default>(
 ) {
     match tower {
         Tower::Laser(vals) => spawn_laser_tower::<TScreen>(cmds, vals.clone_with_pos(pos)),
-        Tower::Microwave(vals) => spawn_rocket_tower::<TScreen>(cmds, vals.clone_with_pos(pos)),
-        Tower::Rocket(_) => todo!(),
+        Tower::Microwave(_) => todo!(),
+        Tower::Rocket(vals) => spawn_rocket_tower::<TScreen>(cmds, vals.clone_with_pos(pos)),
         Tower::Grenade(_) => todo!(),
     };
 }

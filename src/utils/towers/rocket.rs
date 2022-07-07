@@ -8,7 +8,7 @@ use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
 impl Tower {
     pub fn rocket(pos: Vec2Board) -> Self {
-        Self::Laser(TowerValues::laser(pos))
+        Self::Rocket(TowerValues::rocket(pos))
     }
 }
 
