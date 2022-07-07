@@ -1,4 +1,4 @@
-use super::BaseLevel;
+use super::{actions::tile::TileActionsEvent, BaseLevel};
 use crate::{
     board::visualisation::TILE_SIZE,
     utils::{towers::Tower, Vec2Board},
@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 
 #[derive(Component, Default)]
-pub(super) struct GameTowerMenuScreen;
+pub(super) struct TowerMenuScreen;
 
 #[derive(Default)]
 pub(super) struct TowerBuildMenu {
@@ -40,19 +40,22 @@ impl TowerBuildMenu {
 }
 
 #[derive(Component)]
-struct TowerBuildMenuCircle;
+pub struct TowerMenuCircle;
 
-#[derive(Component)]
-pub struct TowerBuildMenuComp;
-
-pub(super) fn draw_tower_build_menu(cmds: &mut Commands, base_lvl: BaseLevel) {
+pub(super) fn draw_tower_build_menu(
+    cmds: &mut Commands,
+    mut actions: EventWriter<TileActionsEvent>,
+    base_lvl: BaseLevel,
+) {
     cmds.spawn_bundle(menu_circle_shape(TILE_SIZE))
-        .insert(TowerBuildMenuCircle)
-        .insert(TowerBuildMenuComp)
-        .insert(GameTowerMenuScreen);
+        .insert(TowerMenuCircle)
+        .insert(TowerMenuScreen);
 
     let mut towers = TowerBuildMenu::available_towers(base_lvl);
-    while let Some(tower) = towers.pop() {}
+    while let Some(tower) = towers.pop() {
+        tower.draw_default::<TowerMenuScreen>(cmds);
+    }
+    actions.send(TileActionsEvent::CloseTowerBuildMenu);
 }
 
 fn menu_circle_shape(tile_size: f32) -> ShapeBundle {

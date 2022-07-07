@@ -1,5 +1,5 @@
 use super::{
-    tower_base_shape, tower_circle_shape, tower_range_circle_shape, Tower, TowerCannon,
+    tower_base_shape, tower_circle_shape, tower_range_circle_shape, Tower, TowerBase, TowerCannon,
     TowerRangeCircle, TowerValues,
 };
 use crate::{board::visualisation::TILE_SIZE, utils::Vec2Board};
@@ -19,27 +19,36 @@ pub(super) fn spawn_rocket_tower<TScreen: Component + Default>(
     let color = Color::PURPLE;
     cmds.spawn_bundle(tower_base_shape(vals.pos.to_scaled_vec3(1.), color))
         .with_children(|parent| {
-            rocket_tower_children(parent, &vals, color);
+            rocket_tower_children::<TScreen>(parent, &vals, color);
         })
+        .insert(TowerBase)
         .insert(Tower::Rocket(vals))
         .insert(TScreen::default());
 }
 
-fn rocket_tower_children(parent: &mut ChildBuilder, vals: &TowerValues, color: Color) {
+fn rocket_tower_children<TScreen: Component + Default>(
+    parent: &mut ChildBuilder,
+    vals: &TowerValues,
+    color: Color,
+) {
     // Tower circle
-    parent.spawn_bundle(tower_circle_shape());
+    parent
+        .spawn_bundle(tower_circle_shape())
+        .insert(TScreen::default());
 
     // Tower cannon
     parent
         .spawn_bundle(tower_rocket_cannon())
-        .insert(TowerCannon);
+        .insert(TowerCannon)
+        .insert(TScreen::default());
 
     // Range circle
     let mut range_circle = tower_range_circle_shape(vals.range_radius, color);
     range_circle.visibility.is_visible = false;
     parent
         .spawn_bundle(range_circle)
-        .insert(TowerRangeCircle(vals.pos.as_uvec2()));
+        .insert(TowerRangeCircle(vals.pos.as_uvec2()))
+        .insert(TScreen::default());
 
     // rocket
 }

@@ -56,13 +56,12 @@ impl Tower {
         }
     }
 
-    pub fn draw_default<TScreen: Component + Default>(self, cmds: &mut Commands) {
-        let pos = Vec2Board::default();
+    pub fn draw_default<TScreen: Component + Default>(&self, cmds: &mut Commands) {
         match self {
-            Tower::Laser(values) => spawn_laser_tower::<TScreen>(cmds, TowerValues::laser(pos)),
-            Tower::Microwave(values) => todo!(),
-            Tower::Rocket(values) => spawn_rocket_tower::<TScreen>(cmds, TowerValues::rocket(pos)),
-            Tower::Grenade(values) => todo!(),
+            Tower::Laser(values) => spawn_laser_tower::<TScreen>(cmds, values.clone()),
+            Tower::Microwave(_) => todo!(),
+            Tower::Rocket(values) => spawn_rocket_tower::<TScreen>(cmds, values.clone()),
+            Tower::Grenade(_) => todo!(),
         }
     }
 }
@@ -122,6 +121,9 @@ impl TowerValues {
 
 #[derive(Component)]
 pub struct TowerCannon;
+
+#[derive(Component)]
+pub struct TowerBase;
 
 #[derive(Component, Deref, DerefMut)]
 pub struct TowerRangeCircle(UVec2);

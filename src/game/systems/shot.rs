@@ -56,7 +56,7 @@ fn handle_damage_per_time_shot(
                 transform.rotation = pos_to_quat(shot.pos_start, enemy.pos);
                 transform.scale = Vec3::new(
                     // (time_to_die_percent(now, die_time, shot.lifetime) / 4.) + 0.75,
-                    (*now % 0.2) * 10.,
+                    0.4 + (*now % 0.1) * 6.,
                     shot.pos_start.distance(enemy.pos.into()),
                     1.,
                 );

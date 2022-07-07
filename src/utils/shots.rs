@@ -61,6 +61,7 @@ pub struct DamagePerTimeShot {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DamageInRadiusEnemyLockedShot {
     pub target_enemy_id: Uuid,
+    pub pos: Vec2Board,
     pub damage: InstantDamage,
     pub damage_radius: f32,
     pub range_radius: f32,

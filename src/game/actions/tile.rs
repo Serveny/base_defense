@@ -3,11 +3,11 @@ use bevy::prelude::*;
 use crate::{
     board::{visualisation::HoverCrossQuery, Board, Tile},
     game::{
-        tower_build_menu::{TowerBuildMenu, TowerBuildMenuComp},
+        tower_build_menu::{TowerBuildMenu, TowerMenuCircle, TowerMenuScreen},
         BoardVisu, Game, GameScreen,
     },
     utils::{
-        towers::{draw_tower, Tower},
+        towers::{draw_tower, Tower, TowerBase},
         Vec2Board,
     },
 };
@@ -20,11 +20,21 @@ type TileActionQueries<'w, 's, 'a> = ParamSet<
     (
         HoverCrossQuery<'w, 's, 'a>,
         RangeCircleQuery<'w, 's, 'a>,
-        TowerBuildMenuQuery<'w, 's, 'a>,
+        TowerMenuCircleQuery<'w, 's, 'a>,
+        TowerMenuQuery<'w, 's, 'a>,
+        TowerBaseQuery<'w, 's, 'a>,
     ),
 >;
-type TowerBuildMenuQuery<'w, 's, 'a> =
-    Query<'w, 's, (&'a mut Visibility, &'a mut Transform), With<TowerBuildMenuComp>>;
+type TowerMenuCircleQuery<'w, 's, 'a> =
+    Query<'w, 's, (&'a mut Visibility, &'a mut Transform), With<TowerMenuCircle>>;
+type TowerBaseQuery<'w, 's, 'a> = Query<
+    'w,
+    's,
+    (&'a mut Visibility, &'a mut Transform, &'a Children),
+    (With<TowerBase>, With<TowerMenuScreen>),
+>;
+type TowerMenuQuery<'w, 's, 'a> =
+    Query<'w, 's, (Entity, &'a mut Visibility), With<TowerMenuScreen>>;
 
 pub enum TileActionsEvent {
     HoverTile(Vec2Board),
@@ -55,8 +65,8 @@ pub(in crate::game) fn on_tile_actions(
                 }
                 TileActionsEvent::UnhoverTile => on_unhover_tile(&mut queries, &game),
                 TileActionsEvent::TileLeftClick(pos) => handle_click(&mut cmds, &mut board, pos),
-                TileActionsEvent::OpenTowerBuildMenu(pos) => open_tbm(&mut tbm, queries.p2(), pos),
-                TileActionsEvent::CloseTowerBuildMenu => close_tbm(&mut tbm, queries.p2()),
+                TileActionsEvent::OpenTowerBuildMenu(pos) => open_tbm(&mut tbm, &mut queries, pos),
+                TileActionsEvent::CloseTowerBuildMenu => close_tbm(&mut tbm, &mut queries.p3()),
                 TileActionsEvent::ScollUpTowerBuildMenu => todo!(),
                 TileActionsEvent::ScollDownTowerBuildMenu => todo!(),
             }
@@ -126,20 +136,70 @@ fn place_tower(cmds: &mut Commands, tower: &mut Option<Tower>, pos: &UVec2) {
     *tower = Some(new_tower);
 }
 
-fn open_tbm(tbm: &mut TowerBuildMenu, q_tbm: TowerBuildMenuQuery, pos: &UVec2) {
-    set_visibility_tbm(q_tbm, true, Vec2Board::from_uvec2_middle(pos));
+fn open_tbm(tbm: &mut TowerBuildMenu, queries: &mut TileActionQueries, pos: &UVec2) {
+    let translation = Vec2Board::from_uvec2_middle(pos).to_scaled_vec3(3.);
+    set_circle(&mut queries.p2(), translation);
+    show_preview_tower(tbm, queries, translation);
     tbm.tile_pos = *pos;
     tbm.is_open = true;
 }
 
-fn close_tbm(tbm: &mut TowerBuildMenu, q_tbm: TowerBuildMenuQuery) {
-    set_visibility_tbm(q_tbm, false, Vec2Board::default());
-    tbm.is_open = false;
+fn set_circle(q_tmc: &mut TowerMenuCircleQuery, translation: Vec3) {
+    let mut circle = q_tmc.single_mut();
+    circle.0.is_visible = true;
+    circle.1.translation = translation;
 }
 
-fn set_visibility_tbm(mut q_tbm: TowerBuildMenuQuery, is_visible: bool, pos: Vec2Board) {
-    q_tbm.for_each_mut(|(mut visi, mut transform)| {
-        transform.translation = pos.to_scaled_vec3(3.);
-        visi.is_visible = is_visible;
-    });
+fn show_preview_tower(
+    tbm: &mut TowerBuildMenu,
+    queries: &mut TileActionQueries,
+    translation: Vec3,
+) {
+    if let Some(to_hide) = hide_preview_tower_base(&mut queries.p4()) {
+        set_preview_tower_children(&mut queries.p3(), to_hide, false);
+    }
+    if let Some(to_show) = show_preview_tower_base(tbm, &mut queries.p4(), translation) {
+        set_preview_tower_children(&mut queries.p3(), to_show, true);
+    }
+}
+
+fn show_preview_tower_base(
+    tbm: &mut TowerBuildMenu,
+    q_tm: &mut TowerBaseQuery,
+    translation: Vec3,
+) -> Option<Children> {
+    for (i, (mut visi, mut transform, children)) in q_tm.iter_mut().enumerate() {
+        if i == tbm.selected_tower_index {
+            transform.translation = translation;
+            transform.scale = Vec3::new(0.5, 0.5, 1.);
+            visi.is_visible = true;
+            return Some(children.clone());
+        }
+    }
+    None
+}
+
+fn hide_preview_tower_base(q_tm: &mut TowerBaseQuery) -> Option<Children> {
+    for (mut visi, _, children) in q_tm.iter_mut() {
+        if visi.is_visible {
+            visi.is_visible = false;
+            return Some(children.clone());
+        }
+    }
+    None
+}
+
+fn set_preview_tower_children(q_tms: &mut TowerMenuQuery, children: Children, is_visible: bool) {
+    for child in children.iter() {
+        if let Ok((_, mut visi)) = q_tms.get_mut(*child) {
+            visi.is_visible = is_visible;
+        }
+    }
+}
+
+fn close_tbm(tbm: &mut TowerBuildMenu, q_tm: &mut TowerMenuQuery) {
+    for (_, mut visi) in q_tm.iter_mut() {
+        visi.is_visible = false;
+    }
+    tbm.is_open = false;
 }

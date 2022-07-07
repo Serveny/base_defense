@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     board::visualisation::TILE_SIZE,
-    game::{actions::tower::TowerActionsEvent, enemies::Enemy},
+    game::{actions::tower::TowerActionsEvent, enemies::Enemy, tower_build_menu::TowerMenuScreen},
     utils::{
         pos_to_quat,
         shots::{Target, TowerStatus},
@@ -13,13 +13,16 @@ use crate::{
 use bevy::{prelude::*, reflect::Uuid};
 use bevy_prototype_lyon::prelude::*;
 
+type Towers<'w, 's, 'a> =
+    Query<'w, 's, (&'a mut Tower, &'a Children), (With<Tower>, Without<TowerMenuScreen>)>;
 type Cannon<'a> = (&'a mut Transform, &'a mut DrawMode);
-type CannonQuery<'w, 's, 'a> = Query<'w, 's, Cannon<'a>, With<TowerCannon>>;
+type CannonQuery<'w, 's, 'a> =
+    Query<'w, 's, Cannon<'a>, (With<TowerCannon>, Without<TowerMenuScreen>)>;
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy, &'a Children), With<Enemy>>;
 
 pub(in crate::game) fn tower_system(
     mut cannons: CannonQuery,
-    mut towers: Query<(&mut Tower, &Children), With<Tower>>,
+    mut towers: Towers,
     mut actions: EventWriter<TowerActionsEvent>,
     enemies: EnemiesQuery,
     time: Res<IngameTime>,
@@ -31,7 +34,6 @@ pub(in crate::game) fn tower_system(
         if locked_enemy.is_none() {
             if let TowerStatus::Shooting(finish) = tower_vals.tower_status {
                 let time_left = 1. - (*finish - *now);
-                println!("{time_left}");
                 let earier_finish = *now + tower_vals.reload_duration.as_secs_f32() - time_left;
                 set_tower_status_reload(tower_vals, earier_finish.into());
             }
@@ -100,6 +102,7 @@ fn find_locked_enemy_in_tower_range<'a>(
     }
     None
 }
+
 fn cannon_mut<'a>(
     cannons: &'a mut CannonQuery,
     tower_children: &Children,

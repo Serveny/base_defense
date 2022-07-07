@@ -13,7 +13,7 @@ use self::{
         tower::tower_system,
         wave::{wave_spawn_system, wave_system, Wave, WaveState},
     },
-    tower_build_menu::{draw_tower_build_menu, GameTowerMenuScreen, TowerBuildMenu},
+    tower_build_menu::{draw_tower_build_menu, TowerBuildMenu, TowerMenuScreen},
 };
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
@@ -67,7 +67,7 @@ impl Plugin for GamePlugin {
                 SystemSet::on_exit(GameState::Game)
                     .with_system(clean_up_game)
                     .with_system(despawn_all_of::<GameScreen>)
-                    .with_system(despawn_all_of::<GameTowerMenuScreen>),
+                    .with_system(despawn_all_of::<TowerMenuScreen>),
             );
     }
 }
@@ -115,6 +115,7 @@ fn on_resize(
 
 fn game_setup(
     mut cmds: Commands,
+    ta_ev: EventWriter<TileActionsEvent>,
     cam_query: CamMutQuery,
     windows: Res<Windows>,
     board: Res<Board>,
@@ -124,7 +125,7 @@ fn game_setup(
     zoom_cam_to_board(&board, cam_query, &windows, Vec2::default());
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache);
-    draw_tower_build_menu(&mut cmds, game.base_lvl);
+    draw_tower_build_menu(&mut cmds, ta_ev, game.base_lvl);
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
     cmds.init_resource::<TowerBuildMenu>();

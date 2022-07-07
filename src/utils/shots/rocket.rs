@@ -6,9 +6,10 @@ use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 pub const INIT_RANGE_RADIUS: f32 = 4.;
 
 impl Shot {
-    pub fn rocket(pos_start: Vec2Board) -> Self {
+    pub fn rocket(pos: Vec2Board) -> Self {
         Self::Rocket(DamageInRadiusEnemyLockedShot {
             target_enemy_id: Uuid::default(),
+            pos,
             damage: 1000.,
             damage_radius: 1.,
             range_radius: INIT_RANGE_RADIUS,
