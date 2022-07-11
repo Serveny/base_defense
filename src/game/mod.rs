@@ -112,7 +112,7 @@ fn on_resize(
     cam: CamMutQuery,
 ) {
     if !ev.is_empty() {
-        zoom_cam_to_board(&board, cam, &wins, Vec2::default());
+        zoom_cam_to_board(&board, cam, &wins);
     }
 }
 
@@ -126,7 +126,7 @@ fn game_setup(
     board_cache: Res<BoardCache>,
     game: Res<Game>,
 ) {
-    zoom_cam_to_board(&board, cam_query, &windows, Vec2::default());
+    zoom_cam_to_board(&board, cam_query, &windows);
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache);
     draw_tower_build_menu(&mut cmds, tm_ev, game.base_lvl);

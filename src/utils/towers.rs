@@ -115,6 +115,10 @@ impl TowerValues {
     pub fn clone_with_pos(&self, pos: Vec2Board) -> Self {
         let mut new_vals = self.clone();
         new_vals.pos = pos;
+        match &mut new_vals.shot {
+            Shot::Laser(shot) => shot.pos_start = pos,
+            Shot::Rocket(shot) => shot.pos = pos,
+        };
         new_vals
     }
 }

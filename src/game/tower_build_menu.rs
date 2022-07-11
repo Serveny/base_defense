@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
     board::visualisation::TILE_SIZE,
-    utils::{towers::Tower, towers::Towerless, Vec2Board},
+    utils::{towers::Tower, Vec2Board},
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};

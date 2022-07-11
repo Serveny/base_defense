@@ -1,15 +1,19 @@
 use crate::utils::{towers::TowerRangeCircle, GameState};
 use bevy::prelude::*;
 
-use super::{systems::wave::WaveState, Game, GameScreen};
+use super::{systems::wave::WaveState, tower_build_menu::TowerMenuScreen, Game, GameScreen};
 
 pub(super) mod tile;
 pub(super) mod tower;
 pub(super) mod tower_menu;
 pub(super) mod wave;
 
-type RangeCircleQuery<'w, 's, 'a> =
-    Query<'w, 's, (&'a mut Visibility, &'a TowerRangeCircle), With<TowerRangeCircle>>;
+type RangeCircleQuery<'w, 's, 'a> = Query<
+    'w,
+    's,
+    (&'a mut Visibility, &'a TowerRangeCircle),
+    (With<TowerRangeCircle>, Without<TowerMenuScreen>),
+>;
 
 type GameScreenQuery<'w, 's> = Query<'w, 's, Entity, With<GameScreen>>;
 

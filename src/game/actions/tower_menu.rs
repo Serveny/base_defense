@@ -157,6 +157,6 @@ fn on_place_tower(cmds: &mut Commands, board: &mut Board, tm: &TowerMenu, q_tb: 
 fn place_tower(cmds: &mut Commands, tower: Option<&Tower>, pos: &UVec2) {
     if let Some(tower) = tower {
         let pos = Vec2Board::from_uvec2_middle(pos);
-        draw_tower::<GameScreen>(cmds, pos, &tower);
+        draw_tower::<GameScreen>(cmds, pos, tower);
     }
 }

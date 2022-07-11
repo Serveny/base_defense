@@ -1,4 +1,4 @@
-use super::{popups::Popups, BoardEditor, BoardVisu, EDITOR_BOARD_START};
+use super::{popups::Popups, BoardEditor, BoardVisu};
 use crate::{
     board::{
         visualisation::{BoardScreen, BoardScreenQuery, BoardVisualTile, RoadEndMarkQuery},
@@ -141,12 +141,7 @@ fn load_board(
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
         repaint(ea_params, queries.p2());
-        zoom_cam_to_board(
-            ea_params.board,
-            queries.p3(),
-            ea_params.windows,
-            Vec2::from(EDITOR_BOARD_START),
-        );
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }
 
@@ -161,12 +156,7 @@ fn new_board(
         *ea_params.board = new_board;
         *ea_params.popups = Popups::None;
         repaint(ea_params, queries.p2());
-        zoom_cam_to_board(
-            ea_params.board,
-            queries.p3(),
-            ea_params.windows,
-            Vec2::from(EDITOR_BOARD_START),
-        );
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }
 
@@ -181,12 +171,7 @@ fn edit_board(
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
         repaint(ea_params, queries.p2());
-        zoom_cam_to_board(
-            ea_params.board,
-            queries.p3(),
-            ea_params.windows,
-            Vec2::from(EDITOR_BOARD_START),
-        );
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }
 

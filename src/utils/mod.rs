@@ -155,12 +155,7 @@ pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
     Quat::from_rotation_z(-pos_to_angle(pos, target).radians)
 }
 
-pub fn zoom_cam_to_board(
-    board: &Board,
-    mut cam_query: CamMutQuery,
-    windows: &Windows,
-    margin_left_top_px: Vec2,
-) {
+pub fn zoom_cam_to_board(board: &Board, mut cam_query: CamMutQuery, windows: &Windows) {
     let win = windows.get_primary().unwrap();
     let margin = cam_margin(board, win);
     let mut cam = cam_query.single_mut();

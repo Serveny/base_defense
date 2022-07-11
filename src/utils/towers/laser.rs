@@ -20,7 +20,7 @@ pub(super) fn spawn_laser_tower<TScreen: Component + Default>(
     cmds.spawn_bundle(tower_base_shape(vals.pos.to_scaled_vec3(1.), color))
         .with_children(|parent| laser_tower_children::<TScreen>(parent, &vals, color))
         .insert(TowerBase)
-        .insert(Tower::Laser(vals.clone()))
+        .insert(Tower::Laser(vals))
         .insert(TScreen::default());
 }
 

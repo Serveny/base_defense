@@ -18,10 +18,9 @@ pub enum TileActionsEvent {
 
 #[allow(clippy::too_many_arguments)]
 pub(in crate::game) fn on_tile_actions(
-    mut cmds: Commands,
     mut actions: EventReader<TileActionsEvent>,
-    mut board: ResMut<Board>,
     mut queries: TileActionQueries,
+    board: ResMut<Board>,
     board_visu: Res<BoardVisu>,
     game: Res<Game>,
 ) {

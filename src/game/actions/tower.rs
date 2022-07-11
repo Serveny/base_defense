@@ -19,6 +19,7 @@ pub fn on_tower_actions(mut cmds: Commands, mut actions: EventReader<TowerAction
 }
 
 fn shoot(cmds: &mut Commands, shot: &Shot) {
+    println!("{:?}", shot);
     match shot {
         Shot::Laser(_) => spawn_shot_laser::<GameScreen>(cmds, shot),
         Shot::Rocket(_) => spawn_shot_rocket::<GameScreen>(cmds, shot),

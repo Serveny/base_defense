@@ -16,8 +16,15 @@ use bevy_prototype_lyon::prelude::*;
 type Towers<'w, 's, 'a> =
     Query<'w, 's, (&'a mut Tower, &'a Children), (With<Tower>, Without<TowerMenuScreen>)>;
 type Cannon<'a> = (&'a mut Transform, &'a mut DrawMode);
-type CannonQuery<'w, 's, 'a> =
-    Query<'w, 's, Cannon<'a>, (With<TowerCannon>, Without<TowerMenuScreen>)>;
+type CannonQuery<'w, 's, 'a> = Query<
+    'w,
+    's,
+    Cannon<'a>,
+    (
+        With<TowerCannon>,
+        (Without<TowerMenuScreen>, Without<TowerMenuScreen>),
+    ),
+>;
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy, &'a Children), With<Enemy>>;
 
 pub(in crate::game) fn tower_system(
