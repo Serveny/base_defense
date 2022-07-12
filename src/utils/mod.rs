@@ -25,7 +25,7 @@ impl IngameTime {
     }
 }
 
-#[derive(Deref, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
+#[derive(Default, Deref, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
 pub struct IngameTimestamp(f32);
 
 impl IngameTimestamp {

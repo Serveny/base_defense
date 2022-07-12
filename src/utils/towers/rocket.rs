@@ -1,14 +1,37 @@
+use std::time::Duration;
+
 use super::{
     tower_base_shape, tower_circle_shape, tower_range_circle_shape, Tower, TowerBase, TowerCannon,
     TowerRangeCircle, TowerValues,
 };
-use crate::{board::visualisation::TILE_SIZE, utils::Vec2Board};
+use crate::{
+    board::visualisation::TILE_SIZE,
+    utils::{
+        shots::{Shot, TowerStatus},
+        Vec2Board,
+    },
+};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
 impl Tower {
     pub fn rocket(pos: Vec2Board) -> Self {
         Self::Rocket(TowerValues::rocket(pos))
+    }
+}
+
+impl TowerValues {
+    pub fn rocket(pos: Vec2Board) -> Self {
+        use super::super::shots::rocket;
+        Self {
+            pos,
+            range_radius: rocket::INIT_RANGE_RADIUS,
+            shot: Shot::rocket(pos),
+            reload_duration: Duration::from_secs_f32(5.),
+            shoot_duration: Duration::from_secs_f32(1.),
+            target_lock: None,
+            tower_status: TowerStatus::Waiting,
+        }
     }
 }
 

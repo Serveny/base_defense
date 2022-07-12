@@ -1,28 +1,33 @@
-use super::{DamagePerTimeShot, Shot};
+use super::{DamagePerTimeShot, DamagePerTimeShotValues, Shot};
 use crate::{board::visualisation::TILE_SIZE, utils::Vec2Board};
-use bevy::{prelude::*, reflect::Uuid};
+use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use std::time::Duration;
 
-pub const INIT_RANGE_RADIUS: f32 = 2.;
+pub const INIT_RANGE_RADIUS: f32 = 1.5;
 pub const INIT_SHOT_DURATION_SECS: f32 = 1.;
 
+#[derive(Component)]
+pub struct LaserShot;
+
 impl Shot {
-    pub fn laser(pos_start: Vec2Board) -> Self {
-        Self::Laser(DamagePerTimeShot {
-            target_enemy_id: Uuid::default(),
+    pub fn laser_vals(pos_start: Vec2Board) -> Self {
+        Self::Laser(DamagePerTimeShotValues {
             damage: 100.,
             lifetime: Duration::from_secs_f32(INIT_SHOT_DURATION_SECS),
-            die_time: None,
             range_radius: INIT_RANGE_RADIUS,
             pos_start,
         })
     }
 }
 
-pub fn spawn_shot_laser<TScreen: Component + Default>(cmds: &mut Commands, shot: &Shot) {
+pub fn spawn_shot_laser<TScreen: Component + Default>(
+    cmds: &mut Commands,
+    shot: DamagePerTimeShot,
+) {
     cmds.spawn_bundle(laser_shape(TILE_SIZE))
-        .insert(shot.clone())
+        .insert(shot)
+        .insert(LaserShot)
         .insert(TScreen::default());
 }
 

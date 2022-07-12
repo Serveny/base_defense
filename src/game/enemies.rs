@@ -3,7 +3,7 @@ use crate::{
     board::{step::BoardStep, visualisation::TILE_SIZE, BoardCache},
     utils::{health_bar::health_bar, TilesPerSecond, Vec2Board},
 };
-use bevy::{prelude::*, reflect::Uuid};
+use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -19,7 +19,6 @@ pub enum EnemyType {
 #[allow(dead_code)]
 #[derive(Component, Clone, Serialize, Deserialize)]
 pub struct Enemy {
-    pub id: Uuid,
     speed: TilesPerSecond,
     pub health_max: f32,
     pub health: f32,
@@ -41,7 +40,6 @@ impl Enemy {
 
     pub fn new_normal(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
-            id: Uuid::new_v4(),
             speed: 1.,
             health_max: 100.,
             health: 100.,
@@ -53,7 +51,6 @@ impl Enemy {
 
     pub fn new_speeder(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
-            id: Uuid::new_v4(),
             speed: 2.,
             health_max: 10.,
             health: 10.,
@@ -65,7 +62,6 @@ impl Enemy {
 
     pub fn new_tank(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
-            id: Uuid::new_v4(),
             speed: 0.2,
             health_max: 1000.,
             health: 1000.,

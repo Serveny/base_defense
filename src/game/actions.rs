@@ -1,19 +1,24 @@
 use crate::utils::{towers::TowerRangeCircle, GameState};
 use bevy::prelude::*;
 
+use self::{
+    damage::{on_damage, DamageEvent},
+    tile::{on_tile_actions, TileActionsEvent},
+    tower::{on_tower_actions, TowerActionsEvent},
+    tower_menu::{on_tower_menu_actions, TowerMenuActionsEvent},
+    wave::{on_wave_actions, WaveActionsEvent},
+};
+
 use super::{systems::wave::WaveState, tower_build_menu::TowerMenuScreen, Game, GameScreen};
 
+pub(super) mod damage;
 pub(super) mod tile;
 pub(super) mod tower;
 pub(super) mod tower_menu;
 pub(super) mod wave;
 
-type RangeCircleQuery<'w, 's, 'a> = Query<
-    'w,
-    's,
-    (&'a mut Visibility, &'a TowerRangeCircle),
-    (With<TowerRangeCircle>, Without<TowerMenuScreen>),
->;
+type RangeCircleQuery<'w, 's, 'a> =
+    Query<'w, 's, (&'a mut Visibility, &'a TowerRangeCircle), Without<TowerMenuScreen>>;
 
 type GameScreenQuery<'w, 's> = Query<'w, 's, Entity, With<GameScreen>>;
 
@@ -26,7 +31,29 @@ pub enum GameActionEvent {
     DeactivateOverview,
 }
 
-pub(super) fn game_actions(
+pub struct GameActions;
+
+impl Plugin for GameActions {
+    fn build(&self, app: &mut App) {
+        app.add_event::<GameActionEvent>()
+            .add_event::<WaveActionsEvent>()
+            .add_event::<TileActionsEvent>()
+            .add_event::<TowerActionsEvent>()
+            .add_event::<TowerMenuActionsEvent>()
+            .add_event::<DamageEvent>()
+            .add_system_set(
+                SystemSet::on_update(GameState::Game)
+                    .with_system(on_game_actions.label("actions"))
+                    .with_system(on_tower_actions)
+                    .with_system(on_wave_actions.label("actions"))
+                    .with_system(on_tower_menu_actions)
+                    .with_system(on_damage)
+                    .with_system(on_tile_actions),
+            );
+    }
+}
+
+fn on_game_actions(
     mut cmds: Commands,
     mut game: ResMut<Game>,
     mut game_state: ResMut<State<GameState>>,

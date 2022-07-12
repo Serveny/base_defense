@@ -1,19 +1,7 @@
 use self::{
-    actions::{
-        game_actions,
-        tile::{on_tile_actions, TileActionsEvent},
-        tower::{on_tower_actions, TowerActionsEvent},
-        tower_menu::{on_tower_menu_actions, TowerMenuActionsEvent},
-        wave::{on_wave_actions, WaveActionsEvent},
-        GameActionEvent,
-    },
+    actions::{tower_menu::TowerMenuActionsEvent, GameActions},
     controls::{keyboard_input, mouse_input},
-    systems::{
-        health_bar::health_bar_system,
-        shot::shot_system,
-        tower::tower_system,
-        wave::{wave_spawn_system, wave_system, Wave, WaveState},
-    },
+    systems::{wave::Wave, GameSystems},
     tower_build_menu::{draw_tower_build_menu, TowerMenu, TowerMenuScreen},
 };
 use crate::{
@@ -39,32 +27,15 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<GameActionEvent>()
-            .add_event::<WaveActionsEvent>()
-            .add_event::<TileActionsEvent>()
-            .add_event::<TowerActionsEvent>()
-            .add_event::<TowerMenuActionsEvent>()
-            .add_state(WaveState::None)
+        app.add_plugin(GameSystems)
+            .add_plugin(GameActions)
             .add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
                     .with_system(tick_ingame_timer)
                     .with_system(keyboard_input)
                     .with_system(mouse_input)
-                    .with_system(on_resize)
-                    .with_system(wave_spawn_system)
-                    .with_system(shot_system)
-                    .with_system(tower_system)
-                    .with_system(health_bar_system)
-                    .with_system(game_actions)
-                    .with_system(on_tower_actions)
-                    .with_system(on_wave_actions)
-                    .with_system(on_tower_menu_actions)
-                    .with_system(on_tile_actions),
-            )
-            .add_system_set(
-                SystemSet::on_update(WaveState::Running)
-                    .with_system(wave_system.before(game_actions).before(on_wave_actions)),
+                    .with_system(on_resize),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Game)

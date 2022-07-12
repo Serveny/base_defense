@@ -1,12 +1,10 @@
-use crate::board::visualisation::TILE_SIZE;
-
 use self::{laser::spawn_laser_tower, rocket::spawn_rocket_tower};
 use super::{
-    shots::{Shot, Target, TowerStatus},
+    shots::{Shot, TowerStatus},
     Vec2Board,
 };
+use crate::board::visualisation::TILE_SIZE;
 use bevy::prelude::*;
-use bevy::reflect::Uuid;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -75,43 +73,11 @@ pub struct TowerValues {
     pub shoot_duration: Duration,
 
     // temp values
-    pub target_lock: Option<Uuid>,
+    pub target_lock: Option<Entity>,
     pub tower_status: TowerStatus,
 }
 
 impl TowerValues {
-    pub fn laser(pos: Vec2Board) -> Self {
-        use super::shots::laser;
-        Self {
-            pos,
-            range_radius: laser::INIT_RANGE_RADIUS,
-            shot: Shot::laser(pos),
-            reload_duration: Duration::from_secs(1),
-            shoot_duration: Duration::from_secs_f32(laser::INIT_SHOT_DURATION_SECS),
-
-            target_lock: None,
-            tower_status: TowerStatus::Waiting,
-        }
-    }
-    pub fn rocket(pos: Vec2Board) -> Self {
-        use super::shots::rocket;
-        Self {
-            pos,
-            range_radius: rocket::INIT_RANGE_RADIUS,
-            shot: Shot::rocket(pos),
-            reload_duration: Duration::from_secs_f32(5.),
-            shoot_duration: Duration::from_secs_f32(1.),
-            target_lock: None,
-            tower_status: TowerStatus::Waiting,
-        }
-    }
-
-    pub fn shoot(&self, target: Target) -> Shot {
-        let mut shot = self.shot.clone();
-        shot.set_target(target);
-        shot
-    }
-
     pub fn clone_with_pos(&self, pos: Vec2Board) -> Self {
         let mut new_vals = self.clone();
         new_vals.pos = pos;
