@@ -210,7 +210,6 @@ fn overheat_color(tower_vals: &TowerValues, now: IngameTimestamp) -> Color {
         }
         TowerStatus::Waiting => 0.,
         TowerStatus::Shooting(finish) => {
-            println!("shoot");
             1. - time_to_percent_inverted(now, finish, tower_vals.shoot_duration)
         }
     };
@@ -272,7 +271,12 @@ fn shoot(
                 return true;
             }
         }
-        Shot::Rocket(_) => todo!(),
+        Shot::Rocket(shot) => {
+            if let Some((entity, _)) = enemy {
+                actions.send(TowerActionsEvent::ShootRocket(shot.clone(), entity));
+                return true;
+            }
+        }
     };
     false
 }

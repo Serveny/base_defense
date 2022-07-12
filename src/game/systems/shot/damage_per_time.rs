@@ -15,7 +15,7 @@ pub fn damage_system(
     let frame_dur = time.delta_seconds();
     for shot in q_shots.iter() {
         if let Some((enemy_entity, _)) = find_enemy_in_range(&q_enemies, shot) {
-            dmg_ev.send(DamageEvent::new(enemy_entity, frame_dur * shot.vals.damage));
+            dmg_ev.send(DamageEvent::new(enemy_entity, frame_dur * shot.damage));
         }
     }
 }
@@ -43,11 +43,11 @@ pub fn visual_system(
     for (mut transform, shot) in q_shots.iter_mut() {
         if let Ok((_, enemy)) = q_enemies.get(shot.target_enemy_id) {
             *transform = Transform {
-                translation: shot.vals.pos_start.to_scaled_vec3(0.9),
-                rotation: pos_to_quat(shot.vals.pos_start, enemy.pos),
+                translation: shot.pos_start.to_scaled_vec3(0.9),
+                rotation: pos_to_quat(shot.pos_start, enemy.pos),
                 scale: Vec3::new(
                     0.4 + (*now % 0.1) * 6.,
-                    shot.vals.pos_start.distance(enemy.pos.into()),
+                    shot.pos_start.distance(enemy.pos.into()),
                     1.,
                 ),
             };
@@ -60,7 +60,7 @@ fn find_enemy_in_range<'a>(
     shot: &DamagePerTimeShot,
 ) -> Option<(Entity, &'a Enemy)> {
     if let Ok((entity, enemy)) = q_enemies.get(shot.target_enemy_id) {
-        if enemy.is_in_range(shot.vals.pos_start, shot.vals.range_radius) {
+        if enemy.is_in_range(shot.pos_start, shot.range_radius) {
             return Some((entity, enemy));
         }
     }

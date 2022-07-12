@@ -25,13 +25,13 @@ impl TowerMenu {
         [(1, Tower::laser(pos)), (1, Tower::rocket(pos))]
     }
 
-    pub fn new_available_towers(base_lvl: BaseLevel) -> Vec<Tower> {
-        Self::towers()
-            .iter()
-            .filter(|item| item.0 == base_lvl)
-            .map(|item| item.1.clone())
-            .collect()
-    }
+    //pub fn new_available_towers(base_lvl: BaseLevel) -> Vec<Tower> {
+    //Self::towers()
+    //.iter()
+    //.filter(|item| item.0 == base_lvl)
+    //.map(|item| item.1.clone())
+    //.collect()
+    //}
 
     pub fn available_towers(base_lvl: BaseLevel) -> Vec<Tower> {
         Self::towers()
@@ -65,7 +65,7 @@ pub(super) fn draw_tower_build_menu(
 
     let mut towers = TowerMenu::available_towers(base_lvl);
     while let Some(tower) = towers.pop() {
-        println!("{:?}", tower);
+        // println!("{:?}", tower);
         tower.draw_default::<TowerMenuScreen>(cmds);
     }
     actions.send(TowerMenuActionsEvent::Close);

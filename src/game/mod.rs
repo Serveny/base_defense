@@ -62,8 +62,8 @@ impl Game {
     pub fn new(difficulty: Difficulty) -> Self {
         Self {
             difficulty,
-            energy: 100,
-            materials: 100,
+            energy: 100.,
+            materials: 100.,
             wave_no: 0,
             next_wave_spawn: Some(IngameTimestamp::new(1.)),
             is_overview: false,

@@ -70,8 +70,8 @@ pub enum Difficulty {
     Hard,
 }
 
-pub type Energy = u32;
-pub type Materials = u32;
+pub type Energy = f32;
+pub type Materials = f32;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Consumption {

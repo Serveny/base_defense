@@ -1,6 +1,7 @@
 use super::{IngameTimestamp, Materials, TilesPerSecond, Vec2Board};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::ops::{Deref, DerefMut};
 use std::time::Duration;
 
 pub mod laser;
@@ -51,6 +52,15 @@ impl DamagePerTimeShotValues {
     }
 }
 
+impl DamageInRadiusEnemyLockedShotValues {
+    pub fn new_shot(&self, target_enemy_id: Entity) -> DamageInRadiusEnemyLockedShot {
+        DamageInRadiusEnemyLockedShot {
+            target_enemy_id,
+            vals: self.clone(),
+        }
+    }
+}
+
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DamageInRadiusEnemyLockedShotValues {
     pub pos: Vec2Board,
@@ -65,4 +75,42 @@ pub struct DamageInRadiusEnemyLockedShotValues {
 pub struct DamageInRadiusEnemyLockedShot {
     pub target_enemy_id: Entity,
     pub vals: DamageInRadiusEnemyLockedShotValues,
+}
+
+impl DamageInRadiusEnemyLockedShot {
+    pub fn fly(&mut self, pos: Vec2Board, frame_dur: Duration) {
+        let way = pos - self.pos;
+        let distance = pos.distance(self.pos.into());
+        let distance_walked = frame_dur.as_secs_f32() * self.speed;
+        self.pos += (way.normalize() * distance_walked.min(distance)).into();
+        self.fuel -= distance_walked;
+    }
+}
+
+impl Deref for DamagePerTimeShot {
+    type Target = DamagePerTimeShotValues;
+
+    fn deref(&self) -> &Self::Target {
+        &self.vals
+    }
+}
+
+impl DerefMut for DamagePerTimeShot {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.vals
+    }
+}
+
+impl Deref for DamageInRadiusEnemyLockedShot {
+    type Target = DamageInRadiusEnemyLockedShotValues;
+
+    fn deref(&self) -> &Self::Target {
+        &self.vals
+    }
+}
+
+impl DerefMut for DamageInRadiusEnemyLockedShot {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.vals
+    }
 }
