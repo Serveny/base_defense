@@ -22,9 +22,8 @@ pub fn damage_and_despawn_system(
 
 fn is_explode(q_enemies: &QueryEnemiesMut, shot: &DamageInRadiusEnemyLockedShot) -> bool {
     match q_enemies.get(shot.target_enemy_id) {
-        Ok(enemy) if shot.pos.distance(enemy.pos.into()) < shot.damage_radius => true,
-        Err(_) => true,
-        _ => shot.fuel <= 0.,
+        Ok(enemy) if shot.pos.distance(enemy.pos.into()) >= shot.damage_radius => shot.fuel <= 0.,
+        _ => true,
     }
 }
 

@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub use vec2_board::Vec2Board;
 
 pub mod buildings;
+pub mod explosions;
 pub mod health_bar;
 pub mod shots;
 pub mod towers;

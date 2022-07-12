@@ -12,6 +12,7 @@ use self::{
 use super::{systems::wave::WaveState, tower_build_menu::TowerMenuScreen, Game, GameScreen};
 
 pub(super) mod damage;
+pub(super) mod explosions;
 pub(super) mod tile;
 pub(super) mod tower;
 pub(super) mod tower_menu;
