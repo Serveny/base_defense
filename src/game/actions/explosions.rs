@@ -1,21 +1,34 @@
+use crate::{
+    game::GameScreen,
+    utils::{
+        explosions::{spawn_explosion, Explosion},
+        Vec2Board,
+    },
+};
 use bevy::prelude::*;
 
-use crate::utils::IngameTime;
-
 pub struct ExplosionEvent {
+    pos: Vec2Board,
     radius: f32,
+    damage: f32,
 }
 
 impl ExplosionEvent {
-    pub fn new(radius: f32) -> Self {
-        Self { radius }
+    pub fn new(pos: Vec2Board, radius: f32, damage: f32) -> Self {
+        Self {
+            pos,
+            radius,
+            damage,
+        }
+    }
+
+    pub fn to_explosion(&self) -> Explosion {
+        Explosion::new(self.pos, self.radius, self.damage)
     }
 }
 
-pub fn on_explosion(
-    mut events: EventReader<ExplosionEvent>,
-    mut cmds: Commands,
-    time: Res<IngameTime>,
-) {
-    for ev in events.iter() {}
+pub fn on_explosions(mut events: EventReader<ExplosionEvent>, mut cmds: Commands) {
+    for ev in events.iter() {
+        spawn_explosion::<GameScreen>(&mut cmds, ev.to_explosion());
+    }
 }

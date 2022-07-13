@@ -3,6 +3,7 @@ use bevy::prelude::*;
 
 use self::{
     damage::{on_damage, DamageEvent},
+    explosions::{on_explosions, ExplosionEvent},
     tile::{on_tile_actions, TileActionsEvent},
     tower::{on_tower_actions, TowerActionsEvent},
     tower_menu::{on_tower_menu_actions, TowerMenuActionsEvent},
@@ -42,14 +43,16 @@ impl Plugin for GameActions {
             .add_event::<TowerActionsEvent>()
             .add_event::<TowerMenuActionsEvent>()
             .add_event::<DamageEvent>()
+            .add_event::<ExplosionEvent>()
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
                     .with_system(on_game_actions.label("actions"))
-                    .with_system(on_tower_actions)
                     .with_system(on_wave_actions.label("actions"))
+                    .with_system(on_tile_actions)
+                    .with_system(on_tower_actions)
                     .with_system(on_tower_menu_actions)
                     .with_system(on_damage)
-                    .with_system(on_tile_actions),
+                    .with_system(on_explosions),
             );
     }
 }

@@ -1,40 +1,33 @@
 use crate::{
-    game::enemies::Enemy,
+    game::{actions::explosions::ExplosionEvent, enemies::Enemy},
     utils::{pos_to_quat, shots::DamageInRadiusEnemyLockedShot, Vec2Board},
 };
 use bevy::prelude::*;
 
 type QueryEnemies<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy)>;
-type QueryEnemiesMut<'w, 's, 'a> = Query<'w, 's, &'a mut Enemy>;
 
 pub fn damage_and_despawn_system(
     mut cmds: Commands,
-    mut q_enemies: QueryEnemiesMut,
+    mut expl_ev: EventWriter<ExplosionEvent>,
+    q_enemies: QueryEnemies,
     q_shots: Query<(Entity, &DamageInRadiusEnemyLockedShot)>,
 ) {
     for (entity, shot) in q_shots.iter() {
         if is_explode(&q_enemies, shot) {
-            damage_enemies_in_range(&mut q_enemies, shot);
+            expl_ev.send(ExplosionEvent::new(
+                shot.pos,
+                shot.damage_radius,
+                shot.damage,
+            ));
             cmds.entity(entity).despawn_recursive();
         }
     }
 }
 
-fn is_explode(q_enemies: &QueryEnemiesMut, shot: &DamageInRadiusEnemyLockedShot) -> bool {
+fn is_explode(q_enemies: &QueryEnemies, shot: &DamageInRadiusEnemyLockedShot) -> bool {
     match q_enemies.get(shot.target_enemy_id) {
-        Ok(enemy) if shot.pos.distance(enemy.pos.into()) >= shot.damage_radius => shot.fuel <= 0.,
+        Ok((_, enemy)) if shot.pos.distance(enemy.pos.into()) >= 0.05 => shot.fuel <= 0.,
         _ => true,
-    }
-}
-
-fn damage_enemies_in_range<'a>(
-    q_enemies: &'a mut QueryEnemiesMut,
-    shot: &DamageInRadiusEnemyLockedShot,
-) {
-    for mut enemy in q_enemies.iter_mut() {
-        if enemy.is_in_range(shot.pos, shot.damage_radius) {
-            enemy.health -= shot.damage;
-        }
     }
 }
 

@@ -10,6 +10,7 @@ pub use vec2_board::Vec2Board;
 
 pub mod buildings;
 pub mod explosions;
+pub mod fuel_bar;
 pub mod health_bar;
 pub mod shots;
 pub mod towers;
@@ -35,6 +36,19 @@ impl IngameTimestamp {
     }
 }
 
+impl Add<f32> for IngameTimestamp {
+    type Output = Self;
+
+    fn add(self, rhs: f32) -> Self::Output {
+        IngameTimestamp(self.0 + rhs)
+    }
+}
+
+impl AddAssign<f32> for IngameTimestamp {
+    fn add_assign(&mut self, rhs: f32) {
+        *self = IngameTimestamp(self.0 + rhs);
+    }
+}
 impl Add<Duration> for IngameTimestamp {
     type Output = Self;
 

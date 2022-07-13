@@ -1,6 +1,5 @@
-use bevy::prelude::*;
-
 use crate::{game::enemies::Enemy, utils::health_bar::HealthBarPercentage};
+use bevy::prelude::*;
 
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy), With<Enemy>>;
 type HealthBarsQuery<'w, 's, 'a> =
