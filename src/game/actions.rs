@@ -2,25 +2,25 @@ use crate::utils::{towers::TowerRangeCircle, GameState};
 use bevy::prelude::*;
 
 use self::{
+    build_menu::{on_tower_menu_actions, BuildMenuActionsEvent},
     damage::{on_damage, DamageEvent},
     explosions::{on_explosions, ExplosionEvent},
     tile::{on_tile_actions, TileActionsEvent},
     tower::{on_tower_actions, TowerActionsEvent},
-    tower_menu::{on_tower_menu_actions, TowerMenuActionsEvent},
     wave::{on_wave_actions, WaveActionsEvent},
 };
 
-use super::{systems::wave::WaveState, tower_build_menu::TowerMenuScreen, Game, GameScreen};
+use super::{build_menus::BuildMenuScreen, systems::wave::WaveState, Game, GameScreen};
 
+pub(super) mod build_menu;
 pub(super) mod damage;
 pub(super) mod explosions;
 pub(super) mod tile;
 pub(super) mod tower;
-pub(super) mod tower_menu;
 pub(super) mod wave;
 
 type RangeCircleQuery<'w, 's, 'a> =
-    Query<'w, 's, (&'a mut Visibility, &'a TowerRangeCircle), Without<TowerMenuScreen>>;
+    Query<'w, 's, (&'a mut Visibility, &'a TowerRangeCircle), Without<BuildMenuScreen>>;
 
 type GameScreenQuery<'w, 's> = Query<'w, 's, Entity, With<GameScreen>>;
 
@@ -41,7 +41,7 @@ impl Plugin for GameActions {
             .add_event::<WaveActionsEvent>()
             .add_event::<TileActionsEvent>()
             .add_event::<TowerActionsEvent>()
-            .add_event::<TowerMenuActionsEvent>()
+            .add_event::<BuildMenuActionsEvent>()
             .add_event::<DamageEvent>()
             .add_event::<ExplosionEvent>()
             .add_system_set(

@@ -1,4 +1,5 @@
 use self::{
+    base::base_system,
     death::death_system,
     explosions::explosion_system,
     fuel_bar::fuel_bar_system,
@@ -9,6 +10,7 @@ use self::{
 use crate::utils::GameState;
 use bevy::prelude::*;
 
+pub mod base;
 pub mod death;
 pub mod explosions;
 pub mod fuel_bar;
@@ -36,6 +38,7 @@ impl Plugin for GameSystems {
                     .with_system(tower_overheat_system)
                     .with_system(health_bar_system)
                     .with_system(fuel_bar_system)
+                    .with_system(base_system)
                     .with_system(explosion_system)
                     .with_system(death_system),
             )

@@ -1,25 +1,24 @@
-use super::{
-    actions::tower_menu::{QueryTowerBase, TowerMenuActionsEvent},
-    BaseLevel,
-};
-use crate::{
-    board::visualisation::TILE_SIZE,
-    utils::{towers::Tower, Vec2Board},
-};
+use crate::utils::{towers::Tower, Vec2Board};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 
+use super::{actions::build_menu::QueryMenuBases, BaseLevel};
+
+pub mod building;
+pub mod tower;
+
 #[derive(Component, Default)]
-pub(super) struct TowerMenuScreen;
+pub(super) struct BuildMenuScreen;
 
 #[derive(Default)]
-pub(super) struct TowerMenu {
+pub(super) struct BuildMenu {
     pub is_open: bool,
     pub selected_tower_index: usize,
+    pub selected_building_index: usize,
     pub tile_pos: UVec2,
 }
 
-impl TowerMenu {
+impl BuildMenu {
     fn towers() -> [(BaseLevel, Tower); 2] {
         let pos = Vec2Board::default();
         [(1, Tower::laser(pos)), (1, Tower::rocket(pos))]
@@ -41,10 +40,13 @@ impl TowerMenu {
             .collect()
     }
 
-    pub fn get_selected_tower<'a>(&self, q_tower_bases: &'a QueryTowerBase) -> Option<&'a Tower> {
-        for (i, (_, _, _, tower)) in q_tower_bases.iter().enumerate() {
+    pub fn get_selected<'a, TBuild: Component, TBase: Component>(
+        &self,
+        q_tower_bases: &'a QueryMenuBases<TBuild, TBase>,
+    ) -> Option<&'a TBuild> {
+        for (i, (_, _, _, build)) in q_tower_bases.iter().enumerate() {
             if i == self.selected_tower_index {
-                return Some(tower);
+                return Some(build);
             }
         }
         None
@@ -52,24 +54,7 @@ impl TowerMenu {
 }
 
 #[derive(Component)]
-pub struct TowerMenuCircle;
-
-pub(super) fn draw_tower_build_menu(
-    cmds: &mut Commands,
-    mut actions: EventWriter<TowerMenuActionsEvent>,
-    base_lvl: BaseLevel,
-) {
-    cmds.spawn_bundle(menu_circle_shape(TILE_SIZE))
-        .insert(TowerMenuCircle)
-        .insert(TowerMenuScreen);
-
-    let mut towers = TowerMenu::available_towers(base_lvl);
-    while let Some(tower) = towers.pop() {
-        // println!("{:?}", tower);
-        tower.draw_preview::<TowerMenuScreen>(cmds);
-    }
-    actions.send(TowerMenuActionsEvent::Close);
-}
+pub struct BuildMenuCircle;
 
 fn menu_circle_shape(tile_size: f32) -> ShapeBundle {
     let shape = Circle {

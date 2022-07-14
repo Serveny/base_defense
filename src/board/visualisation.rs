@@ -247,7 +247,7 @@ mod road_end_mark {
         board::BoardCache,
         utils::{
             energy::{energy_symbol, EnergyText, ENERGY_COLOR},
-            materials::{materials_symbol, MATERIALS_COLOR},
+            materials::{materials_symbol, MaterialsText, MATERIALS_COLOR},
             text_bundle, Vec2Board,
         },
     };
@@ -393,7 +393,7 @@ mod road_end_mark {
                     MATERIALS_COLOR,
                     assets,
                 ))
-                .insert(EnergyText);
+                .insert(MaterialsText);
             parent.spawn_bundle(materials_symbol(Transform {
                 translation: Vec3::new(-width / 6., 0., 0.),
                 scale: Vec3::new(0.15, 0.15, 1.),

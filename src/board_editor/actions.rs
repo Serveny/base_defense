@@ -30,17 +30,29 @@ type EditorActionQueries<'w, 's, 'a> = ParamSet<
     ),
 >;
 
-struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu, 'ass> {
+struct EditorActionParams<'w, 's, 'a> {
     cmds: Commands<'w, 's>,
-    game_state: &'gs mut State<GameState>,
-    editor: &'es mut BoardEditor,
-    visu: &'visu mut BoardVisu,
-    board: &'b mut Board,
-    board_cache: &'bc mut BoardCache,
-    windows: &'win Windows,
-    popups: &'pu mut Popups,
-    assets: &'ass StandardAssets,
+    game_state: &'a mut State<GameState>,
+    editor: &'a mut BoardEditor,
+    visu: &'a mut BoardVisu,
+    board: &'a mut Board,
+    board_cache: &'a mut BoardCache,
+    windows: &'a Windows,
+    popups: &'a mut Popups,
+    assets: &'a StandardAssets,
 }
+
+//struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu, 'ass> {
+//cmds: Commands<'w, 's>,
+//game_state: &'gs mut State<GameState>,
+//editor: &'es mut BoardEditor,
+//visu: &'visu mut BoardVisu,
+//board: &'b mut Board,
+//board_cache: &'bc mut BoardCache,
+//windows: &'win Windows,
+//popups: &'pu mut Popups,
+//assets: &'ass StandardAssets,
+//}
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn board_editor_actions(

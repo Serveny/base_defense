@@ -1,8 +1,8 @@
 use self::{
-    actions::{tower_menu::TowerMenuActionsEvent, GameActions},
+    actions::{build_menu::BuildMenuActionsEvent, GameActions},
+    build_menus::{tower::draw_tower_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
     systems::{wave::Wave, GameSystems},
-    tower_build_menu::{draw_tower_build_menu, TowerMenu, TowerMenuScreen},
 };
 use crate::{
     assets::StandardAssets,
@@ -16,10 +16,10 @@ use crate::{
 use bevy::{prelude::*, window::WindowResized};
 
 mod actions;
+mod build_menus;
 mod controls;
 mod enemies;
 mod systems;
-mod tower_build_menu;
 
 type BoardVisu = BoardVisualisation<GameScreen>;
 type BaseLevel = u8;
@@ -42,7 +42,7 @@ impl Plugin for GamePlugin {
                 SystemSet::on_exit(GameState::Game)
                     .with_system(clean_up_game)
                     .with_system(despawn_all_of::<GameScreen>)
-                    .with_system(despawn_all_of::<TowerMenuScreen>),
+                    .with_system(despawn_all_of::<BuildMenuScreen>),
             );
     }
 }
@@ -91,7 +91,7 @@ fn on_resize(
 #[allow(clippy::too_many_arguments)]
 fn game_setup(
     mut cmds: Commands,
-    tm_ev: EventWriter<TowerMenuActionsEvent>,
+    tm_ev: EventWriter<BuildMenuActionsEvent>,
     cam_query: CamMutQuery,
     windows: Res<Windows>,
     board: Res<Board>,
@@ -105,7 +105,7 @@ fn game_setup(
     draw_tower_build_menu(&mut cmds, tm_ev, game.base_lvl);
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
-    cmds.init_resource::<TowerMenu>();
+    cmds.init_resource::<BuildMenu>();
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>) {
@@ -119,5 +119,5 @@ fn clean_up_game(mut cmds: Commands) {
     cmds.remove_resource::<BoardVisu>();
     cmds.remove_resource::<Wave>();
     cmds.remove_resource::<IngameTime>();
-    cmds.remove_resource::<TowerMenu>();
+    cmds.remove_resource::<BuildMenu>();
 }

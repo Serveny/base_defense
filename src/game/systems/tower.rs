@@ -1,6 +1,6 @@
 use crate::{
     board::visualisation::TILE_SIZE,
-    game::{actions::tower::TowerActionsEvent, enemies::Enemy, tower_build_menu::TowerMenuScreen},
+    game::{actions::tower::TowerActionsEvent, build_menus::BuildMenuScreen, enemies::Enemy},
     utils::{
         pos_to_quat,
         shots::{Shot, TowerStatus},
@@ -13,17 +13,17 @@ use bevy_prototype_lyon::prelude::*;
 use std::time::Duration;
 
 type QueryTowersAndChildren<'w, 's, 'a> =
-    Query<'w, 's, (&'a Tower, &'a Children), Without<TowerMenuScreen>>;
+    Query<'w, 's, (&'a Tower, &'a Children), Without<BuildMenuScreen>>;
 type QueryCannonTransMut<'w, 's, 'a> =
-    Query<'w, 's, &'a mut Transform, (With<TowerCannon>, Without<TowerMenuScreen>)>;
+    Query<'w, 's, &'a mut Transform, (With<TowerCannon>, Without<BuildMenuScreen>)>;
 type QueryCannonDrawMut<'w, 's, 'a> =
-    Query<'w, 's, &'a mut DrawMode, (With<TowerCannon>, Without<TowerMenuScreen>)>;
+    Query<'w, 's, &'a mut DrawMode, (With<TowerCannon>, Without<BuildMenuScreen>)>;
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy, &'a Children)>;
 type EntityEnemy<'a> = (Entity, &'a Enemy);
 
 pub(super) fn tower_target_system(
     mut actions: EventWriter<TowerActionsEvent>,
-    mut q_towers: Query<&mut Tower, Without<TowerMenuScreen>>,
+    mut q_towers: Query<&mut Tower, Without<BuildMenuScreen>>,
     q_enemies: EnemiesQuery,
     time: Res<IngameTime>,
 ) {
