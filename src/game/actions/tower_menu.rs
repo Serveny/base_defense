@@ -133,9 +133,9 @@ fn set_preview_tower_children(q_tms: &mut QueryTowerMenu, children: Children, is
 fn scroll(tm: &mut TowerMenu, queries: &mut QueriesTowerMenuAction, additor: isize) {
     let translation = Vec2Board::from_uvec2_middle(&tm.tile_pos).to_scaled_vec3(3.);
     let count = queries.p2().iter().count();
+    let new_i = tm.selected_tower_index as isize + additor as isize;
     if count > 1 {
-        tm.selected_tower_index =
-            (tm.selected_tower_index as isize + additor).clamp(0, count as isize - 1) as usize;
+        tm.selected_tower_index = new_i.rem_euclid(count as isize) as usize;
         show_preview_tower(tm, queries, translation);
     }
 }

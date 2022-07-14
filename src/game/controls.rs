@@ -74,10 +74,9 @@ fn mouse_wheel_handler(
         // println!("{:?}", ev);
         if let Tile::TowerGround(tile) = &tile {
             if tile.is_none() {
-                if tbm.is_open {
-                    send_tbm_scroll_ev(ev, tm_actions);
-                } else {
-                    tm_actions.send(Open(pos.as_uvec2()));
+                match tbm.is_open {
+                    true => send_tbm_scroll_ev(ev, tm_actions),
+                    false => tm_actions.send(Open(pos.as_uvec2())),
                 }
             }
         }
