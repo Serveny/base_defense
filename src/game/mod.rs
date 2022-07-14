@@ -5,6 +5,7 @@ use self::{
     tower_build_menu::{draw_tower_build_menu, TowerMenu, TowerMenuScreen},
 };
 use crate::{
+    assets::StandardAssets,
     board::{visualisation::BoardVisualisation, Board, BoardCache},
     utils::{
         despawn_all_of, zoom_cam_to_board, Difficulty, Energy, IngameTime, IngameTimestamp,
@@ -96,10 +97,11 @@ fn game_setup(
     board: Res<Board>,
     board_cache: Res<BoardCache>,
     game: Res<Game>,
+    assets: Res<StandardAssets>,
 ) {
     zoom_cam_to_board(&board, cam_query, &windows);
     let visu = BoardVisu::new(1.);
-    visu.draw_board(&mut cmds, &board, &board_cache);
+    visu.draw_board(&mut cmds, &board, &board_cache, &assets);
     draw_tower_build_menu(&mut cmds, tm_ev, game.base_lvl);
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();

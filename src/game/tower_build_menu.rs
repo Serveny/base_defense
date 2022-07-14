@@ -66,7 +66,7 @@ pub(super) fn draw_tower_build_menu(
     let mut towers = TowerMenu::available_towers(base_lvl);
     while let Some(tower) = towers.pop() {
         // println!("{:?}", tower);
-        tower.draw_default::<TowerMenuScreen>(cmds);
+        tower.draw_preview::<TowerMenuScreen>(cmds);
     }
     actions.send(TowerMenuActionsEvent::Close);
 }

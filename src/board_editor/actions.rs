@@ -1,5 +1,6 @@
 use super::{popups::Popups, BoardEditor, BoardVisu};
 use crate::{
+    assets::StandardAssets,
     board::{
         visualisation::{BoardScreen, BoardScreenQuery, BoardVisualTile, RoadEndMarkQuery},
         Board, BoardCache, Tile,
@@ -29,7 +30,7 @@ type EditorActionQueries<'w, 's, 'a> = ParamSet<
     ),
 >;
 
-struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu> {
+struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu, 'ass> {
     cmds: Commands<'w, 's>,
     game_state: &'gs mut State<GameState>,
     editor: &'es mut BoardEditor,
@@ -38,6 +39,7 @@ struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu> {
     board_cache: &'bc mut BoardCache,
     windows: &'win Windows,
     popups: &'pu mut Popups,
+    assets: &'ass StandardAssets,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -52,6 +54,7 @@ pub(super) fn board_editor_actions(
     mut popups: ResMut<Popups>,
     mut editor_actions: EventReader<EditorActionEvent>,
     windows: Res<Windows>,
+    assets: Res<StandardAssets>,
 ) {
     if !editor_actions.is_empty() {
         let mut ea_params = EditorActionParams {
@@ -63,6 +66,7 @@ pub(super) fn board_editor_actions(
             board_cache: &mut board_cache,
             windows: &windows,
             popups: &mut popups,
+            assets: &assets,
         };
         for event in editor_actions.iter() {
             match event {
@@ -109,13 +113,14 @@ fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to
     }
 }
 
-fn repaint(ea_params: &mut EditorActionParams, query: BoardScreenQuery) {
+fn repaint(ea_params: &mut EditorActionParams, query: BoardScreenQuery, assets: &StandardAssets) {
     *ea_params.visu = BoardVisu::new(0.9);
     ea_params.visu.repaint(
         &mut ea_params.cmds,
         query,
         ea_params.board,
         ea_params.board_cache,
+        assets,
     );
 }
 
@@ -140,7 +145,7 @@ fn load_board(
         *ea_params.board = new_board;
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
-        repaint(ea_params, queries.p2());
+        repaint(ea_params, queries.p2(), ea_params.assets);
         zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }
@@ -155,7 +160,7 @@ fn new_board(
         *ea_params.board_cache = BoardCache::new(&new_board);
         *ea_params.board = new_board;
         *ea_params.popups = Popups::None;
-        repaint(ea_params, queries.p2());
+        repaint(ea_params, queries.p2(), ea_params.assets);
         zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }
@@ -170,7 +175,7 @@ fn edit_board(
         *ea_params.board_cache = BoardCache::new(ea_params.board);
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
-        repaint(ea_params, queries.p2());
+        repaint(ea_params, queries.p2(), ea_params.assets);
         zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
     }
 }

@@ -50,10 +50,9 @@ fn find_nearest_enemy(q_enemies: &QueryEnemies, pos: Vec2Board) -> Option<Entity
     q_enemies
         .iter()
         .reduce(|item_1, item_2| {
-            if item_1.1.pos.distance(pos.into()) < item_2.1.pos.distance(pos.into()) {
-                item_1
-            } else {
-                item_2
+            match item_1.1.pos.distance(pos.into()) < item_2.1.pos.distance(pos.into()) {
+                true => item_1,
+                false => item_2,
             }
         })
         .map(|item| item.0)

@@ -38,10 +38,14 @@ impl TowerValues {
 pub(super) fn spawn_laser_tower<TScreen: Component + Default>(
     cmds: &mut Commands,
     vals: TowerValues,
+    is_preview: bool,
 ) {
-    let color = Color::RED;
+    let mut color = Color::RED;
+    if is_preview {
+        color.set_a(0.9);
+    }
     cmds.spawn_bundle(tower_base_shape(vals.pos.to_scaled_vec3(1.), color))
-        .with_children(|parent| laser_tower_children::<TScreen>(parent, &vals, color))
+        .with_children(|parent| laser_tower_children::<TScreen>(parent, &vals, color, is_preview))
         .insert(TowerBase)
         .insert(Tower::Laser(vals))
         .insert(TScreen::default());
@@ -51,6 +55,7 @@ fn laser_tower_children<TScreen: Component + Default>(
     parent: &mut ChildBuilder,
     vals: &TowerValues,
     color: Color,
+    is_preview: bool,
 ) {
     // Tower circle
     parent
@@ -64,7 +69,11 @@ fn laser_tower_children<TScreen: Component + Default>(
         .insert(TScreen::default());
 
     // Range circle
-    let mut range_circle = tower_range_circle_shape(vals.range_radius, color);
+    let range_radius = match is_preview {
+        true => vals.range_radius * 2.,
+        false => vals.range_radius,
+    };
+    let mut range_circle = tower_range_circle_shape(range_radius, color);
     range_circle.visibility.is_visible = false;
     parent
         .spawn_bundle(range_circle)

@@ -1,3 +1,4 @@
+use super::materials::MATERIALS_COLOR;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
@@ -47,7 +48,7 @@ fn fuel_bar_percentage_shape(bar_height: f32) -> ShapeBundle {
 
     GeometryBuilder::build_as(
         &shape,
-        DrawMode::Fill(FillMode::color(Color::ORANGE)),
+        DrawMode::Fill(FillMode::color(MATERIALS_COLOR)),
         Transform {
             translation: Vec3::new(-bar_height / 8. + margin, -bar_height / 2. + margin, 0.2),
             ..Default::default()

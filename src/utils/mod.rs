@@ -1,73 +1,27 @@
+use crate::assets::StandardAssets;
 use crate::board::visualisation::TILE_SIZE;
 use crate::{CamMutQuery, CamQuery};
 // #![allow(unused)]
 use crate::board::Board;
-use bevy::core::Stopwatch;
 use bevy::prelude::*;
 use euclid::Angle;
+pub use ingame_time::IngameTime;
+pub use ingame_time::IngameTimestamp;
 use serde::{Deserialize, Serialize};
 pub use vec2_board::Vec2Board;
 
 pub mod buildings;
+pub mod energy;
 pub mod explosions;
 pub mod fuel_bar;
 pub mod health_bar;
+mod ingame_time;
+pub mod materials;
 pub mod shots;
 pub mod towers;
 mod vec2_board;
 
 pub type TilesPerSecond = f32;
-
-#[derive(Deref, DerefMut, Clone, Debug, Default)]
-pub struct IngameTime(Stopwatch);
-
-impl IngameTime {
-    pub fn now(&self) -> IngameTimestamp {
-        self.0.elapsed_secs().into()
-    }
-}
-
-#[derive(Default, Deref, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub struct IngameTimestamp(f32);
-
-impl IngameTimestamp {
-    pub fn new(now: f32) -> Self {
-        Self(now)
-    }
-}
-
-impl Add<f32> for IngameTimestamp {
-    type Output = Self;
-
-    fn add(self, rhs: f32) -> Self::Output {
-        IngameTimestamp(self.0 + rhs)
-    }
-}
-
-impl AddAssign<f32> for IngameTimestamp {
-    fn add_assign(&mut self, rhs: f32) {
-        *self = IngameTimestamp(self.0 + rhs);
-    }
-}
-impl Add<Duration> for IngameTimestamp {
-    type Output = Self;
-
-    fn add(self, rhs: Duration) -> Self::Output {
-        IngameTimestamp(self.0 + rhs.as_secs_f32())
-    }
-}
-
-impl AddAssign<Duration> for IngameTimestamp {
-    fn add_assign(&mut self, rhs: Duration) {
-        *self = IngameTimestamp(self.0 + rhs.as_secs_f32());
-    }
-}
-
-impl From<f32> for IngameTimestamp {
-    fn from(val: f32) -> Self {
-        Self(val)
-    }
-}
 
 // Enum that will be used as a global state for the game
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
@@ -104,9 +58,7 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
 use std::error::Error;
 use std::fs::{read_dir, read_to_string, DirEntry, File};
 use std::io::Write;
-use std::ops::{Add, AddAssign};
 use std::path::Path;
-use std::time::Duration;
 
 pub fn save_board_to_file(name: &str, board: &Board) -> Result<(), Box<dyn Error>> {
     let mut output = File::create(Path::new(&format!("./maps/{}_map.json", name)))?;
@@ -210,4 +162,26 @@ pub fn cursor_pos(wnds: Res<Windows>, q_cam: CamQuery) -> Option<Vec2Board> {
         return Some((world_pos.truncate() / TILE_SIZE).into());
     }
     None
+}
+
+pub fn text_bundle(width: f32, text: &str, color: Color, assets: &StandardAssets) -> Text2dBundle {
+    Text2dBundle {
+        text: Text::with_section(
+            text,
+            TextStyle {
+                font: assets.font.clone(),
+                font_size: width,
+                color,
+            },
+            TextAlignment {
+                horizontal: HorizontalAlign::Left,
+                vertical: VerticalAlign::Center,
+            },
+        ),
+        transform: Transform {
+            translation: Vec3::new(0., width / 30., 1.),
+            ..Default::default()
+        },
+        ..default()
+    }
 }

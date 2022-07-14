@@ -73,45 +73,18 @@ fn target_enemy<'a>(
     None
 }
 
-//pub(super) fn tower_system(
-//mut cannons: CannonQuery,
-//mut towers: QueryTowers,
-//mut actions: EventWriter<TowerActionsEvent>,
-//enemies: EnemiesQuery,
-//time: Res<IngameTime>,
-//) {
-//let now = time.now();
-//for (mut tower, tower_children) in towers.iter_mut() {
-//let tower_vals = tower.values_mut();
-//let enemy = lock_tower_to_enemy(tower_vals, &enemies);
-//if let TowerStatus::Shooting(finish) = tower_vals.tower_status {
-//let time_left = tower_vals.shoot_duration.as_secs_f32() - (*finish - *now);
-//let earier_finish = *now + tower_vals.reload_duration.as_secs_f32() - time_left;
-//set_tower_status_reload(tower_vals, earier_finish.into());
-//}
-
-//let cannon = cannon_mut(&mut cannons, tower_children).expect("Every tower needs a cannon");
-
-//rotate_cannon_to_enemy(cannon.0.into_inner(), tower_vals, enemy);
-//overheat_cannon(cannon.1.into_inner(), tower_vals, now);
-//shoot_or_reload(&mut actions, tower_vals, enemy, now);
-//}
-//}
-
 fn lock_tower_to_enemy<'a>(
     tower_vals: &mut TowerValues,
     enemies: &'a EnemiesQuery,
 ) -> Option<EntityEnemy<'a>> {
-    if let Some(locked_entity) = tower_vals.target_lock {
-        if let Some(locked_enemy) =
-            find_locked_enemy_in_tower_range(locked_entity, enemies, tower_vals)
-        {
-            return Some((locked_entity, locked_enemy));
-        } else {
-            tower_vals.target_lock = None;
+    match tower_vals.target_lock {
+        Some(locked_entity) => {
+            match find_locked_enemy_in_tower_range(locked_entity, enemies, tower_vals) {
+                Some(locked_enemy) => return Some((locked_entity, locked_enemy)),
+                None => tower_vals.target_lock = None,
+            }
         }
-    } else {
-        tower_vals.target_lock = find_first_enemy_entity_in_range(tower_vals, enemies);
+        None => tower_vals.target_lock = find_first_enemy_entity_in_range(tower_vals, enemies),
     }
     None
 }

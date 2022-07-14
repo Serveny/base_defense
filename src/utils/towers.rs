@@ -54,11 +54,11 @@ impl Tower {
         }
     }
 
-    pub fn draw_default<TScreen: Component + Default>(&self, cmds: &mut Commands) {
+    pub fn draw_preview<TScreen: Component + Default>(&self, cmds: &mut Commands) {
         match self {
-            Tower::Laser(values) => spawn_laser_tower::<TScreen>(cmds, values.clone()),
+            Tower::Laser(values) => spawn_laser_tower::<TScreen>(cmds, values.clone(), true),
             Tower::Microwave(_) => todo!(),
-            Tower::Rocket(values) => spawn_rocket_tower::<TScreen>(cmds, values.clone()),
+            Tower::Rocket(values) => spawn_rocket_tower::<TScreen>(cmds, values.clone(), true),
             Tower::Grenade(_) => todo!(),
         }
     }
@@ -108,9 +108,9 @@ pub fn draw_tower<TScreen: Component + Default>(
     tower: &Tower,
 ) {
     match tower {
-        Tower::Laser(vals) => spawn_laser_tower::<TScreen>(cmds, vals.clone_with_pos(pos)),
+        Tower::Laser(vals) => spawn_laser_tower::<TScreen>(cmds, vals.clone_with_pos(pos), false),
         Tower::Microwave(_) => todo!(),
-        Tower::Rocket(vals) => spawn_rocket_tower::<TScreen>(cmds, vals.clone_with_pos(pos)),
+        Tower::Rocket(vals) => spawn_rocket_tower::<TScreen>(cmds, vals.clone_with_pos(pos), false),
         Tower::Grenade(_) => todo!(),
     };
 }

@@ -16,7 +16,6 @@ pub enum EnemyType {
     Tank,
 }
 
-#[allow(dead_code)]
 #[derive(Component, Clone, Serialize, Deserialize)]
 pub struct Enemy {
     speed: TilesPerSecond,
@@ -25,6 +24,9 @@ pub struct Enemy {
     pub pos: Vec2Board,
     enemy_type: EnemyType,
     current_step: BoardStep,
+
+    // Tower can reserve damage, so other towers will not shoot at this enemy if damage == health
+    pub reserved_damage: f32,
 }
 
 impl Enemy {
@@ -46,6 +48,7 @@ impl Enemy {
             pos,
             enemy_type: EnemyType::Normal,
             current_step,
+            reserved_damage: 0.,
         }
     }
 
@@ -57,6 +60,7 @@ impl Enemy {
             pos,
             enemy_type: EnemyType::Speeder,
             current_step,
+            reserved_damage: 0.,
         }
     }
 
@@ -68,6 +72,7 @@ impl Enemy {
             pos,
             enemy_type: EnemyType::Tank,
             current_step,
+            reserved_damage: 0.,
         }
     }
 

@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use self::road_end_mark::spawn_road_end_mark;
 use super::Tile;
 use crate::{
+    assets::StandardAssets,
     board::{cache::BoardCache, Board},
     utils::Vec2Board,
 };
@@ -62,7 +63,7 @@ impl BoardVisualTile {
     }
 }
 
-impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
+impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     pub fn new(tile_scale: f32) -> BoardVisualisation<TScreen> {
         let inner_tile_size = tile_scale * TILE_SIZE;
 
@@ -74,7 +75,13 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
         }
     }
 
-    pub fn draw_board(&self, cmds: &mut Commands, board: &Board, board_cache: &BoardCache) {
+    pub fn draw_board(
+        &self,
+        cmds: &mut Commands,
+        board: &Board,
+        board_cache: &BoardCache,
+        assets: &StandardAssets,
+    ) {
         // Board tiles
         for (y, row) in board.tiles.iter().enumerate() {
             for (x, tile) in row.iter().enumerate() {
@@ -83,7 +90,7 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
         }
 
         // Road end mark
-        self.spawn_road_end_mark(cmds, board_cache);
+        self.spawn_road_end_mark(cmds, board_cache, assets);
 
         // Hover cross
         self.spawn_hover_cross(cmds);
@@ -109,8 +116,13 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
         .insert(TScreen::default());
     }
 
-    fn spawn_road_end_mark(&self, cmds: &mut Commands, board_cache: &BoardCache) {
-        spawn_road_end_mark(cmds, board_cache, self.inner_tile_size, TScreen::default());
+    fn spawn_road_end_mark(
+        &self,
+        cmds: &mut Commands,
+        board_cache: &BoardCache,
+        assets: &StandardAssets,
+    ) {
+        spawn_road_end_mark::<TScreen>(cmds, board_cache, self.inner_tile_size, assets);
     }
 
     pub fn change_tile(
@@ -178,11 +190,12 @@ impl<TScreen: Component + Copy + Default> BoardVisualisation<TScreen> {
         mut query: Query<Entity, With<BoardScreen>>,
         board: &Board,
         board_cache: &BoardCache,
+        assets: &StandardAssets,
     ) {
         for entity in query.iter_mut() {
             cmds.entity(entity).despawn_recursive();
         }
-        self.draw_board(cmds, board, board_cache);
+        self.draw_board(cmds, board, board_cache, assets);
     }
 
     fn hover_cross_shape() -> ShapeBundle {
@@ -229,13 +242,21 @@ mod road_end_mark {
     use euclid::Angle;
 
     use super::{BoardRoadEndMark, BoardScreen, TILE_SIZE};
-    use crate::{board::BoardCache, utils::Vec2Board};
+    use crate::{
+        assets::StandardAssets,
+        board::BoardCache,
+        utils::{
+            energy::{energy_symbol, EnergyText, ENERGY_COLOR},
+            materials::{materials_symbol, MATERIALS_COLOR},
+            text_bundle, Vec2Board,
+        },
+    };
 
-    pub fn spawn_road_end_mark<TScreen: Component + Copy>(
+    pub fn spawn_road_end_mark<TScreen: Component + Default>(
         cmds: &mut Commands,
         board_cache: &BoardCache,
         tile_size: f32,
-        screen: TScreen,
+        assets: &StandardAssets,
     ) {
         let is_visible =
             board_cache.road_path.last().is_some() && board_cache.road_end_pos.is_some();
@@ -246,12 +267,12 @@ mod road_end_mark {
             Angle::default()
         };
         let pos = board_cache.road_end_pos.unwrap_or_default();
+        let pos_board = Vec2Board::from_uvec2_tilesize_middle(&pos, tile_size / TILE_SIZE);
 
         cmds.spawn_bundle(road_end_shape(
             tile_size,
             Transform {
-                translation: Vec2Board::from_uvec2_tilesize_middle(&pos, tile_size / TILE_SIZE)
-                    .to_scaled_vec3(3.),
+                translation: pos_board.to_scaled_vec3(3.),
                 rotation: Quat::from_rotation_z(angle.radians),
                 ..Default::default()
             },
@@ -260,13 +281,21 @@ mod road_end_mark {
         .with_children(|parent| {
             parent
                 .spawn_bundle(road_end_entry_shape(tile_size, is_visible))
-                .insert(BoardRoadEndMark::child())
-                .insert(BoardScreen)
-                .insert(screen);
+                .insert(BoardRoadEndMark::child());
         })
         .insert(BoardRoadEndMark::parent())
         .insert(BoardScreen)
-        .insert(screen);
+        .insert(TScreen::default());
+
+        // Energy sign
+        let mut pos_energy = pos_board.to_scaled_vec3(3.1);
+        pos_energy.y += tile_size / 10.;
+        spawn_energy_sign::<TScreen>(cmds, assets, tile_size / 1.5, pos_energy);
+
+        // Materials sign
+        let mut pos_materials = pos_board.to_scaled_vec3(3.1);
+        pos_materials.y -= tile_size / 10.;
+        spawn_materials_sign::<TScreen>(cmds, assets, tile_size / 1.5, pos_materials);
     }
 
     fn road_end_shape(size_px: f32, transform: Transform, is_visible: bool) -> ShapeBundle {
@@ -307,5 +336,84 @@ mod road_end_mark {
         );
         shape_bundle.visibility.is_visible = is_visible;
         shape_bundle
+    }
+
+    fn spawn_energy_sign<TScreen: Component + Default>(
+        cmds: &mut Commands,
+        assets: &StandardAssets,
+        width: f32,
+        translation: Vec3,
+    ) {
+        cmds.spawn_bundle(text_background_shape(
+            width,
+            Transform {
+                translation,
+                ..Default::default()
+            },
+        ))
+        .insert(BoardScreen)
+        .insert(TScreen::default())
+        .with_children(|parent| {
+            parent
+                .spawn_bundle(text_bundle(
+                    width / 6.,
+                    &format!("{}", 0),
+                    ENERGY_COLOR,
+                    assets,
+                ))
+                .insert(EnergyText);
+            parent.spawn_bundle(energy_symbol(Transform {
+                translation: Vec3::new(-width / 6., 0., 0.),
+                scale: Vec3::new(0.15, 0.15, 1.),
+                ..Default::default()
+            }));
+        });
+    }
+
+    fn spawn_materials_sign<TScreen: Component + Default>(
+        cmds: &mut Commands,
+        assets: &StandardAssets,
+        width: f32,
+        translation: Vec3,
+    ) {
+        cmds.spawn_bundle(text_background_shape(
+            width,
+            Transform {
+                translation,
+                ..Default::default()
+            },
+        ))
+        .insert(BoardScreen)
+        .insert(TScreen::default())
+        .with_children(|parent| {
+            parent
+                .spawn_bundle(text_bundle(
+                    width / 6.,
+                    &format!("{}", 0),
+                    MATERIALS_COLOR,
+                    assets,
+                ))
+                .insert(EnergyText);
+            parent.spawn_bundle(materials_symbol(Transform {
+                translation: Vec3::new(-width / 6., 0., 0.),
+                scale: Vec3::new(0.15, 0.15, 1.),
+                ..Default::default()
+            }));
+        });
+    }
+
+    fn text_background_shape(width: f32, transform: Transform) -> ShapeBundle {
+        let shape = shapes::Rectangle {
+            origin: RectangleOrigin::Center,
+            extents: Vec2::new(width / 2., width / 6.),
+        };
+        GeometryBuilder::build_as(
+            &shape,
+            DrawMode::Outlined {
+                fill_mode: FillMode::color(Color::rgba(1., 1., 1., 0.1)),
+                outline_mode: StrokeMode::new(Color::rgba(1., 1., 1., 0.6), width / 40.),
+            },
+            transform,
+        )
     }
 }

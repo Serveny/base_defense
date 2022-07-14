@@ -9,6 +9,7 @@ use self::{
     top_bar::add_top_menu_bar,
 };
 use crate::{
+    assets::StandardAssets,
     board::{visualisation::BoardVisualisation, Board, BoardCache},
     utils::{despawn_all_of, zoom_cam_to_board, GameState},
     CamMutQuery,
@@ -67,13 +68,14 @@ fn editor_setup(
     mut cmds: Commands,
     windows: Res<Windows>,
     cam_query: Query<&mut OrthographicProjection, With<Camera2d>>,
+    assets: Res<StandardAssets>,
 ) {
     let board = Board::default();
     let board_cache = BoardCache::new(&board);
 
     zoom_cam_to_board(&board, cam_query, &windows);
     let visu = BoardVisu::new(0.9);
-    visu.draw_board(&mut cmds, &board, &board_cache);
+    visu.draw_board(&mut cmds, &board, &board_cache, &assets);
     cmds.insert_resource(visu);
     cmds.insert_resource(board);
     cmds.insert_resource(board_cache);
