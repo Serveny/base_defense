@@ -1,6 +1,6 @@
 use self::{
     actions::{build_menu::BuildMenuActionsEvent, GameActions},
-    build_menus::{tower::draw_tower_build_menu, BuildMenu, BuildMenuScreen},
+    build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
     systems::{wave::Wave, GameSystems},
 };
@@ -102,7 +102,7 @@ fn game_setup(
     zoom_cam_to_board(&board, cam_query, &windows);
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache, &assets);
-    draw_tower_build_menu(&mut cmds, tm_ev, game.base_lvl);
+    draw_build_menu(&mut cmds, tm_ev, game.base_lvl);
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
     cmds.init_resource::<BuildMenu>();

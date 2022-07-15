@@ -25,45 +25,56 @@ pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn mouse_input(
-    mut tile_actions: EventWriter<TileActionsEvent>,
-    mut tm_actions: EventWriter<BuildMenuActionsEvent>,
+    mut tile_ac: EventWriter<TileActionsEvent>,
+    mut tm_ac: EventWriter<BuildMenuActionsEvent>,
     ev_scroll: EventReader<MouseWheel>,
-    mouse_button_input: Res<Input<MouseButton>>,
+    mbi: Res<Input<MouseButton>>,
     q_cam: CamQuery,
     wnds: Res<Windows>,
     board: Res<Board>,
     tbm: Res<BuildMenu>,
 ) {
     match get_hover_pos_and_tile(wnds, q_cam, board) {
-        Some((pos, tile)) => {
-            use Tile::*;
-            let upos = pos.as_uvec2();
-            if let Some(ev) = match (
-                mouse_button_input.just_pressed(MouseButton::Left),
-                tbm.is_open,
-                &tile,
-            ) {
-                (true, true, _) => Some(BuildMenuActionsEvent::Build),
-                (true, false, _) => Some(Open(upos)),
-                (false, true, _) if tbm.tile_pos != upos => Some(Open(upos)),
-                (false, true, TowerGround(None) | BuildingGround(None)) => Some(Open(upos)),
-                (false, true, _) => Some(Close),
-                (false, false, _) => None,
-            } {
-                tm_actions.send(ev);
-            }
-            mouse_wheel_handler(&mut tm_actions, ev_scroll, &tbm, &pos, &tile);
-            tile_actions.send(HoverTile(pos));
-        }
-        None => {
-            tile_actions.send(UnhoverTile);
-            tm_actions.send(Close);
-        }
+        Some((pos, tile)) => tile_hover(&mut tile_ac, &mut tm_ac, ev_scroll, &mbi, tbm, pos, tile),
+        None => tile_unhover(&mut tile_ac, &mut tm_ac),
     };
 
-    if mouse_button_input.just_pressed(MouseButton::Right) {
-        tm_actions.send(Close);
+    if mbi.just_pressed(MouseButton::Right) {
+        tm_ac.send(Close);
     }
+}
+
+fn tile_hover(
+    tile_acts: &mut EventWriter<TileActionsEvent>,
+    tm_acts: &mut EventWriter<BuildMenuActionsEvent>,
+    ev_scroll: EventReader<MouseWheel>,
+    mbi: &Input<MouseButton>,
+    tbm: Res<BuildMenu>,
+    pos: Vec2Board,
+    tile: Tile,
+) {
+    use Tile::*;
+    let upos = pos.as_uvec2();
+    if let Some(ev) = match (mbi.just_pressed(MouseButton::Left), tbm.is_open, &tile) {
+        (true, true, _) => Some(BuildMenuActionsEvent::Build),
+        (true, false, _) => Some(Open(upos)),
+        (false, true, _) if tbm.tile_pos != upos => Some(Open(upos)),
+        (false, true, TowerGround(None) | BuildingGround(None)) => Some(Open(upos)),
+        (false, true, _) => Some(Close),
+        (false, false, _) => None,
+    } {
+        tm_acts.send(ev);
+    }
+    mouse_wheel_handler(tm_acts, ev_scroll, &tbm, &pos, &tile);
+    tile_acts.send(HoverTile(pos));
+}
+
+fn tile_unhover(
+    tile_ac: &mut EventWriter<TileActionsEvent>,
+    tm_ac: &mut EventWriter<BuildMenuActionsEvent>,
+) {
+    tile_ac.send(UnhoverTile);
+    tm_ac.send(Close);
 }
 
 fn mouse_wheel_handler(
@@ -75,13 +86,14 @@ fn mouse_wheel_handler(
 ) {
     for ev in ev_scroll.iter() {
         // println!("{:?}", ev);
-        if let Tile::TowerGround(tile) = &tile {
-            if tile.is_none() {
-                match tbm.is_open {
-                    true => send_tbm_scroll_ev(ev, tm_actions),
-                    false => tm_actions.send(Open(pos.as_uvec2())),
-                }
+        match (tile, tbm.is_open) {
+            (Tile::TowerGround(None) | Tile::BuildingGround(None), true) => {
+                send_tbm_scroll_ev(ev, tm_actions)
             }
+            (Tile::TowerGround(None) | Tile::BuildingGround(None), false) => {
+                tm_actions.send(Open(pos.as_uvec2()))
+            }
+            _ => (),
         }
     }
 }
