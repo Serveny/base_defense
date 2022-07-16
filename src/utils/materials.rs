@@ -7,7 +7,7 @@ pub const MATERIALS_COLOR: Color = Color::ORANGE;
 #[derive(Component)]
 pub struct MaterialsText;
 
-pub fn materials_symbol(transform: Transform) -> ShapeBundle {
+pub fn materials_symbol(transform: Transform, color: Color) -> ShapeBundle {
     let shape = SvgPathShape {
         svg_doc_size_in_px: Vec2::new(512., 512.),
         svg_path_string: String::from(
@@ -16,7 +16,7 @@ pub fn materials_symbol(transform: Transform) -> ShapeBundle {
     };
     GeometryBuilder::build_as(
         &shape,
-        DrawMode::Stroke(StrokeMode::new(MATERIALS_COLOR, TILE_SIZE / 15.)),
+        DrawMode::Stroke(StrokeMode::new(color, TILE_SIZE / 15.)),
         transform,
     )
 }

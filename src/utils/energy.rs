@@ -7,7 +7,7 @@ pub const ENERGY_COLOR: Color = Color::YELLOW;
 #[derive(Component)]
 pub struct EnergyText;
 
-pub fn energy_symbol(transform: Transform) -> ShapeBundle {
+pub fn energy_symbol(transform: Transform, color: Color) -> ShapeBundle {
     let shape = SvgPathShape {
         svg_doc_size_in_px: Vec2::new(512., 512.),
         svg_path_string: String::from(
@@ -16,7 +16,7 @@ pub fn energy_symbol(transform: Transform) -> ShapeBundle {
     };
     GeometryBuilder::build_as(
         &shape,
-        DrawMode::Stroke(StrokeMode::new(ENERGY_COLOR, TILE_SIZE / 15.)),
+        DrawMode::Stroke(StrokeMode::new(color, TILE_SIZE / 15.)),
         transform,
     )
 }

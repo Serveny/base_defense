@@ -1,5 +1,3 @@
-use std::marker::PhantomData;
-
 use self::road_end_mark::spawn_road_end_mark;
 use super::Tile;
 use crate::{
@@ -10,6 +8,7 @@ use crate::{
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use euclid::Angle;
+use std::marker::PhantomData;
 
 // Tile size factor, because bevy_lyon can't handle to small screen scales
 pub const TILE_SIZE: f32 = 1000.;
@@ -140,8 +139,8 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
 
     fn get_tile_color(tile: &Tile) -> Color {
         match tile {
-            Tile::TowerGround(_) => Color::GOLD,
-            Tile::BuildingGround(_) => Color::ANTIQUE_WHITE,
+            Tile::TowerGround => Color::GOLD,
+            Tile::BuildingGround => Color::ANTIQUE_WHITE,
             Tile::Road => Color::GRAY,
             Tile::Empty => Color::DARK_GRAY,
         }
@@ -248,7 +247,7 @@ mod road_end_mark {
         utils::{
             energy::{energy_symbol, EnergyText, ENERGY_COLOR},
             materials::{materials_symbol, MaterialsText, MATERIALS_COLOR},
-            text_bundle, Vec2Board,
+            text_background_shape, text_bundle, Vec2Board,
         },
     };
 
@@ -350,6 +349,7 @@ mod road_end_mark {
                 translation,
                 ..Default::default()
             },
+            true,
         ))
         .insert(BoardScreen)
         .insert(TScreen::default())
@@ -362,11 +362,14 @@ mod road_end_mark {
                     assets,
                 ))
                 .insert(EnergyText);
-            parent.spawn_bundle(energy_symbol(Transform {
-                translation: Vec3::new(-width / 6., 0., 0.),
-                scale: Vec3::new(0.15, 0.15, 1.),
-                ..Default::default()
-            }));
+            parent.spawn_bundle(energy_symbol(
+                Transform {
+                    translation: Vec3::new(-width / 6., 0., 0.),
+                    scale: Vec3::new(0.15, 0.15, 1.),
+                    ..Default::default()
+                },
+                ENERGY_COLOR,
+            ));
         });
     }
 
@@ -382,6 +385,7 @@ mod road_end_mark {
                 translation,
                 ..Default::default()
             },
+            true,
         ))
         .insert(BoardScreen)
         .insert(TScreen::default())
@@ -394,26 +398,14 @@ mod road_end_mark {
                     assets,
                 ))
                 .insert(MaterialsText);
-            parent.spawn_bundle(materials_symbol(Transform {
-                translation: Vec3::new(-width / 6., 0., 0.),
-                scale: Vec3::new(0.15, 0.15, 1.),
-                ..Default::default()
-            }));
+            parent.spawn_bundle(materials_symbol(
+                Transform {
+                    translation: Vec3::new(-width / 6., 0., 0.),
+                    scale: Vec3::new(0.15, 0.15, 1.),
+                    ..Default::default()
+                },
+                MATERIALS_COLOR,
+            ));
         });
-    }
-
-    fn text_background_shape(width: f32, transform: Transform) -> ShapeBundle {
-        let shape = shapes::Rectangle {
-            origin: RectangleOrigin::Center,
-            extents: Vec2::new(width / 2., width / 6.),
-        };
-        GeometryBuilder::build_as(
-            &shape,
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::rgba(1., 1., 1., 0.1)),
-                outline_mode: StrokeMode::new(Color::rgba(1., 1., 1., 0.6), width / 40.),
-            },
-            transform,
-        )
     }
 }

@@ -1,29 +1,31 @@
-use std::time::Duration;
-
 use super::{building_base_shape, Building, BuildingBase};
-use crate::utils::{energy::ENERGY_COLOR, Energy, Vec2Board};
+use crate::utils::{energy::ENERGY_COLOR, Energy, IngameTimestamp, Vec2Board};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct PowerPlant {
-    energy_package_size: Energy,
-    production_time: Duration,
-}
-
-impl Building {
-    pub fn power_plant() -> Self {
-        Self::PowerPlant(PowerPlant::new())
-    }
+    pub energy_package_size: Energy,
+    pub production_time: Duration,
+    pub next_drop: IngameTimestamp,
+    pub pos: Vec2Board,
 }
 
 impl PowerPlant {
-    pub fn new() -> Self {
+    pub fn new(now: IngameTimestamp, pos: Vec2Board) -> Self {
+        let production_time = Duration::from_secs(5);
         Self {
             energy_package_size: 50.,
-            production_time: Duration::from_secs(5),
+            production_time,
+            next_drop: now + production_time,
+            pos,
         }
+    }
+
+    pub fn set_next_drop(&mut self, now: IngameTimestamp) {
+        self.next_drop = now + self.production_time;
     }
 }
 
@@ -31,17 +33,17 @@ pub fn spawn_power_plant<TScreen: Component + Default>(
     cmds: &mut Commands,
     power_plant: PowerPlant,
     tile_size: f32,
-    pos: Vec2Board,
 ) {
     let color = ENERGY_COLOR;
     cmds.spawn_bundle(building_base_shape(
-        pos.to_scaled_vec3(1.),
+        power_plant.pos.to_scaled_vec3(1.),
         tile_size / 1.1,
         color,
     ))
     .with_children(|parent| power_plant_children::<TScreen>(parent, tile_size))
     .insert(BuildingBase)
-    .insert(Building::PowerPlant(power_plant))
+    .insert(Building::PowerPlant)
+    .insert(power_plant)
     .insert(TScreen::default());
 }
 

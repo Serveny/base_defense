@@ -1,32 +1,34 @@
-use std::time::Duration;
-
 use super::{building_base_shape, Building, BuildingBase};
-use crate::utils::{materials::MATERIALS_COLOR, Energy, Materials, Vec2Board};
+use crate::utils::{materials::MATERIALS_COLOR, Energy, IngameTimestamp, Materials, Vec2Board};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use euclid::Angle;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
-#[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct Factory {
-    materials_package_size: Materials,
-    energy_consumption: Energy,
-    production_time: Duration,
-}
-
-impl Building {
-    pub fn factory() -> Self {
-        Self::Factory(Factory::new())
-    }
+    pub materials_package_size: Materials,
+    pub energy_consumption: Energy,
+    pub production_time: Duration,
+    pub next_drop: IngameTimestamp,
+    pub pos: Vec2Board,
 }
 
 impl Factory {
-    pub fn new() -> Self {
+    pub fn new(now: IngameTimestamp, pos: Vec2Board) -> Self {
+        let production_time = Duration::from_secs(5);
         Self {
             materials_package_size: 5.,
-            energy_consumption: 1.,
-            production_time: Duration::from_secs(5),
+            energy_consumption: -10.,
+            production_time,
+            next_drop: now + production_time,
+            pos,
         }
+    }
+
+    pub fn set_next_drop(&mut self, now: IngameTimestamp) {
+        self.next_drop = now + self.production_time;
     }
 }
 
@@ -34,17 +36,17 @@ pub fn spawn_factory<TScreen: Component + Default>(
     cmds: &mut Commands,
     factory: Factory,
     tile_size: f32,
-    pos: Vec2Board,
 ) {
     let color = MATERIALS_COLOR;
     cmds.spawn_bundle(building_base_shape(
-        pos.to_scaled_vec3(1.),
+        factory.pos.to_scaled_vec3(1.),
         tile_size / 1.1,
         color,
     ))
     .with_children(|parent| factory_children::<TScreen>(parent, tile_size))
     .insert(BuildingBase)
-    .insert(Building::Factory(factory))
+    .insert(Building::Factory)
+    .insert(factory)
     .insert(TScreen::default());
 }
 

@@ -5,6 +5,7 @@ use self::{
     build_menu::{on_tower_menu_actions, BuildMenuActionsEvent},
     damage::{on_damage, DamageEvent},
     explosions::{on_explosions, ExplosionEvent},
+    resources::{on_change_resources, ResourcesEvent},
     tile::{on_tile_actions, TileActionsEvent},
     tower::{on_tower_actions, TowerActionsEvent},
     wave::{on_wave_actions, WaveActionsEvent},
@@ -15,6 +16,7 @@ use super::{build_menus::BuildMenuScreen, systems::wave::WaveState, Game, GameSc
 pub(super) mod build_menu;
 pub(super) mod damage;
 pub(super) mod explosions;
+pub(super) mod resources;
 pub(super) mod tile;
 pub(super) mod tower;
 pub(super) mod wave;
@@ -39,6 +41,7 @@ impl Plugin for GameActions {
     fn build(&self, app: &mut App) {
         app.add_event::<GameActionEvent>()
             .add_event::<WaveActionsEvent>()
+            .add_event::<ResourcesEvent>()
             .add_event::<TileActionsEvent>()
             .add_event::<TowerActionsEvent>()
             .add_event::<BuildMenuActionsEvent>()
@@ -48,6 +51,7 @@ impl Plugin for GameActions {
                 SystemSet::on_update(GameState::Game)
                     .with_system(on_game_actions.label("actions"))
                     .with_system(on_wave_actions.label("actions"))
+                    .with_system(on_change_resources)
                     .with_system(on_tile_actions)
                     .with_system(on_tower_actions)
                     .with_system(on_tower_menu_actions)

@@ -1,13 +1,17 @@
 use crate::{
-    board::{Board, Tile},
+    board::{visualisation::TILE_SIZE, Board, Tile},
     game::{
         build_menus::{BuildMenu, BuildMenuCircle, BuildMenuScreen},
         GameScreen,
     },
     utils::{
-        buildings::{draw_building, Building, BuildingBase},
+        buildings::{
+            factory::{spawn_factory, Factory},
+            power_plant::{spawn_power_plant, PowerPlant},
+            Building, BuildingBase,
+        },
         towers::{draw_tower, Tower, TowerBase},
-        Vec2Board,
+        IngameTime, IngameTimestamp, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -56,6 +60,7 @@ pub(in crate::game) fn on_tower_menu_actions(
     mut board: ResMut<Board>,
     mut queries: QueriesTowerMenuAction,
     mut tm: ResMut<BuildMenu>,
+    time: Res<IngameTime>,
 ) {
     use BuildMenuActionsEvent::*;
     if !actions.is_empty() {
@@ -66,7 +71,7 @@ pub(in crate::game) fn on_tower_menu_actions(
                 ScollUp => scroll(&mut tm, &mut queries, &board, -1),
                 ScollDown => scroll(&mut tm, &mut queries, &board, 1),
                 Build => {
-                    on_build(&mut cmds, &mut board, &tm, &mut queries);
+                    on_build(&mut cmds, &mut board, &tm, &mut queries, time.now());
                     close(&mut tm, &mut queries.p1());
                 }
             }
@@ -109,7 +114,7 @@ fn show_preview(
         set_preview_children(&mut queries.p1(), building_to_hide, false);
     }
 
-    if let Tile::TowerGround(_) = tile {
+    if *tile == Tile::TowerGround {
         if let Some(to_show) =
             show_preview_base(&mut queries.p2(), translation, tm.selected_tower_index)
         {
@@ -161,7 +166,7 @@ fn set_preview_children(q_tms: &mut QueryBuildMenu, children: Children, is_visib
 fn scroll(tm: &mut BuildMenu, queries: &mut QueriesTowerMenuAction, board: &Board, additor: isize) {
     if let Some(tile) = board.get_tile(&tm.tile_pos) {
         let translation = Vec2Board::from_uvec2_middle(&tm.tile_pos).to_scaled_vec3(3.);
-        if let Tile::TowerGround(_) = tile {
+        if *tile == Tile::TowerGround {
             let count = queries.p2().iter().count();
             let new_i = tm.selected_tower_index as isize + additor as isize;
             if count > 1 {
@@ -184,14 +189,20 @@ fn on_build(
     board: &mut Board,
     tm: &BuildMenu,
     queries: &mut QueriesTowerMenuAction,
+    now: IngameTimestamp,
 ) {
     if let Some(tile) = board.get_tile_mut(&tm.tile_pos) {
         match tile {
-            Tile::TowerGround(None) => {
+            Tile::TowerGround => {
                 place_tower(cmds, tm.get_selected_tower(&queries.p2()), &tm.tile_pos);
             }
-            Tile::BuildingGround(_) => {
-                place_building(cmds, tm.get_selected_building(&queries.p3()), &tm.tile_pos);
+            Tile::BuildingGround => {
+                place_building(
+                    cmds,
+                    tm.get_selected_building(&queries.p3()),
+                    &tm.tile_pos,
+                    now,
+                );
             }
             _ => (),
         }
@@ -205,9 +216,20 @@ fn place_tower(cmds: &mut Commands, tower: Option<&Tower>, pos: &UVec2) {
     }
 }
 
-fn place_building(cmds: &mut Commands, tower: Option<&Building>, pos: &UVec2) {
-    if let Some(building) = tower {
-        let pos = Vec2Board::from_uvec2_middle(pos);
-        draw_building::<GameScreen>(cmds, pos, building);
+fn place_building(
+    cmds: &mut Commands,
+    building: Option<&Building>,
+    pos: &UVec2,
+    now: IngameTimestamp,
+) {
+    let pos = Vec2Board::from_uvec2_middle(pos);
+    match building {
+        Some(Building::PowerPlant) => {
+            spawn_power_plant::<GameScreen>(cmds, PowerPlant::new(now, pos), TILE_SIZE)
+        }
+        Some(Building::Factory) => {
+            spawn_factory::<GameScreen>(cmds, Factory::new(now, pos), TILE_SIZE)
+        }
+        None => (),
     }
 }

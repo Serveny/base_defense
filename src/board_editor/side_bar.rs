@@ -16,8 +16,8 @@ pub(super) enum SettileState {
 impl SettileState {
     pub fn as_tile(&self) -> Tile {
         match self {
-            SettileState::TowerGround => Tile::TowerGround(None),
-            SettileState::BuildingGround => Tile::BuildingGround(None),
+            SettileState::TowerGround => Tile::TowerGround,
+            SettileState::BuildingGround => Tile::BuildingGround,
             SettileState::Road => Tile::Road,
         }
     }

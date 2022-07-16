@@ -59,7 +59,7 @@ fn tile_hover(
         (true, true, _) => Some(BuildMenuActionsEvent::Build),
         (true, false, _) => Some(Open(upos)),
         (false, true, _) if tbm.tile_pos != upos => Some(Open(upos)),
-        (false, true, TowerGround(None) | BuildingGround(None)) => Some(Open(upos)),
+        (false, true, TowerGround | BuildingGround) => Some(Open(upos)),
         (false, true, _) => Some(Close),
         (false, false, _) => None,
     } {
@@ -87,10 +87,8 @@ fn mouse_wheel_handler(
     for ev in ev_scroll.iter() {
         // println!("{:?}", ev);
         match (tile, tbm.is_open) {
-            (Tile::TowerGround(None) | Tile::BuildingGround(None), true) => {
-                send_tbm_scroll_ev(ev, tm_actions)
-            }
-            (Tile::TowerGround(None) | Tile::BuildingGround(None), false) => {
+            (Tile::TowerGround | Tile::BuildingGround, true) => send_tbm_scroll_ev(ev, tm_actions),
+            (Tile::TowerGround | Tile::BuildingGround, false) => {
                 tm_actions.send(Open(pos.as_uvec2()))
             }
             _ => (),

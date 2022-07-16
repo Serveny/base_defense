@@ -1,7 +1,11 @@
 use crate::{
     board::visualisation::TILE_SIZE,
     utils::{
-        buildings::{Building, BuildingBase},
+        buildings::{
+            factory::{spawn_factory, Factory},
+            power_plant::{spawn_power_plant, PowerPlant},
+            Building, BuildingBase,
+        },
         towers::{Tower, TowerBase},
         Vec2Board,
     },
@@ -32,7 +36,7 @@ impl BuildMenu {
     }
 
     fn buidings() -> [(BaseLevel, Building); 2] {
-        [(1, Building::power_plant()), (1, Building::factory())]
+        [(1, Building::PowerPlant), (1, Building::Factory)]
     }
 
     //pub fn new_available_towers(base_lvl: BaseLevel) -> Vec<Tower> {
@@ -55,7 +59,7 @@ impl BuildMenu {
         Self::buidings()
             .iter()
             .filter(|item| item.0 <= base_lvl)
-            .map(|item| item.1.clone())
+            .map(|item| item.1)
             .collect()
     }
 
@@ -123,7 +127,14 @@ pub fn draw_build_menu(
     }
     let mut buildings = BuildMenu::available_buildings(base_lvl);
     while let Some(building) = buildings.pop() {
-        building.draw_preview::<BuildMenuScreen>(cmds);
+        match building {
+            Building::PowerPlant => {
+                spawn_power_plant::<BuildMenuScreen>(cmds, PowerPlant::default(), TILE_SIZE)
+            }
+            Building::Factory => {
+                spawn_factory::<BuildMenuScreen>(cmds, Factory::default(), TILE_SIZE)
+            }
+        }
     }
     actions.send(BuildMenuActionsEvent::Close);
 }

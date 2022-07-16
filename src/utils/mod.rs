@@ -4,6 +4,8 @@ use crate::{CamMutQuery, CamQuery};
 // #![allow(unused)]
 use crate::board::Board;
 use bevy::prelude::*;
+use bevy_prototype_lyon::entity::ShapeBundle;
+use bevy_prototype_lyon::prelude::*;
 use euclid::Angle;
 pub use ingame_time::IngameTime;
 pub use ingame_time::IngameTimestamp;
@@ -184,4 +186,21 @@ pub fn text_bundle(width: f32, text: &str, color: Color, assets: &StandardAssets
         },
         ..default()
     }
+}
+
+pub fn text_background_shape(width: f32, transform: Transform, is_visible: bool) -> ShapeBundle {
+    let shape = shapes::Rectangle {
+        origin: RectangleOrigin::Center,
+        extents: Vec2::new(width / 2., width / 6.),
+    };
+    let mut bundle = GeometryBuilder::build_as(
+        &shape,
+        DrawMode::Outlined {
+            fill_mode: FillMode::color(Color::rgba(1., 1., 1., 0.05)),
+            outline_mode: StrokeMode::new(Color::rgba(1., 1., 1., 0.05), width / 40.),
+        },
+        transform,
+    );
+    bundle.visibility.is_visible = is_visible;
+    bundle
 }

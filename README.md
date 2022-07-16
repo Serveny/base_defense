@@ -5,7 +5,8 @@ A litte tower defense game with Rust and Bevy engine. It's my first litte game p
 Base defense concept:
 
 - There is one Base board and one defense board
-- there are resources you can earn in the base and spend in defense
+- there are resources you can earn in power plants/factories and spend in defense
+- The game is over if you have no more resources
 - Energy (produced by power plants and gets stored in main base building)
 - Materials (produced by factories, factories need energy)
   (- Buildings and towers have levels)

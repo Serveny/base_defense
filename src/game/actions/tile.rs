@@ -64,8 +64,8 @@ fn draw_hover_cross(
     tile: &Tile,
 ) {
     match tile {
-        Tile::TowerGround(_) => board_visu.show_hover_cross(query, pos),
-        Tile::BuildingGround(_) => board_visu.show_hover_cross(query, pos),
+        Tile::TowerGround => board_visu.show_hover_cross(query, pos),
+        Tile::BuildingGround => board_visu.show_hover_cross(query, pos),
         _ => BoardVisu::hide_hover_cross(query),
     }
 }

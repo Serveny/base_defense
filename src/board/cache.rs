@@ -18,8 +18,8 @@ pub struct BoardCache {
 // Static functions
 impl BoardCache {
     pub fn new(board: &Board) -> Self {
-        let tower_tile_posis = board.get_tiles(Tile::TowerGround(None));
-        let building_tile_posis = board.get_tiles(Tile::BuildingGround(None));
+        let tower_tile_posis = board.get_tiles(Tile::TowerGround);
+        let building_tile_posis = board.get_tiles(Tile::BuildingGround);
         let mut road_tile_posis = board.get_tiles(Tile::Road);
         let road_start = Self::road_start_pos_from(&road_tile_posis, board.width, board.height);
         let road_end = Self::road_end_pos_from(&road_tile_posis, &building_tile_posis);
@@ -165,8 +165,8 @@ impl BoardCache {
 impl BoardCache {
     pub fn get_tile_posis_mut(&mut self, tile: &Tile) -> Option<&mut IndexSet<UVec2>> {
         match tile {
-            Tile::TowerGround(_) => Some(&mut self.tower_tile_posis),
-            Tile::BuildingGround(_) => Some(&mut self.building_tile_posis),
+            Tile::TowerGround => Some(&mut self.tower_tile_posis),
+            Tile::BuildingGround => Some(&mut self.building_tile_posis),
             Tile::Road => Some(&mut self.road_tile_posis),
             Tile::Empty => None,
         }

@@ -1,15 +1,13 @@
-use crate::utils::{buildings::Building, towers::Tower};
 use serde::{Deserialize, Serialize};
-use strum::EnumDiscriminants;
 
 // Place on the board
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, EnumDiscriminants)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Tile {
     // A place where towers can be built
-    TowerGround(Option<Tower>),
+    TowerGround,
 
     // A place where base buildings can be built
-    BuildingGround(Option<Building>),
+    BuildingGround,
 
     // The road, enemy must was
     Road,
