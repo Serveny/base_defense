@@ -16,3 +16,7 @@ Base defense concept:
 - Destroing an enemy results in a little reward of materials
 - Controls:
   - Shift: Show all tower ranges
+- Enemies sometimes drop special items on death
+- Random special items:
+  - More temp. tower damage
+  - Slower enemies

@@ -18,6 +18,7 @@ pub enum EnemyType {
 
 #[derive(Component, Clone, Serialize, Deserialize)]
 pub struct Enemy {
+    pub size_radius: f32,
     speed: TilesPerSecond,
     pub health_max: f32,
     pub health: f32,
@@ -42,6 +43,7 @@ impl Enemy {
 
     pub fn new_normal(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
+            size_radius: 0.125,
             speed: 1.,
             health_max: 100.,
             health: 100.,
@@ -54,6 +56,7 @@ impl Enemy {
 
     pub fn new_speeder(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
+            size_radius: 0.075,
             speed: 2.,
             health_max: 10.,
             health: 10.,
@@ -66,6 +69,7 @@ impl Enemy {
 
     pub fn new_tank(pos: Vec2Board, current_step: BoardStep) -> Self {
         Self {
+            size_radius: 0.3,
             speed: 0.2,
             health_max: 1000.,
             health: 1000.,
@@ -107,7 +111,7 @@ impl Enemy {
 }
 
 pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu, enemy: Enemy) {
-    cmds.spawn_bundle(enemy_normal_shape(TILE_SIZE, enemy.pos.to_scaled_vec3(1.)))
+    cmds.spawn_bundle(enemy_normal_shape(&enemy))
         .with_children(|parent| {
             health_bar(parent, board_visu.inner_tile_size / 5.);
         })
@@ -115,10 +119,10 @@ pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu,
         .insert(GameScreen);
 }
 
-fn enemy_normal_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
+fn enemy_normal_shape(enemy: &Enemy) -> ShapeBundle {
     let shape = shapes::RegularPolygon {
         sides: 5,
-        feature: shapes::RegularPolygonFeature::Radius(tile_size / 8.),
+        feature: shapes::RegularPolygonFeature::Radius(enemy.size_radius * TILE_SIZE),
         ..shapes::RegularPolygon::default()
     };
 
@@ -126,10 +130,10 @@ fn enemy_normal_shape(tile_size: f32, translation: Vec3) -> ShapeBundle {
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::MAROON),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 16.),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
         },
         Transform {
-            translation,
+            translation: enemy.pos.to_scaled_vec3(1.),
             ..Default::default()
         },
     )

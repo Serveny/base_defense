@@ -1,5 +1,5 @@
 use crate::{
-    game::GameScreen,
+    game::{enemies::Enemy, GameScreen},
     utils::{
         explosions::{spawn_explosion, Explosion},
         Vec2Board,
@@ -19,6 +19,14 @@ impl ExplosionEvent {
             pos,
             radius,
             damage,
+        }
+    }
+
+    pub fn death(enemy: &Enemy) -> Self {
+        Self {
+            pos: enemy.pos,
+            radius: enemy.size_radius * 2.,
+            damage: enemy.health_max / 5.,
         }
     }
 

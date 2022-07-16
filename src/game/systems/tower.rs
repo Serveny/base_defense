@@ -183,7 +183,8 @@ fn overheat_color(tower_vals: &TowerValues, now: IngameTimestamp) -> Color {
         }
         TowerStatus::Waiting => 0.,
         TowerStatus::Shooting(finish) => {
-            1. - time_to_percent_inverted(now, finish, tower_vals.shoot_duration)
+            tower_vals.reload_duration.as_secs_f32()
+                - time_to_percent_inverted(now, finish, tower_vals.shoot_duration)
         }
     };
     Color::Rgba {
@@ -221,8 +222,10 @@ fn shoot_or_reload(
             }
         }
         TowerStatus::Shooting(time_finish) => {
-            if now >= time_finish {
-                set_tower_status_reload(tower_vals, now + tower_vals.reload_duration);
+            if now >= time_finish || enemy.is_none() {
+                let rl_dur =
+                    tower_vals.reload_duration.as_secs_f32() - (*(time_finish - now)).abs();
+                set_tower_status_reload(tower_vals, now + rl_dur);
             }
         }
     };
