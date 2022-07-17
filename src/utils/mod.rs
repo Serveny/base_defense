@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 pub use vec2_board::Vec2Board;
 
 pub mod buildings;
+pub mod consumption;
 pub mod energy;
 pub mod explosions;
 pub mod fuel_bar;
@@ -45,11 +46,17 @@ pub type Energy = f32;
 pub type Materials = f32;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct Consumption {
-    energy: Energy,
-    materials: Materials,
+pub enum BDVal<T> {
+    PerSecond(T),
+    PerShot(T),
+    None,
 }
 
+impl<T> Default for BDVal<T> {
+    fn default() -> Self {
+        Self::None
+    }
+}
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in to_despawn.iter() {

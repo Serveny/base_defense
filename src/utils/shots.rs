@@ -20,12 +20,9 @@ pub enum Shot {
     Rocket(DamageInRadiusEnemyLockedShotValues),
 }
 
-pub type DamagePerSecond = f32;
-pub type InstantDamage = f32;
-
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DamagePerTimeShotValues {
-    pub damage: DamagePerSecond,
+    pub damage: f32,
     pub lifetime: Duration,
     pub pos_start: Vec2Board,
     pub range_radius: f32,
@@ -64,7 +61,7 @@ impl DamageInRadiusEnemyLockedShotValues {
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DamageInRadiusEnemyLockedShotValues {
     pub pos: Vec2Board,
-    pub damage: InstantDamage,
+    pub damage: f32,
     pub damage_radius: f32,
     pub range_radius: f32,
     pub speed: TilesPerSecond,

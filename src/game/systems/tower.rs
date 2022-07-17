@@ -61,6 +61,10 @@ pub(super) fn tower_overheat_system(
     }
 }
 
+//pub(super) fn r_consumption_system(_towers: Query<&TowerValues>) {
+//for tower in q_towers.iter() {}
+//}
+
 fn target_enemy<'a>(
     q_enemies: &'a EnemiesQuery,
     locked_enemy: Option<Entity>,
@@ -113,28 +117,6 @@ fn find_locked_enemy_in_tower_range<'a>(
     }
     None
 }
-
-//fn irgendwas_mut<'a>(vector_1: &'a mut Vec<u8>, vector_2: &Vec<u8>) -> Option<&'a mut u8> {
-//for item in vector_2.iter() {
-//if let Some(res) = vector_1.get_mut(*item as usize) {
-//Some(res);
-//}
-//}
-//None
-//}
-
-//fn cannon_mut_wrong<'a>(
-//cannons: &'a mut CannonQuery,
-//tower_children: &Children,
-//) -> Option<(Mut<'a, Transform>, Mut<'a, DrawMode>)> {
-//for child in tower_children.iter() {
-//let cannon = cannons.get_mut(*child);
-//if let Ok(entity) = cannon {
-//return Some(entity);
-//}
-//}
-//panic!();
-//}
 
 fn cannon_trans_mut<'a>(
     cannons: &'a mut QueryCannonTransMut,

@@ -1,7 +1,8 @@
 use self::{laser::spawn_laser_tower, rocket::spawn_rocket_tower};
 use super::{
+    consumption::Consumption,
     shots::{Shot, TowerStatus},
-    Vec2Board,
+    Energy, Materials, Vec2Board,
 };
 use crate::board::visualisation::TILE_SIZE;
 use bevy::prelude::*;
@@ -71,6 +72,8 @@ pub struct TowerValues {
     pub shot: Shot,
     pub reload_duration: Duration,
     pub shoot_duration: Duration,
+    pub energy: Consumption<Energy>,
+    pub materials: Consumption<Materials>,
 
     // temp values
     pub target_lock: Option<Entity>,
