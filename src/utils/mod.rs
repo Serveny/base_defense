@@ -1,8 +1,7 @@
 use crate::assets::StandardAssets;
 use crate::board::visualisation::TILE_SIZE;
-use crate::{CamMutQuery, CamQuery};
-// #![allow(unused)]
 use crate::board::Board;
+use crate::{CamMutQuery, CamQuery};
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
@@ -49,13 +48,13 @@ pub type Energy = f32;
 pub type Materials = f32;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum BDVal<T> {
+pub enum BDVal<T: Default> {
     PerSecond(T),
     PerShot(T),
     None,
 }
 
-impl<T> Default for BDVal<T> {
+impl<T: Default> Default for BDVal<T> {
     fn default() -> Self {
         Self::None
     }

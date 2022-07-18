@@ -103,10 +103,9 @@ pub(super) fn enemies_walk_until_wave_end(
     board_cache: &BoardCache,
 ) -> bool {
     query.for_each_mut(|(entity, mut enemy, mut transform)| {
-        if enemy.walk_until_end(dur, board_cache) {
-            enemy_reached_base(cmds, &mut res_actions, &enemy, entity);
-        } else {
-            transform.translation = enemy.pos.to_scaled_vec3(1.);
+        match enemy.walk_until_end(dur, board_cache) {
+            true => enemy_reached_base(cmds, &mut res_actions, &enemy, entity),
+            false => transform.translation = enemy.pos.to_scaled_vec3(1.),
         }
     });
     query.is_empty()

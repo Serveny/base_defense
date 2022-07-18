@@ -67,6 +67,7 @@ fn spawn_energy_animation(
     now: IngameTimestamp,
 ) {
     let (color, pos_y_add) = color_and_pos(energy);
+    pos.x -= 0.25;
     pos.y += pos_y_add;
     cmds.spawn_bundle(text_background_shape(
         WIDTH,
@@ -100,6 +101,7 @@ fn spawn_materials_animation(
     now: IngameTimestamp,
 ) {
     let (color, pos_y_add) = color_and_pos(materials);
+    pos.x += 0.25;
     pos.y += pos_y_add;
     cmds.spawn_bundle(text_background_shape(
         WIDTH,

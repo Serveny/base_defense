@@ -1,6 +1,10 @@
 use crate::{
     board::visualisation::TILE_SIZE,
-    game::{actions::tower::TowerActionsEvent, build_menus::BuildMenuScreen, enemies::Enemy},
+    game::{
+        actions::{resources::ResourcesEvent, tower::TowerActionsEvent},
+        build_menus::BuildMenuScreen,
+        enemies::Enemy,
+    },
     utils::{
         pos_to_quat,
         shots::{Shot, TowerStatus},
@@ -22,15 +26,24 @@ type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy, &'a Children)>
 type EntityEnemy<'a> = (Entity, &'a Enemy);
 
 pub(super) fn tower_target_system(
-    mut actions: EventWriter<TowerActionsEvent>,
+    mut tower_acts: EventWriter<TowerActionsEvent>,
+    mut res_acts: EventWriter<ResourcesEvent>,
     mut q_towers: Query<&mut Tower, Without<BuildMenuScreen>>,
     q_enemies: EnemiesQuery,
-    time: Res<IngameTime>,
+    ingame_time: Res<IngameTime>,
+    time: Res<Time>,
 ) {
     for mut tower in q_towers.iter_mut() {
         let vals = tower.values_mut();
         let enemy = lock_tower_to_enemy(vals, &q_enemies);
-        shoot_or_reload(&mut actions, vals, enemy, time.now());
+        shoot_or_reload(
+            &mut tower_acts,
+            &mut res_acts,
+            vals,
+            enemy,
+            ingame_time.now(),
+            time.delta(),
+        );
     }
 }
 
@@ -60,10 +73,6 @@ pub(super) fn tower_overheat_system(
         }
     }
 }
-
-//pub(super) fn r_consumption_system(_towers: Query<&TowerValues>) {
-//for tower in q_towers.iter() {}
-//}
 
 fn target_enemy<'a>(
     q_enemies: &'a EnemiesQuery,
@@ -188,28 +197,31 @@ fn time_to_percent_inverted(
 
 fn shoot_or_reload(
     actions: &mut EventWriter<TowerActionsEvent>,
-    tower_vals: &mut TowerValues,
+    res_acts: &mut EventWriter<ResourcesEvent>,
+    vals: &mut TowerValues,
     enemy: Option<EntityEnemy>,
     now: IngameTimestamp,
+    frame_dur: Duration,
 ) {
-    match tower_vals.tower_status {
+    match vals.tower_status {
         TowerStatus::Reloading(time_finish) => {
             if now >= time_finish {
-                tower_vals.tower_status = TowerStatus::Waiting;
+                vals.tower_status = TowerStatus::Waiting;
             }
         }
         TowerStatus::Waiting => {
-            if shoot(actions, &tower_vals.shot, enemy) {
-                tower_vals.tower_status = TowerStatus::Shooting(now + tower_vals.shoot_duration);
+            if shoot(actions, &vals.shot, enemy) {
+                consume_shot_start(res_acts, vals);
+                vals.tower_status = TowerStatus::Shooting(now + vals.shoot_duration);
             }
         }
-        TowerStatus::Shooting(time_finish) => {
-            if now >= time_finish || enemy.is_none() {
-                let rl_dur =
-                    tower_vals.reload_duration.as_secs_f32() - (*(time_finish - now)).abs();
-                set_tower_status_reload(tower_vals, now + rl_dur);
+        TowerStatus::Shooting(time_finish) => match now >= time_finish || enemy.is_none() {
+            true => {
+                let rl_dur = vals.reload_duration.as_secs_f32() - (*(time_finish - now)).abs();
+                set_tower_status_reload(vals, now + rl_dur);
             }
-        }
+            false => consume_during_shot(res_acts, vals, frame_dur),
+        },
     };
 }
 
@@ -237,4 +249,26 @@ fn shoot(
         }
     };
     false
+}
+
+fn consume_shot_start(res_acts: &mut EventWriter<ResourcesEvent>, vals: &mut TowerValues) {
+    if let Some(energy) = vals.energy.consume_at_start() {
+        res_acts.send(ResourcesEvent::Energy(energy, vals.pos));
+    }
+    if let Some(materials) = vals.materials.consume_at_start() {
+        res_acts.send(ResourcesEvent::Materials(materials, vals.pos));
+    }
+}
+
+fn consume_during_shot(
+    res_acts: &mut EventWriter<ResourcesEvent>,
+    vals: &mut TowerValues,
+    frame_dur: Duration,
+) {
+    if let Some(energy) = vals.energy.consume_during(frame_dur) {
+        res_acts.send(ResourcesEvent::Energy(energy, vals.pos));
+    }
+    if let Some(materials) = vals.materials.consume_during(frame_dur) {
+        res_acts.send(ResourcesEvent::Materials(materials, vals.pos));
+    }
 }
