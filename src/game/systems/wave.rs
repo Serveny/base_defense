@@ -1,4 +1,5 @@
 use crate::board::BoardCache;
+use crate::game::actions::resources::ResourcesEvent;
 use crate::game::actions::wave::WaveActionsEvent;
 use crate::game::enemies::{spawn_enemy_component, Enemy, EnemyType};
 use crate::game::{BoardVisu, Game};
@@ -55,8 +56,9 @@ pub(in crate::game) fn wave_spawn_system(
 #[allow(clippy::too_many_arguments)]
 pub(in crate::game) fn wave_system(
     mut cmds: Commands,
-    mut actions: EventWriter<WaveActionsEvent>,
+    mut wave_acts: EventWriter<WaveActionsEvent>,
     mut wave: ResMut<Wave>,
+    res_acts: EventWriter<ResourcesEvent>,
     query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
     time: Res<Time>,
     ingame_time: Res<IngameTime>,
@@ -69,9 +71,10 @@ pub(in crate::game) fn wave_system(
         let now = IngameTimestamp::new(ingame_time.elapsed_secs());
 
         // Let enemies walk
-        if enemies_walk_until_wave_end(&mut cmds, query, time.delta(), &board_cache) && is_wave_end
+        if enemies_walk_until_wave_end(&mut cmds, res_acts, query, time.delta(), &board_cache)
+            && is_wave_end
         {
-            actions.send(WaveActionsEvent::EndWave);
+            wave_acts.send(WaveActionsEvent::EndWave);
         }
 
         // Spawn enemy on next spawn time point
@@ -94,16 +97,29 @@ fn spawn_enemy_and_prepare_next(
 
 pub(super) fn enemies_walk_until_wave_end(
     cmds: &mut Commands,
+    mut res_actions: EventWriter<ResourcesEvent>,
     mut query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
     dur: Duration,
     board_cache: &BoardCache,
 ) -> bool {
     query.for_each_mut(|(entity, mut enemy, mut transform)| {
         if enemy.walk_until_end(dur, board_cache) {
-            cmds.entity(entity).despawn_recursive();
+            enemy_reached_base(cmds, &mut res_actions, &enemy, entity);
         } else {
             transform.translation = enemy.pos.to_scaled_vec3(1.);
         }
     });
     query.is_empty()
+}
+
+fn enemy_reached_base(
+    cmds: &mut Commands,
+    res_actions: &mut EventWriter<ResourcesEvent>,
+    enemy: &Enemy,
+    entity: Entity,
+) {
+    let damage = (-enemy.health * 20.).round();
+    res_actions.send(ResourcesEvent::Energy(damage, enemy.pos));
+    res_actions.send(ResourcesEvent::Materials(damage, enemy.pos));
+    cmds.entity(entity).despawn_recursive();
 }
