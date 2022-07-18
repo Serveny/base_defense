@@ -1,7 +1,7 @@
 use super::{DamageInRadiusEnemyLockedShot, DamageInRadiusEnemyLockedShotValues, Shot};
 use crate::{
     board::visualisation::TILE_SIZE,
-    utils::{fuel_bar::fuel_bar, Vec2Board},
+    utils::{resource_bar::resource_bar, Vec2Board},
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
@@ -61,7 +61,7 @@ fn rocket_shot_children(parent: &mut ChildBuilder) {
     parent.spawn_bundle(rocket_bottom_shape(TILE_SIZE));
 
     // Fuel bar
-    fuel_bar(parent, TILE_SIZE / 5.);
+    resource_bar(parent, TILE_SIZE / 5.);
 }
 
 fn rocket_head_shape(tile_size: f32) -> ShapeBundle {

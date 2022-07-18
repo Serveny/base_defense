@@ -1,6 +1,6 @@
 use self::{laser::spawn_laser_tower, rocket::spawn_rocket_tower};
 use super::{
-    consumption::Consumption,
+    buffer::Buffer,
     shots::{Shot, TowerStatus},
     Energy, Materials, Vec2Board,
 };
@@ -72,8 +72,8 @@ pub struct TowerValues {
     pub shot: Shot,
     pub reload_duration: Duration,
     pub shoot_duration: Duration,
-    pub energy: Consumption<Energy>,
-    pub materials: Consumption<Materials>,
+    pub energy: Buffer<Energy>,
+    pub materials: Buffer<Materials>,
 
     // temp values
     pub target_lock: Option<Entity>,

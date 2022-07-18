@@ -3,25 +3,25 @@ use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
 #[derive(Component)]
-struct FuelBar;
+struct ResourceBar;
 
 #[derive(Component)]
-pub struct FuelBarPercentage;
+pub struct ResourceBarPercentage;
 
-pub fn fuel_bar(parent: &mut ChildBuilder, bar_height_px: f32) {
+pub fn resource_bar(parent: &mut ChildBuilder, bar_height_px: f32) {
     parent
-        .spawn_bundle(fuel_bar_background_shape(
+        .spawn_bundle(resource_bar_background_shape(
             bar_height_px,
             Vec3::new(0., 0., 0.1),
         ))
-        .insert(FuelBar);
+        .insert(ResourceBar);
     parent
-        .spawn_bundle(fuel_bar_percentage_shape(bar_height_px))
-        .insert(FuelBar)
-        .insert(FuelBarPercentage);
+        .spawn_bundle(resource_bar_percentage_shape(bar_height_px))
+        .insert(ResourceBar)
+        .insert(ResourceBarPercentage);
 }
 
-fn fuel_bar_background_shape(bar_height: f32, translation: Vec3) -> ShapeBundle {
+fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> ShapeBundle {
     let shape = shapes::Rectangle {
         origin: RectangleOrigin::Center,
         extents: Vec2::new(bar_height / 4., bar_height),
@@ -39,7 +39,7 @@ fn fuel_bar_background_shape(bar_height: f32, translation: Vec3) -> ShapeBundle 
     )
 }
 
-fn fuel_bar_percentage_shape(bar_height: f32) -> ShapeBundle {
+fn resource_bar_percentage_shape(bar_height: f32) -> ShapeBundle {
     let margin = 0.01;
     let shape = shapes::Rectangle {
         origin: RectangleOrigin::BottomLeft,

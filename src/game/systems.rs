@@ -3,9 +3,9 @@ use self::{
     building::{factory_system, power_plant_system},
     death::death_system,
     explosions::explosion_system,
-    fuel_bar::fuel_bar_system,
     health_bar::health_bar_system,
     resource::resouce_animation_system,
+    resource_bar::resource_bar_system,
     tower::{tower_overheat_system, tower_rotation_system, tower_target_system},
     wave::{wave_spawn_system, wave_system, WaveState},
 };
@@ -16,9 +16,9 @@ pub mod base;
 pub mod building;
 pub mod death;
 pub mod explosions;
-pub mod fuel_bar;
 pub mod health_bar;
 pub mod resource;
+pub mod resource_bar;
 pub mod shot;
 pub mod tower;
 pub mod wave;
@@ -44,7 +44,7 @@ impl Plugin for GameSystems {
                     .with_system(tower_rotation_system)
                     .with_system(tower_overheat_system)
                     .with_system(health_bar_system)
-                    .with_system(fuel_bar_system)
+                    .with_system(resource_bar_system)
                     .with_system(base_system)
                     .with_system(explosion_system)
                     .with_system(death_system),

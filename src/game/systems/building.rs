@@ -1,46 +1,33 @@
 use crate::{
     game::{actions::resources::ResourcesEvent, build_menus::BuildMenuScreen},
-    utils::{
-        buildings::{factory::Factory, power_plant::PowerPlant},
-        IngameTime,
-    },
+    utils::buildings::{factory::Factory, power_plant::PowerPlant},
 };
-use bevy::prelude::*;
 
-pub(super) fn factory_system(
+use bevy::prelude::*;
+pub(super) fn power_plant_system(
     mut rs_actions: EventWriter<ResourcesEvent>,
-    mut q_buildings: Query<&mut Factory, Without<BuildMenuScreen>>,
-    time: Res<IngameTime>,
+    mut q_buildings: Query<&mut PowerPlant, Without<BuildMenuScreen>>,
+    time: Res<Time>,
 ) {
-    let now = time.now();
-    q_buildings.iter_mut().for_each(|mut factory| {
-        if now >= factory.next_drop {
-            factory.set_next_drop(now);
-            rs_actions.send(ResourcesEvent::Energy(
-                factory.energy_consumption,
-                factory.pos,
-            ));
-            rs_actions.send(ResourcesEvent::Materials(
-                factory.materials_package_size,
-                factory.pos,
-            ));
+    q_buildings.iter_mut().for_each(|mut power_plant| {
+        if let Some(energy) = power_plant.produce(time.delta()) {
+            rs_actions.send(ResourcesEvent::Energy(energy, power_plant.pos));
         }
     });
 }
 
-pub(super) fn power_plant_system(
+pub(super) fn factory_system(
     mut rs_actions: EventWriter<ResourcesEvent>,
-    mut q_buildings: Query<&mut PowerPlant, Without<BuildMenuScreen>>,
-    time: Res<IngameTime>,
+    mut q_buildings: Query<&mut Factory, Without<BuildMenuScreen>>,
+    time: Res<Time>,
 ) {
-    let now = time.now();
-    q_buildings.iter_mut().for_each(|mut power_plant| {
-        if now >= power_plant.next_drop {
-            power_plant.set_next_drop(now);
-            rs_actions.send(ResourcesEvent::Energy(
-                power_plant.energy_package_size,
-                power_plant.pos,
-            ));
+    q_buildings.iter_mut().for_each(|mut factory| {
+        let (enery, materials) = factory.produce(time.delta());
+        if let Some(energy) = enery {
+            rs_actions.send(ResourcesEvent::Energy(energy, factory.pos));
+        }
+        if let Some(materials) = materials {
+            rs_actions.send(ResourcesEvent::Materials(materials, factory.pos));
         }
     });
 }

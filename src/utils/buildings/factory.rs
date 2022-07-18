@@ -1,36 +1,35 @@
+use std::time::Duration;
+
 use super::{building_base_shape, Building, BuildingBase};
 use crate::utils::{
-    materials::MATERIALS_COLOR, BoardPos, Energy, IngameTimestamp, Materials, Vec2Board,
+    buffer::Buffer, materials::MATERIALS_COLOR, Amount, BoardPos, Energy, Materials, Vec2Board,
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use euclid::Angle;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct Factory {
-    pub materials_package_size: Materials,
-    pub energy_consumption: Energy,
-    pub production_time: Duration,
-    pub next_drop: IngameTimestamp,
     pub pos: Vec2Board,
+    pub enery: Buffer<Energy>,
+    pub materials: Buffer<Materials>,
 }
 
 impl Factory {
-    pub fn new(now: IngameTimestamp, pos: Vec2Board) -> Self {
-        let production_time = Duration::from_secs(5);
+    pub fn new(pos: Vec2Board) -> Self {
         Self {
-            materials_package_size: 5.,
-            energy_consumption: -10.,
-            production_time,
-            next_drop: now + production_time,
             pos,
+            enery: Buffer::new(10., Amount::PerSecond(2.)),
+            materials: Buffer::new(5., Amount::PerSecond(1.)),
         }
     }
 
-    pub fn set_next_drop(&mut self, now: IngameTimestamp) {
-        self.next_drop = now + self.production_time;
+    pub fn produce(&mut self, frame_dur: Duration) -> (Option<Energy>, Option<Materials>) {
+        (
+            self.enery.consume_during(frame_dur),
+            self.materials.produce_during(frame_dur),
+        )
     }
 }
 

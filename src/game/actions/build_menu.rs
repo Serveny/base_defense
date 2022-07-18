@@ -11,7 +11,7 @@ use crate::{
             Building, BuildingBase,
         },
         towers::{draw_tower, Tower, TowerBase},
-        IngameTime, IngameTimestamp, Vec2Board,
+        Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -61,7 +61,6 @@ pub(in crate::game) fn on_tower_menu_actions(
     mut board: ResMut<Board>,
     mut queries: QueriesTowerMenuAction,
     mut tm: ResMut<BuildMenu>,
-    time: Res<IngameTime>,
 ) {
     use BuildMenuActionsEvent::*;
     if !actions.is_empty() {
@@ -72,7 +71,7 @@ pub(in crate::game) fn on_tower_menu_actions(
                 ScollUp => scroll(&mut tm, &mut queries, &board, -1),
                 ScollDown => scroll(&mut tm, &mut queries, &board, 1),
                 Build => {
-                    on_build(&mut cmds, &mut board, &tm, &mut queries, time.now());
+                    on_build(&mut cmds, &mut board, &tm, &mut queries);
                     close(&mut tm, &mut queries.p1());
                 }
                 Hide => hide(&mut queries.p1()),
@@ -195,7 +194,6 @@ fn on_build(
     board: &mut Board,
     tm: &BuildMenu,
     queries: &mut QueriesTowerMenuAction,
-    now: IngameTimestamp,
 ) {
     if let Some(tile) = board.get_tile_mut(&tm.tile_pos) {
         match tile {
@@ -203,12 +201,7 @@ fn on_build(
                 place_tower(cmds, tm.get_selected_tower(&queries.p2()), &tm.tile_pos);
             }
             Tile::BuildingGround => {
-                place_building(
-                    cmds,
-                    tm.get_selected_building(&queries.p3()),
-                    &tm.tile_pos,
-                    now,
-                );
+                place_building(cmds, tm.get_selected_building(&queries.p3()), &tm.tile_pos);
             }
             _ => (),
         }
@@ -222,20 +215,13 @@ fn place_tower(cmds: &mut Commands, tower: Option<&Tower>, pos: &UVec2) {
     }
 }
 
-fn place_building(
-    cmds: &mut Commands,
-    building: Option<&Building>,
-    pos: &UVec2,
-    now: IngameTimestamp,
-) {
+fn place_building(cmds: &mut Commands, building: Option<&Building>, pos: &UVec2) {
     let pos = Vec2Board::from_uvec2_middle(pos);
     match building {
         Some(Building::PowerPlant) => {
-            spawn_power_plant::<GameScreen>(cmds, PowerPlant::new(now, pos), TILE_SIZE)
+            spawn_power_plant::<GameScreen>(cmds, PowerPlant::new(pos), TILE_SIZE)
         }
-        Some(Building::Factory) => {
-            spawn_factory::<GameScreen>(cmds, Factory::new(now, pos), TILE_SIZE)
-        }
+        Some(Building::Factory) => spawn_factory::<GameScreen>(cmds, Factory::new(pos), TILE_SIZE),
         None => (),
     }
 }

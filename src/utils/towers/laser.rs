@@ -7,9 +7,9 @@ use super::{
 use crate::{
     board::visualisation::TILE_SIZE,
     utils::{
-        consumption::Consumption,
+        buffer::Buffer,
         shots::{Shot, TowerStatus},
-        BDVal, BoardPos, Energy, Vec2Board,
+        Amount, BoardPos, Energy, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -29,8 +29,8 @@ impl TowerValues {
             shot: Shot::laser_vals(pos),
             reload_duration: Duration::from_secs(1),
             shoot_duration: Duration::from_secs_f32(laser::INIT_SHOT_DURATION_SECS),
-            energy: Consumption::<Energy>::new(20., BDVal::PerSecond(10.)),
-            materials: Consumption::default(),
+            energy: Buffer::<Energy>::new(20., Amount::PerSecond(10.)),
+            materials: Buffer::default(),
 
             target_lock: None,
             tower_status: TowerStatus::Waiting,

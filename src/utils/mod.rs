@@ -11,14 +11,14 @@ pub use ingame_time::IngameTimestamp;
 use serde::{Deserialize, Serialize};
 pub use vec2_board::Vec2Board;
 
+pub mod buffer;
 pub mod buildings;
-pub mod consumption;
 pub mod energy;
 pub mod explosions;
-pub mod fuel_bar;
 pub mod health_bar;
 mod ingame_time;
 pub mod materials;
+pub mod resource_bar;
 pub mod shots;
 pub mod towers;
 mod vec2_board;
@@ -48,17 +48,11 @@ pub type Energy = f32;
 pub type Materials = f32;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum BDVal<T: Default> {
+pub enum Amount<T: Default> {
     PerSecond(T),
-    PerShot(T),
-    None,
+    Once(T),
 }
 
-impl<T: Default> Default for BDVal<T> {
-    fn default() -> Self {
-        Self::None
-    }
-}
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in to_despawn.iter() {

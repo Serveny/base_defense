@@ -1,5 +1,5 @@
 use super::{building_base_shape, Building, BuildingBase};
-use crate::utils::{energy::ENERGY_COLOR, BoardPos, Energy, IngameTimestamp, Vec2Board};
+use crate::utils::{buffer::Buffer, energy::ENERGY_COLOR, Amount, BoardPos, Energy, Vec2Board};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -7,25 +7,20 @@ use std::time::Duration;
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct PowerPlant {
-    pub energy_package_size: Energy,
-    pub production_time: Duration,
-    pub next_drop: IngameTimestamp,
     pub pos: Vec2Board,
+    pub energy: Buffer<Energy>,
 }
 
 impl PowerPlant {
-    pub fn new(now: IngameTimestamp, pos: Vec2Board) -> Self {
-        let production_time = Duration::from_secs(5);
+    pub fn new(pos: Vec2Board) -> Self {
         Self {
-            energy_package_size: 50.,
-            production_time,
-            next_drop: now + production_time,
             pos,
+            energy: Buffer::new(50., Amount::PerSecond(10.)),
         }
     }
 
-    pub fn set_next_drop(&mut self, now: IngameTimestamp) {
-        self.next_drop = now + self.production_time;
+    pub fn produce(&mut self, frame_dur: Duration) -> Option<Energy> {
+        self.energy.produce_during(frame_dur)
     }
 }
 
