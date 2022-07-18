@@ -9,7 +9,7 @@ use crate::{
     utils::{
         consumption::Consumption,
         shots::{Shot, TowerStatus},
-        BDVal, Energy, Vec2Board,
+        BDVal, BoardPos, Energy, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -50,6 +50,7 @@ pub(super) fn spawn_laser_tower<TScreen: Component + Default>(
     cmds.spawn_bundle(tower_base_shape(vals.pos.to_scaled_vec3(1.), color))
         .with_children(|parent| laser_tower_children::<TScreen>(parent, &vals, color, is_preview))
         .insert(TowerBase)
+        .insert(BoardPos(vals.pos.as_uvec2()))
         .insert(Tower::Laser(vals))
         .insert(TScreen::default());
 }

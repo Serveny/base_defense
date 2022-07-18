@@ -4,12 +4,14 @@ use super::{
 };
 use crate::{
     board::{Board, Tile},
-    utils::{cursor_pos, Vec2Board},
+    utils::{cursor_pos, BoardPos, Vec2Board},
     CamQuery,
 };
 use bevy::{input::mouse::MouseWheel, prelude::*};
 use BuildMenuActionsEvent::*;
 use TileActionsEvent::*;
+
+type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos>;
 
 pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter<GameActionEvent>) {
     if keys.just_released(KeyCode::Escape) {
@@ -30,12 +32,22 @@ pub(super) fn mouse_input(
     ev_scroll: EventReader<MouseWheel>,
     mbi: Res<Input<MouseButton>>,
     q_cam: CamQuery,
+    q_pos: QueryPos,
     wnds: Res<Windows>,
     board: Res<Board>,
     tbm: Res<BuildMenu>,
 ) {
     match get_hover_pos_and_tile(wnds, q_cam, board) {
-        Some((pos, tile)) => tile_hover(&mut tile_ac, &mut tm_ac, ev_scroll, &mbi, tbm, pos, tile),
+        Some((pos, tile)) => tile_hover(
+            &mut tile_ac,
+            &mut tm_ac,
+            ev_scroll,
+            &mbi,
+            tbm,
+            q_pos,
+            pos,
+            tile,
+        ),
         None => tile_unhover(&mut tile_ac, &mut tm_ac),
     };
 
@@ -44,24 +56,34 @@ pub(super) fn mouse_input(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn tile_hover(
     tile_acts: &mut EventWriter<TileActionsEvent>,
     tm_acts: &mut EventWriter<BuildMenuActionsEvent>,
     ev_scroll: EventReader<MouseWheel>,
     mbi: &Input<MouseButton>,
     tbm: Res<BuildMenu>,
+    p_pos: QueryPos,
     pos: Vec2Board,
     tile: Tile,
 ) {
     use Tile::*;
     let upos = pos.as_uvec2();
-    if let Some(ev) = match (mbi.just_pressed(MouseButton::Left), tbm.is_open, &tile) {
-        (true, true, _) => Some(BuildMenuActionsEvent::Build),
-        (true, false, _) => Some(Open(upos)),
-        (false, true, _) if tbm.tile_pos != upos => Some(Open(upos)),
-        (false, true, TowerGround | BuildingGround) => Some(Open(upos)),
-        (false, true, _) => Some(Close),
-        (false, false, _) => None,
+    let is_tile_filled = p_pos.iter().any(|t_pos| upos == **t_pos);
+    if let Some(ev) = match (
+        mbi.just_pressed(MouseButton::Left),
+        tbm.is_open,
+        &tile,
+        is_tile_filled,
+    ) {
+        (true, true, _, false) => Some(BuildMenuActionsEvent::Build),
+        (true, false, TowerGround | BuildingGround, false) => Some(Open(upos)),
+        (false, true, TowerGround | BuildingGround, false) => match tbm.tile_pos != upos {
+            true => Some(Open(upos)),
+            false => None,
+        },
+        (false, true, _, _) => Some(Hide),
+        _ => None,
     } {
         tm_acts.send(ev);
     }

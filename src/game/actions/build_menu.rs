@@ -51,6 +51,7 @@ pub enum BuildMenuActionsEvent {
     ScollDown,
     Close,
     Build,
+    Hide,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -74,6 +75,7 @@ pub(in crate::game) fn on_tower_menu_actions(
                     on_build(&mut cmds, &mut board, &tm, &mut queries, time.now());
                     close(&mut tm, &mut queries.p1());
                 }
+                Hide => hide(&mut queries.p1()),
             }
         }
     }
@@ -90,10 +92,14 @@ fn open(tbm: &mut BuildMenu, queries: &mut QueriesTowerMenuAction, board: &Board
 }
 
 fn close(tbm: &mut BuildMenu, q_tm: &mut QueryBuildMenu) {
+    hide(q_tm);
+    tbm.is_open = false;
+}
+
+fn hide(q_tm: &mut QueryBuildMenu) {
     for (_, mut visi) in q_tm.iter_mut() {
         visi.is_visible = false;
     }
-    tbm.is_open = false;
 }
 
 fn set_build_circle(q_tmc: &mut QueryBuildMenuCircle, translation: Vec3) {

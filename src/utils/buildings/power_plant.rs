@@ -1,5 +1,5 @@
 use super::{building_base_shape, Building, BuildingBase};
-use crate::utils::{energy::ENERGY_COLOR, Energy, IngameTimestamp, Vec2Board};
+use crate::utils::{energy::ENERGY_COLOR, BoardPos, Energy, IngameTimestamp, Vec2Board};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -43,6 +43,7 @@ pub fn spawn_power_plant<TScreen: Component + Default>(
     .with_children(|parent| power_plant_children::<TScreen>(parent, tile_size))
     .insert(BuildingBase)
     .insert(Building::PowerPlant)
+    .insert(BoardPos(power_plant.pos.as_uvec2()))
     .insert(power_plant)
     .insert(TScreen::default());
 }

@@ -24,6 +24,9 @@ pub mod shots;
 pub mod towers;
 mod vec2_board;
 
+#[derive(Component, Deref)]
+pub struct BoardPos(UVec2);
+
 pub type TilesPerSecond = f32;
 
 // Enum that will be used as a global state for the game

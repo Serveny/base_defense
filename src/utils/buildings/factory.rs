@@ -1,5 +1,7 @@
 use super::{building_base_shape, Building, BuildingBase};
-use crate::utils::{materials::MATERIALS_COLOR, Energy, IngameTimestamp, Materials, Vec2Board};
+use crate::utils::{
+    materials::MATERIALS_COLOR, BoardPos, Energy, IngameTimestamp, Materials, Vec2Board,
+};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use euclid::Angle;
@@ -46,6 +48,7 @@ pub fn spawn_factory<TScreen: Component + Default>(
     .with_children(|parent| factory_children::<TScreen>(parent, tile_size))
     .insert(BuildingBase)
     .insert(Building::Factory)
+    .insert(BoardPos(factory.pos.as_uvec2()))
     .insert(factory)
     .insert(TScreen::default());
 }

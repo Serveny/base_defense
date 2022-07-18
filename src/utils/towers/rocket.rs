@@ -9,7 +9,7 @@ use crate::{
     utils::{
         consumption::Consumption,
         shots::{Shot, TowerStatus},
-        BDVal, Energy, Materials, Vec2Board,
+        BDVal, BoardPos, Energy, Materials, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -52,6 +52,7 @@ pub(super) fn spawn_rocket_tower<TScreen: Component + Default>(
             rocket_tower_children::<TScreen>(parent, &vals, color, is_preview);
         })
         .insert(TowerBase)
+        .insert(BoardPos(vals.pos.as_uvec2()))
         .insert(Tower::Rocket(vals))
         .insert(TScreen::default());
 }
