@@ -64,7 +64,12 @@ fn power_plant_children<TScreen: Component + Default>(parent: &mut ChildBuilder,
             Vec3::new(tile_size / 20., -tile_size / 4., 0.1),
         ))
         .insert(TScreen::default());
-    spawn_resource_bar::<TScreen>(parent, tile_size / 4., Vec2Board::new(0.2, 0.));
+    spawn_resource_bar::<TScreen>(
+        parent,
+        tile_size / 4.,
+        Vec2Board::new(0.2, 0.),
+        ENERGY_COLOR,
+    );
 }
 
 fn power_plant_chimney_shape(tile_size: f32, color: Color, translation: Vec3) -> ShapeBundle {

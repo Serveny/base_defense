@@ -1,6 +1,6 @@
 use crate::board::visualisation::TILE_SIZE;
 
-use super::{materials::MATERIALS_COLOR, Vec2Board};
+use super::Vec2Board;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
@@ -16,6 +16,7 @@ pub fn spawn_resource_bar<TScreen: Component + Default>(
     parent: &mut ChildBuilder,
     bar_height_px: f32,
     pos: Vec2Board,
+    color: Color,
 ) {
     parent
         .spawn_bundle(resource_bar_background_shape(
@@ -28,6 +29,7 @@ pub fn spawn_resource_bar<TScreen: Component + Default>(
         .spawn_bundle(resource_bar_percentage_shape(
             bar_height_px,
             pos.to_scaled_vec3(10.),
+            color,
         ))
         .insert(TScreen::default())
         .insert(ResourceBar)
@@ -52,7 +54,7 @@ fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> ShapeBun
     )
 }
 
-fn resource_bar_percentage_shape(bar_height: f32, translation: Vec3) -> ShapeBundle {
+fn resource_bar_percentage_shape(bar_height: f32, translation: Vec3, color: Color) -> ShapeBundle {
     let margin = LINE_WIDTH / 2.;
     let shape = shapes::Rectangle {
         origin: RectangleOrigin::BottomLeft,
@@ -61,7 +63,7 @@ fn resource_bar_percentage_shape(bar_height: f32, translation: Vec3) -> ShapeBun
 
     GeometryBuilder::build_as(
         &shape,
-        DrawMode::Fill(FillMode::color(MATERIALS_COLOR)),
+        DrawMode::Fill(FillMode::color(color)),
         Transform {
             translation: Vec3::new(
                 translation.x - bar_height / 8. + margin,

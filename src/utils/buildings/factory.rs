@@ -85,7 +85,12 @@ fn factory_children<TScreen: Component + Default>(parent: &mut ChildBuilder, til
             Vec3::new(tile_size / 6., -tile_size / 4., 0.09),
         ))
         .insert(TScreen::default());
-    spawn_resource_bar::<TScreen>(parent, tile_size / 4., Vec2Board::new(0.2, 0.));
+    spawn_resource_bar::<TScreen>(
+        parent,
+        tile_size / 4.,
+        Vec2Board::new(0.2, 0.),
+        MATERIALS_COLOR,
+    );
 }
 
 fn factory_roof_shape(tile_size: f32, color: Color, translation: Vec3) -> ShapeBundle {
