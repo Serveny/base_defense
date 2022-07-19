@@ -1,6 +1,10 @@
-use super::materials::MATERIALS_COLOR;
+use crate::board::visualisation::TILE_SIZE;
+
+use super::{materials::MATERIALS_COLOR, Vec2Board};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+
+const LINE_WIDTH: f32 = TILE_SIZE / 80.;
 
 #[derive(Component)]
 struct ResourceBar;
@@ -8,15 +12,24 @@ struct ResourceBar;
 #[derive(Component)]
 pub struct ResourceBarPercentage;
 
-pub fn resource_bar(parent: &mut ChildBuilder, bar_height_px: f32) {
+pub fn spawn_resource_bar<TScreen: Component + Default>(
+    parent: &mut ChildBuilder,
+    bar_height_px: f32,
+    pos: Vec2Board,
+) {
     parent
         .spawn_bundle(resource_bar_background_shape(
             bar_height_px,
-            Vec3::new(0., 0., 0.1),
+            pos.to_scaled_vec3(3.),
         ))
+        .insert(TScreen::default())
         .insert(ResourceBar);
     parent
-        .spawn_bundle(resource_bar_percentage_shape(bar_height_px))
+        .spawn_bundle(resource_bar_percentage_shape(
+            bar_height_px,
+            pos.to_scaled_vec3(10.),
+        ))
+        .insert(TScreen::default())
         .insert(ResourceBar)
         .insert(ResourceBarPercentage);
 }
@@ -30,7 +43,7 @@ fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> ShapeBun
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::BLACK, 0.01),
+            outline_mode: StrokeMode::new(Color::BLACK, LINE_WIDTH),
         },
         Transform {
             translation,
@@ -39,18 +52,22 @@ fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> ShapeBun
     )
 }
 
-fn resource_bar_percentage_shape(bar_height: f32) -> ShapeBundle {
-    let margin = 0.01;
+fn resource_bar_percentage_shape(bar_height: f32, translation: Vec3) -> ShapeBundle {
+    let margin = LINE_WIDTH / 2.;
     let shape = shapes::Rectangle {
         origin: RectangleOrigin::BottomLeft,
-        extents: Vec2::new(bar_height / 4. - margin, bar_height - margin),
+        extents: Vec2::new(bar_height / 4. - (margin * 2.), bar_height - (margin * 2.)),
     };
 
     GeometryBuilder::build_as(
         &shape,
         DrawMode::Fill(FillMode::color(MATERIALS_COLOR)),
         Transform {
-            translation: Vec3::new(-bar_height / 8. + margin, -bar_height / 2. + margin, 0.2),
+            translation: Vec3::new(
+                translation.x - bar_height / 8. + margin,
+                translation.y - bar_height / 2. + margin,
+                translation.z,
+            ),
             ..Default::default()
         },
     )

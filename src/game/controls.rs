@@ -1,6 +1,7 @@
 use super::{
     actions::{build_menu::BuildMenuActionsEvent, tile::TileActionsEvent, GameActionEvent},
     build_menus::BuildMenu,
+    GameScreen,
 };
 use crate::{
     board::{Board, Tile},
@@ -11,7 +12,7 @@ use bevy::{input::mouse::MouseWheel, prelude::*};
 use BuildMenuActionsEvent::*;
 use TileActionsEvent::*;
 
-type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos>;
+type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos, With<GameScreen>>;
 
 pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter<GameActionEvent>) {
     if keys.just_released(KeyCode::Escape) {

@@ -1,3 +1,4 @@
+use super::buffer::Buffer;
 use super::{IngameTimestamp, Materials, TilesPerSecond, Vec2Board};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -65,8 +66,7 @@ pub struct DamageInRadiusEnemyLockedShotValues {
     pub damage_radius: f32,
     pub range_radius: f32,
     pub speed: TilesPerSecond,
-    pub fuel: Materials,
-    pub fuel_max: Materials,
+    pub fuel: Buffer<Materials>,
 }
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -81,11 +81,11 @@ impl DamageInRadiusEnemyLockedShot {
         let distance = pos.distance(self.pos.into());
         let distance_walked = frame_dur.as_secs_f32() * self.speed;
         self.pos += (way.normalize() * distance_walked.min(distance)).into();
-        self.fuel -= distance_walked;
+        self.fuel.fill -= distance_walked;
     }
 
-    pub fn fuel_as_percent(&self) -> f32 {
-        self.fuel / self.fuel_max
+    pub fn is_fuel_empty(&self) -> bool {
+        self.fuel.fill <= 0.
     }
 }
 

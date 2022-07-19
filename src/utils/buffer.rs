@@ -48,4 +48,8 @@ impl Buffer<f32> {
             _ => None,
         }
     }
+
+    pub fn percent(&self) -> f32 {
+        self.fill / self.size
+    }
 }

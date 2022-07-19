@@ -1,7 +1,7 @@
 use super::{DamageInRadiusEnemyLockedShot, DamageInRadiusEnemyLockedShotValues, Shot};
 use crate::{
     board::visualisation::TILE_SIZE,
-    utils::{resource_bar::resource_bar, Vec2Board},
+    utils::{buffer::Buffer, resource_bar::spawn_resource_bar, Amount, Materials, Vec2Board},
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
@@ -19,8 +19,7 @@ impl Shot {
             damage_radius: 0.5,
             range_radius: INIT_RANGE_RADIUS,
             speed: 3.,
-            fuel: 5.,
-            fuel_max: 5.,
+            fuel: Buffer::<Materials>::new(5., Amount::PerSecond(1.)),
         })
     }
 }
@@ -29,7 +28,7 @@ pub fn spawn_shot_rocket<TScreen: Component + Default>(
     shot: DamageInRadiusEnemyLockedShot,
 ) {
     cmds.spawn_bundle(rocket_body_shape(TILE_SIZE))
-        .with_children(rocket_shot_children)
+        .with_children(|parent| rocket_shot_children::<TScreen>(parent))
         .insert(shot)
         .insert(RocketShot)
         .insert(TScreen::default());
@@ -53,7 +52,7 @@ fn rocket_body_shape(tile_size: f32) -> ShapeBundle {
     )
 }
 
-fn rocket_shot_children(parent: &mut ChildBuilder) {
+fn rocket_shot_children<TScreen: Component + Default>(parent: &mut ChildBuilder) {
     // Head
     parent.spawn_bundle(rocket_head_shape(TILE_SIZE));
 
@@ -61,7 +60,7 @@ fn rocket_shot_children(parent: &mut ChildBuilder) {
     parent.spawn_bundle(rocket_bottom_shape(TILE_SIZE));
 
     // Fuel bar
-    resource_bar(parent, TILE_SIZE / 5.);
+    spawn_resource_bar::<TScreen>(parent, TILE_SIZE / 5., Vec2Board::default());
 }
 
 fn rocket_head_shape(tile_size: f32) -> ShapeBundle {

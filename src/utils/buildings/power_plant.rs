@@ -1,5 +1,8 @@
 use super::{building_base_shape, Building, BuildingBase};
-use crate::utils::{buffer::Buffer, energy::ENERGY_COLOR, Amount, BoardPos, Energy, Vec2Board};
+use crate::utils::{
+    buffer::Buffer, energy::ENERGY_COLOR, resource_bar::spawn_resource_bar, Amount, BoardPos,
+    Energy, Vec2Board,
+};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -61,6 +64,7 @@ fn power_plant_children<TScreen: Component + Default>(parent: &mut ChildBuilder,
             Vec3::new(tile_size / 20., -tile_size / 4., 0.1),
         ))
         .insert(TScreen::default());
+    spawn_resource_bar::<TScreen>(parent, tile_size / 4., Vec2Board::new(0.2, 0.));
 }
 
 fn power_plant_chimney_shape(tile_size: f32, color: Color, translation: Vec3) -> ShapeBundle {

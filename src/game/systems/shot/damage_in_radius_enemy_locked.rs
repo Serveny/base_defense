@@ -26,7 +26,7 @@ pub fn damage_and_despawn_system(
 
 fn is_explode(q_enemies: &QueryEnemies, shot: &DamageInRadiusEnemyLockedShot) -> bool {
     match q_enemies.get(shot.target_enemy_id) {
-        Ok((_, enemy)) if shot.pos.distance(enemy.pos.into()) >= 0.05 => shot.fuel <= 0.,
+        Ok((_, enemy)) if shot.pos.distance(enemy.pos.into()) >= 0.05 => shot.is_fuel_empty(),
         _ => true,
     }
 }
