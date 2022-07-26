@@ -17,6 +17,7 @@ strum_macros = "0.24"
 indexmap = "1.9.1"
 bevy_screen_diags = "0.4.0"
 euclid = { features = ["serde"], version = "0.22.7"}
+rand = "0.8.5"
 # heron = { version = "3", features = ["2d"] }
 
 [features]

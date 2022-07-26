@@ -6,8 +6,12 @@ use crate::{
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
+use euclid::Angle;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
+
+pub type IsRoadEnd = bool;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub enum EnemyType {
@@ -28,55 +32,72 @@ pub struct Enemy {
 
     // Tower can reserve damage, so other towers will not shoot at this enemy if damage == health
     pub reserved_damage: f32,
+    pub path_offset: f32,
 }
 
 impl Enemy {
     pub fn new(enemy_type: EnemyType, board_cache: &BoardCache) -> Self {
-        let start_pos = Vec2Board::from_uvec2_middle(&board_cache.road_start_pos.unwrap());
         let first_step = board_cache.road_path.first().unwrap().clone();
         match enemy_type {
-            EnemyType::Normal => Self::new_normal(start_pos, first_step),
-            EnemyType::Speeder => Self::new_speeder(start_pos, first_step),
-            EnemyType::Tank => Self::new_tank(start_pos, first_step),
+            EnemyType::Normal => Self::new_normal(first_step),
+            EnemyType::Speeder => Self::new_speeder(first_step),
+            EnemyType::Tank => Self::new_tank(first_step),
         }
     }
 
-    pub fn new_normal(pos: Vec2Board, current_step: BoardStep) -> Self {
+    fn generate_offset(size_radius: f32) -> f32 {
+        let offset_max = 0.5 - size_radius;
+        rand::thread_rng().gen_range((-offset_max)..(offset_max))
+    }
+
+    pub fn new_normal(mut current_step: BoardStep) -> Self {
+        let size_radius = 0.125;
+        let path_offset = Self::generate_offset(size_radius);
+        current_step.distance += 0.5 - path_offset;
         Self {
-            size_radius: 0.125,
+            size_radius,
             speed: 1.,
             health_max: 100.,
             health: 100.,
-            pos,
+            pos: first_pos(&current_step, path_offset),
             enemy_type: EnemyType::Normal,
             current_step,
             reserved_damage: 0.,
+            path_offset,
         }
     }
 
-    pub fn new_speeder(pos: Vec2Board, current_step: BoardStep) -> Self {
+    pub fn new_speeder(mut current_step: BoardStep) -> Self {
+        let size_radius = 0.075;
+        let path_offset = Self::generate_offset(size_radius);
+        current_step.distance += 0.5 - path_offset;
         Self {
-            size_radius: 0.075,
+            size_radius,
             speed: 2.,
             health_max: 10.,
             health: 10.,
-            pos,
+            pos: first_pos(&current_step, path_offset),
             enemy_type: EnemyType::Speeder,
             current_step,
             reserved_damage: 0.,
+            path_offset,
         }
     }
 
-    pub fn new_tank(pos: Vec2Board, current_step: BoardStep) -> Self {
+    pub fn new_tank(mut current_step: BoardStep) -> Self {
+        let size_radius = 0.25;
+        let path_offset = Self::generate_offset(size_radius);
+        current_step.distance += 0.5 - path_offset;
         Self {
-            size_radius: 0.3,
+            size_radius,
             speed: 0.2,
             health_max: 1000.,
             health: 1000.,
-            pos,
+            pos: first_pos(&current_step, path_offset),
             enemy_type: EnemyType::Tank,
             current_step,
             reserved_damage: 0.,
+            path_offset,
         }
     }
 
@@ -85,19 +106,27 @@ impl Enemy {
     }
 
     // Return true if end is reached
-    pub fn walk_until_end(&mut self, dur: Duration, board_cache: &BoardCache) -> bool {
-        let mut step = &mut self.current_step;
-        if step.is_end_reached() {
-            if let Some(next) = board_cache.road_path.get(step.road_path_index + 1) {
-                *step = next.clone();
-            } else {
-                return true;
-            }
-        } else {
-            let dist = Self::distance_walked(self.speed, dur);
-            step.distance_walked += dist;
-            self.pos.add_in_direction(dist, step.direction);
+    pub fn walk_until_end(&mut self, dur: Duration, board_cache: &BoardCache) -> IsRoadEnd {
+        match self.current_step.is_end_reached() {
+            true => self.step_end_reached(board_cache),
+            false => self.walk(dur),
         }
+    }
+
+    fn step_end_reached(&mut self, board_cache: &BoardCache) -> IsRoadEnd {
+        let step = &mut self.current_step;
+        if let Some(next) = next_step(&board_cache.road_path, step, self.path_offset) {
+            *step = next;
+            return false;
+        }
+        true
+    }
+
+    fn walk(&mut self, dur: Duration) -> IsRoadEnd {
+        let mut step = &mut self.current_step;
+        let dist = Self::distance_walked(self.speed, dur);
+        step.distance_walked += dist;
+        self.pos.add_in_direction(dist, step.direction);
         false
     }
 
@@ -137,4 +166,49 @@ fn enemy_normal_shape(enemy: &Enemy) -> ShapeBundle {
             ..Default::default()
         },
     )
+}
+
+pub fn next_step(path: &[BoardStep], last: &BoardStep, offset: f32) -> Option<BoardStep> {
+    if let Some(next) = path.get(last.road_path_index + 1) {
+        let mut new_step = next.clone();
+        new_step.start_pos = last.end_pos();
+        new_step.distance += next_offset(last, next, path.get(next.road_path_index + 1), offset);
+        return Some(new_step);
+    }
+    None
+}
+
+fn first_pos(first_step: &BoardStep, offset: f32) -> Vec2Board {
+    let pos = first_step.start_pos;
+    use crate::board::step::BoardDirection::*;
+    match first_step.direction {
+        East => Vec2Board::new(pos.x - 0.5, pos.y + offset),
+        North => Vec2Board::new(pos.x + offset, pos.y - 0.5),
+        West => Vec2Board::new(pos.x + 0.5, pos.y + offset),
+        South => Vec2Board::new(pos.x + offset, pos.y + 0.5),
+    }
+}
+
+fn next_offset(
+    last: &BoardStep,
+    next: &BoardStep,
+    overnext: Option<&BoardStep>,
+    offset: f32,
+) -> f32 {
+    relative_multiplier(last, next)
+        * if let Some(overnext) = overnext {
+            match last.direction == overnext.direction {
+                true => 0.,
+                false => offset * 2.,
+            }
+        } else {
+            offset
+        }
+}
+
+fn relative_multiplier(last: &BoardStep, next: &BoardStep) -> f32 {
+    let last_vec = last.direction.as_vec2board();
+    let next_vec = next.direction.as_vec2board();
+    let angle = Angle::radians(last_vec.angle_between(next_vec.into())).to_degrees();
+    angle / -90.
 }

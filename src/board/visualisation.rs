@@ -272,8 +272,8 @@ mod road_end_mark {
             tile_size,
             Transform {
                 translation: pos_board.to_scaled_vec3(3.),
+                scale: Vec3::new(2., 2., 1.),
                 rotation: Quat::from_rotation_z(angle.radians),
-                ..Default::default()
             },
             is_visible,
         ))
@@ -308,7 +308,7 @@ mod road_end_mark {
             &shape,
             DrawMode::Outlined {
                 fill_mode: FillMode::color(Color::SEA_GREEN),
-                outline_mode: StrokeMode::new(Color::DARK_GRAY, size_px / 8.),
+                outline_mode: StrokeMode::new(Color::DARK_GRAY, size_px / 10.),
             },
             transform,
         );
@@ -347,6 +347,7 @@ mod road_end_mark {
             width,
             Transform {
                 translation,
+                scale: Vec3::new(2., 2., 1.),
                 ..Default::default()
             },
             true,
@@ -383,6 +384,7 @@ mod road_end_mark {
             width,
             Transform {
                 translation,
+                scale: Vec3::new(2., 2., 1.),
                 ..Default::default()
             },
             true,

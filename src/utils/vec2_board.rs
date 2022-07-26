@@ -38,10 +38,10 @@ impl Vec2Board {
 
     pub fn add_in_direction(&mut self, distance: f32, direction: BoardDirection) {
         match direction {
-            BoardDirection::Up => self.0.y -= distance,
-            BoardDirection::Right => self.0.x += distance,
-            BoardDirection::Down => self.0.y += distance,
-            BoardDirection::Left => self.0.x -= distance,
+            BoardDirection::North => self.0.y += distance,
+            BoardDirection::East => self.0.x += distance,
+            BoardDirection::South => self.0.y -= distance,
+            BoardDirection::West => self.0.x -= distance,
         };
     }
 

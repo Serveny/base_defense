@@ -72,21 +72,18 @@ impl BoardCache {
         neighbors
     }
 
-    fn calc_road_path(road_tile_posis: &IndexSet<UVec2>) -> Vec<BoardStep> {
+    fn calc_road_path(rt_posis: &IndexSet<UVec2>) -> Vec<BoardStep> {
+        let pos = Vec2Board::from_uvec2_middle(rt_posis.get_index(0).unwrap());
         let mut path = vec![BoardStep::new(
             0,
-            Vec2Board::from_uvec2_middle(road_tile_posis.get_index(1).unwrap())
-                - Vec2Board::from_uvec2_middle(road_tile_posis.get_index(0).unwrap()),
+            Vec2Board::from_uvec2_middle(rt_posis.get_index(1).unwrap())
+                - Vec2Board::from_uvec2_middle(rt_posis.get_index(0).unwrap()),
+            pos,
         )];
-        for (i, first_pos) in road_tile_posis.iter().enumerate() {
-            if let Some(third_pos) = road_tile_posis.get_index(i + 2) {
-                let second_pos = road_tile_posis.get_index(i + 1).unwrap();
-                let this_vec = Vec2Board::from_uvec2_middle(second_pos)
-                    - Vec2Board::from_uvec2_middle(first_pos);
-                let next_vec = Vec2Board::from_uvec2_middle(third_pos)
-                    - Vec2Board::from_uvec2_middle(second_pos);
-                if this_vec != next_vec {
-                    path.push(BoardStep::new(path.len(), next_vec));
+        for (i, first_pos) in rt_posis.iter().enumerate() {
+            if let Some(third_pos) = rt_posis.get_index(i + 2) {
+                if let Some(step) = Self::next_step(rt_posis, i, first_pos, third_pos, path.len()) {
+                    path.push(step);
                 } else {
                     let mut step = path.last_mut().unwrap();
                     step.distance += 1.;
@@ -96,6 +93,28 @@ impl BoardCache {
             }
         }
         path
+    }
+
+    fn next_step(
+        rt_posis: &IndexSet<UVec2>,
+        i: usize,
+        first_pos: &UVec2,
+        third_pos: &UVec2,
+        path_i: usize,
+    ) -> Option<BoardStep> {
+        let second_pos = rt_posis.get_index(i + 1).unwrap();
+        let this_vec =
+            Vec2Board::from_uvec2_middle(second_pos) - Vec2Board::from_uvec2_middle(first_pos);
+        let next_vec =
+            Vec2Board::from_uvec2_middle(third_pos) - Vec2Board::from_uvec2_middle(second_pos);
+        if this_vec != next_vec {
+            return Some(BoardStep::new(
+                path_i,
+                next_vec,
+                Vec2Board::from_uvec2_middle(second_pos),
+            ));
+        }
+        None
     }
 }
 
