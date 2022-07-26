@@ -142,16 +142,19 @@ impl Enemy {
 pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu, enemy: Enemy) {
     cmds.spawn_bundle(enemy_normal_shape(&enemy))
         .with_children(|parent| {
-            health_bar(parent, board_visu.inner_tile_size / 5.);
+            health_bar(parent, board_visu.inner_tile_size / 8.);
         })
         .insert(enemy)
         .insert(GameScreen);
 }
 
 fn enemy_normal_shape(enemy: &Enemy) -> ShapeBundle {
+    let line_width = TILE_SIZE / 24.;
     let shape = shapes::RegularPolygon {
         sides: 5,
-        feature: shapes::RegularPolygonFeature::Radius(enemy.size_radius * TILE_SIZE),
+        feature: shapes::RegularPolygonFeature::Radius(
+            enemy.size_radius * TILE_SIZE - (line_width / 2.),
+        ),
         ..shapes::RegularPolygon::default()
     };
 
@@ -159,7 +162,7 @@ fn enemy_normal_shape(enemy: &Enemy) -> ShapeBundle {
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::MAROON),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, line_width),
         },
         Transform {
             translation: enemy.pos.to_scaled_vec3(1.),

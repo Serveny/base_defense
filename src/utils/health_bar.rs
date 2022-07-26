@@ -29,7 +29,7 @@ fn health_bar_background_shape(bar_width: f32, translation: Vec3) -> ShapeBundle
         &shape,
         DrawMode::Outlined {
             fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::BLACK, 0.01),
+            outline_mode: StrokeMode::new(Color::BLACK, bar_width / 16.),
         },
         Transform {
             translation,
