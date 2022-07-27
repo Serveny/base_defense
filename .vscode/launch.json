@@ -41,7 +41,9 @@
           "kind": "bin"
         }
       },
-      "args": [],
+      "args": [
+        "test_target_e"
+      ],
       "cwd": "${workspaceFolder}",
       "env": {
         "CARGO_MANIFEST_DIR": "${workspaceFolder}",

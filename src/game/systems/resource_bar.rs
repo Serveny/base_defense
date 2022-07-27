@@ -1,11 +1,11 @@
 use crate::utils::{
     buildings::{factory::Factory, power_plant::PowerPlant},
     resource_bar::ResourceBarPercentage,
-    shots::DamageInRadiusEnemyLockedShot,
+    shots::DamageInRadiusTargetPosShot,
 };
 use bevy::prelude::*;
 
-type QueryShots<'w, 's, 'a> = Query<'w, 's, (Entity, &'a DamageInRadiusEnemyLockedShot)>;
+type QueryShots<'w, 's, 'a> = Query<'w, 's, (Entity, &'a DamageInRadiusTargetPosShot)>;
 type QueryResourceBars<'w, 's, 'a> =
     Query<'w, 's, (&'a Parent, &'a mut Transform), With<ResourceBarPercentage>>;
 

@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Mul, Sub};
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign, Mul, Sub},
+};
 
 use bevy::prelude::*;
 use euclid::Angle;
@@ -53,6 +56,12 @@ impl Vec2Board {
 
     pub fn to_scaled_vec3(self, z: f32) -> Vec3 {
         Vec3::new(self.x * TILE_SIZE, self.y * TILE_SIZE, z)
+    }
+}
+
+impl Display for Vec2Board {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
     }
 }
 

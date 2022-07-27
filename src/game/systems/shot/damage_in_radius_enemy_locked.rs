@@ -1,6 +1,7 @@
 use crate::{
+    board::BoardCache,
     game::{actions::explosions::ExplosionEvent, enemies::Enemy},
-    utils::{pos_to_quat, shots::DamageInRadiusEnemyLockedShot, Vec2Board},
+    utils::{circle::Circle, pos_to_quat, shots::DamageInRadiusTargetPosShot, Vec2Board},
 };
 use bevy::prelude::*;
 
@@ -9,11 +10,10 @@ type QueryEnemies<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy)>;
 pub fn damage_and_despawn_system(
     mut cmds: Commands,
     mut expl_ev: EventWriter<ExplosionEvent>,
-    q_enemies: QueryEnemies,
-    q_shots: Query<(Entity, &DamageInRadiusEnemyLockedShot)>,
+    q_shots: Query<(Entity, &DamageInRadiusTargetPosShot)>,
 ) {
     for (entity, shot) in q_shots.iter() {
-        if is_explode(&q_enemies, shot) {
+        if is_explode(shot) {
             expl_ev.send(ExplosionEvent::new(
                 shot.pos,
                 shot.damage_radius,
@@ -24,24 +24,38 @@ pub fn damage_and_despawn_system(
     }
 }
 
-fn is_explode(q_enemies: &QueryEnemies, shot: &DamageInRadiusEnemyLockedShot) -> bool {
-    match q_enemies.get(shot.target_enemy_id) {
-        Ok((_, enemy)) if shot.pos.distance(enemy.pos.into()) >= 0.05 => shot.is_fuel_empty(),
-        _ => true,
-    }
+fn is_explode(shot: &DamageInRadiusTargetPosShot) -> bool {
+    shot.pos.distance(*shot.target_pos) < 0.05
 }
 
 pub fn fly_system(
-    mut q_shots: Query<&mut DamageInRadiusEnemyLockedShot>,
+    mut q_shots: Query<&mut DamageInRadiusTargetPosShot>,
     q_enemies: QueryEnemies,
     time: Res<Time>,
+    board_cache: Res<BoardCache>,
 ) {
     let frame_dur = time.delta();
     for mut shot in q_shots.iter_mut() {
-        if let Ok((_, enemy)) = q_enemies.get(shot.target_enemy_id) {
-            shot.fly(enemy.pos, frame_dur);
-        } else if let Some(enemy) = find_nearest_enemy(&q_enemies, shot.pos) {
-            shot.target_enemy_id = enemy;
+        if let Some(target_id) = shot.target_id {
+            if let Ok((_, enemy)) = q_enemies.get(target_id) {
+                shot.fly(enemy.pos, frame_dur);
+            } else if let Some(enemy) = find_nearest_enemy(&q_enemies, shot.pos) {
+                shot.target_id = Some(enemy);
+            } else {
+                shot.target_id = None;
+                let range = Circle::new(shot.pos, shot.fuel.fill);
+                let posis = board_cache.road_path.iter().map(|step| step.start_pos);
+                if let Some(pos) = posis
+                    .clone()
+                    .zip(posis.skip(1))
+                    .find_map(|(vec_start, vec_end)| range.target_point(*vec_start, *vec_end))
+                {
+                    shot.target_pos = pos.into();
+                }
+            }
+        } else {
+            let target_pos = shot.target_pos;
+            shot.fly(target_pos, frame_dur);
         }
     }
 }
@@ -58,15 +72,9 @@ fn find_nearest_enemy(q_enemies: &QueryEnemies, pos: Vec2Board) -> Option<Entity
         .map(|item| item.0)
 }
 
-pub fn visual_system(
-    mut q_shot: Query<(&mut Transform, &DamageInRadiusEnemyLockedShot)>,
-    q_enemy: Query<&Enemy>,
-) {
+pub fn visual_system(mut q_shot: Query<(&mut Transform, &DamageInRadiusTargetPosShot)>) {
     for (mut transform, shot) in q_shot.iter_mut() {
         transform.translation = shot.pos.to_scaled_vec3(1.);
-
-        if let Ok(enemy) = q_enemy.get(shot.target_enemy_id) {
-            transform.rotation = pos_to_quat(shot.pos, enemy.pos);
-        }
+        transform.rotation = pos_to_quat(shot.pos, shot.target_pos);
     }
 }

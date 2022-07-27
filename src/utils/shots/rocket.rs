@@ -1,4 +1,4 @@
-use super::{DamageInRadiusEnemyLockedShot, DamageInRadiusEnemyLockedShotValues, Shot};
+use super::{DamageInRadiusTargetPosShot, DamageInRadiusTargetPosShotValues, Shot};
 use crate::{
     board::visualisation::TILE_SIZE,
     utils::{
@@ -16,7 +16,7 @@ pub struct RocketShot;
 
 impl Shot {
     pub fn rocket(pos: Vec2Board) -> Self {
-        Self::Rocket(DamageInRadiusEnemyLockedShotValues {
+        Self::Rocket(DamageInRadiusTargetPosShotValues {
             pos,
             damage: 100.,
             damage_radius: 0.5,
@@ -28,7 +28,7 @@ impl Shot {
 }
 pub fn spawn_shot_rocket<TScreen: Component + Default>(
     cmds: &mut Commands,
-    shot: DamageInRadiusEnemyLockedShot,
+    shot: DamageInRadiusTargetPosShot,
 ) {
     cmds.spawn_bundle(rocket_body_shape(TILE_SIZE))
         .with_children(|parent| rocket_shot_children::<TScreen>(parent))

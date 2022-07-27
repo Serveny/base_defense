@@ -18,7 +18,7 @@ pub enum TowerStatus {
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum Shot {
     Laser(DamagePerTimeShotValues),
-    Rocket(DamageInRadiusEnemyLockedShotValues),
+    Rocket(DamageInRadiusTargetPosShotValues),
 }
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -50,17 +50,24 @@ impl DamagePerTimeShotValues {
     }
 }
 
-impl DamageInRadiusEnemyLockedShotValues {
-    pub fn new_shot(&self, target_enemy_id: Entity) -> DamageInRadiusEnemyLockedShot {
-        DamageInRadiusEnemyLockedShot {
-            target_enemy_id,
+impl DamageInRadiusTargetPosShotValues {
+    pub fn new_shot(&self, target_id: Entity) -> DamageInRadiusTargetPosShot {
+        DamageInRadiusTargetPosShot {
+            target_pos: Vec2Board::default(),
+            target_id: Some(target_id),
             vals: self.clone(),
         }
     }
 }
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct DamageInRadiusEnemyLockedShotValues {
+pub enum Target {
+    Entity(Entity),
+    Pos(Vec2Board),
+}
+
+#[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct DamageInRadiusTargetPosShotValues {
     pub pos: Vec2Board,
     pub damage: f32,
     pub damage_radius: f32,
@@ -70,16 +77,18 @@ pub struct DamageInRadiusEnemyLockedShotValues {
 }
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct DamageInRadiusEnemyLockedShot {
-    pub target_enemy_id: Entity,
-    pub vals: DamageInRadiusEnemyLockedShotValues,
+pub struct DamageInRadiusTargetPosShot {
+    pub target_pos: Vec2Board,
+    pub target_id: Option<Entity>,
+    pub vals: DamageInRadiusTargetPosShotValues,
 }
 
-impl DamageInRadiusEnemyLockedShot {
+impl DamageInRadiusTargetPosShot {
     pub fn fly(&mut self, pos: Vec2Board, frame_dur: Duration) {
         let way = pos - self.pos;
         let distance = pos.distance(self.pos.into());
         let distance_walked = frame_dur.as_secs_f32() * self.speed;
+        self.target_pos = pos;
         self.pos += (way.normalize() * distance_walked.min(distance)).into();
         self.fuel.fill -= distance_walked;
     }
@@ -103,15 +112,15 @@ impl DerefMut for DamagePerTimeShot {
     }
 }
 
-impl Deref for DamageInRadiusEnemyLockedShot {
-    type Target = DamageInRadiusEnemyLockedShotValues;
+impl Deref for DamageInRadiusTargetPosShot {
+    type Target = DamageInRadiusTargetPosShotValues;
 
     fn deref(&self) -> &Self::Target {
         &self.vals
     }
 }
 
-impl DerefMut for DamageInRadiusEnemyLockedShot {
+impl DerefMut for DamageInRadiusTargetPosShot {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.vals
     }

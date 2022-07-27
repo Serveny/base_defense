@@ -18,5 +18,16 @@ Base defense concept:
   - Shift: Show all tower ranges
 - Enemies sometimes drop special items on death
 - Random special items:
+
   - More temp. tower damage
   - Slower enemies
+
+  TODO:
+
+  - Tower Target System
+  - Soundsystem: Background Music, Ingame Sounds
+  - Z-Layer Shots
+  - Wave ticker
+  - Enemy resource drops at death
+  - Upgrade system
+  - tank enemy type

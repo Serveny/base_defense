@@ -25,8 +25,8 @@ impl ExplosionEvent {
     pub fn death(enemy: &Enemy) -> Self {
         Self {
             pos: enemy.pos,
-            radius: enemy.size_radius * 2.,
-            damage: enemy.health_max / 5.,
+            radius: enemy.size_radius * 1.2,
+            damage: enemy.health_max / 20.,
         }
     }
 
