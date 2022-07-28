@@ -247,7 +247,9 @@ mod road_end_mark {
         utils::{
             energy::{energy_symbol, EnergyText, ENERGY_COLOR},
             materials::{materials_symbol, MaterialsText, MATERIALS_COLOR},
-            text_background_shape, text_bundle, Vec2Board,
+            text_background_shape, text_bundle,
+            wave::{wave_symbol, WaveText},
+            Vec2Board,
         },
     };
 
@@ -286,15 +288,18 @@ mod road_end_mark {
         .insert(BoardScreen)
         .insert(TScreen::default());
 
+        let mut pos_wave_no = pos_board.to_scaled_vec3(3.1);
+        pos_wave_no.y += tile_size / 5.;
+        spawn_wave_sign::<TScreen>(cmds, assets, tile_size / 1.25, pos_wave_no);
+
         // Energy sign
-        let mut pos_energy = pos_board.to_scaled_vec3(3.1);
-        pos_energy.y += tile_size / 10.;
-        spawn_energy_sign::<TScreen>(cmds, assets, tile_size / 1.5, pos_energy);
+        let pos_energy = pos_board.to_scaled_vec3(3.1);
+        spawn_energy_sign::<TScreen>(cmds, assets, tile_size / 1.25, pos_energy);
 
         // Materials sign
         let mut pos_materials = pos_board.to_scaled_vec3(3.1);
-        pos_materials.y -= tile_size / 10.;
-        spawn_materials_sign::<TScreen>(cmds, assets, tile_size / 1.5, pos_materials);
+        pos_materials.y -= tile_size / 5.;
+        spawn_materials_sign::<TScreen>(cmds, assets, tile_size / 1.25, pos_materials);
     }
 
     fn road_end_shape(size_px: f32, transform: Transform, is_visible: bool) -> ShapeBundle {
@@ -337,6 +342,42 @@ mod road_end_mark {
         shape_bundle
     }
 
+    fn spawn_wave_sign<TScreen: Component + Default>(
+        cmds: &mut Commands,
+        assets: &StandardAssets,
+        width: f32,
+        translation: Vec3,
+    ) {
+        cmds.spawn_bundle(text_background_shape(
+            width,
+            Transform {
+                translation,
+                scale: Vec3::new(2., 2., 1.),
+                ..Default::default()
+            },
+            true,
+        ))
+        .insert(BoardScreen)
+        .insert(TScreen::default())
+        .with_children(|parent| {
+            parent
+                .spawn_bundle(text_bundle(
+                    width / 6.,
+                    &format!("{}", 0),
+                    Color::GOLD,
+                    assets,
+                ))
+                .insert(WaveText);
+            parent.spawn_bundle(wave_symbol(
+                Transform {
+                    translation: Vec3::new(-width / 6., 0., 0.),
+                    scale: Vec3::new(1., 1., 1.),
+                    ..Default::default()
+                },
+                Color::GOLD,
+            ));
+        });
+    }
     fn spawn_energy_sign<TScreen: Component + Default>(
         cmds: &mut Commands,
         assets: &StandardAssets,
@@ -366,7 +407,7 @@ mod road_end_mark {
             parent.spawn_bundle(energy_symbol(
                 Transform {
                     translation: Vec3::new(-width / 6., 0., 0.),
-                    scale: Vec3::new(0.15, 0.15, 1.),
+                    scale: Vec3::new(0.1, 0.1, 1.),
                     ..Default::default()
                 },
                 ENERGY_COLOR,
@@ -403,7 +444,7 @@ mod road_end_mark {
             parent.spawn_bundle(materials_symbol(
                 Transform {
                     translation: Vec3::new(-width / 6., 0., 0.),
-                    scale: Vec3::new(0.15, 0.15, 1.),
+                    scale: Vec3::new(0.1, 0.1, 1.),
                     ..Default::default()
                 },
                 MATERIALS_COLOR,

@@ -59,7 +59,7 @@ pub(in crate::game) fn wave_system(
     mut wave_acts: EventWriter<WaveActionsEvent>,
     mut wave: ResMut<Wave>,
     res_acts: EventWriter<ResourcesEvent>,
-    query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
+    q_enemies: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
     time: Res<Time>,
     ingame_time: Res<IngameTime>,
     board_cache: Res<BoardCache>,
@@ -71,7 +71,7 @@ pub(in crate::game) fn wave_system(
         let now = IngameTimestamp::new(ingame_time.elapsed_secs());
 
         // Let enemies walk
-        if enemies_walk_until_wave_end(&mut cmds, res_acts, query, time.delta(), &board_cache)
+        if enemies_walk_until_wave_end(&mut cmds, res_acts, q_enemies, time.delta(), &board_cache)
             && is_wave_end
         {
             wave_acts.send(WaveActionsEvent::EndWave);

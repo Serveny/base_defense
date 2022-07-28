@@ -81,21 +81,22 @@ fn setup_cameras(mut commands: Commands) {
     commands.spawn_bundle(UiCameraBundle::default());
 }
 
-fn setup_egui(mut egui_ctx: ResMut<EguiContext>) {
-    // Fonts
-    let mut fonts = egui::FontDefinitions::default();
-
+const fn font() -> &'static [u8; 78628] {
     #[cfg(windows)]
-    let font = include_bytes!("..\\assets\\fonts\\Quicksand-Regular.ttf");
+    return include_bytes!("..\\assets\\fonts\\Quicksand-Regular.ttf");
 
     #[cfg(unix)]
-    let font = include_bytes!("../assets/fonts/Quicksand-Regular.ttf");
+    include_bytes!("../assets/fonts/Quicksand-Regular.ttf")
+}
+
+fn setup_egui(mut egui_ctx: ResMut<EguiContext>) {
+    let mut fonts = egui::FontDefinitions::default();
+    let font = font();
 
     fonts.font_data.insert(
         "Quicksand-Regular".to_owned(),
         egui::FontData::from_static(font),
     );
-    // Put Quicksand-Regular first (highest priority) for proportional text:
     fonts
         .families
         .entry(egui::FontFamily::Proportional)

@@ -23,6 +23,7 @@ pub mod resource_bar;
 pub mod shots;
 pub mod towers;
 mod vec2_board;
+pub mod wave;
 
 #[derive(Component, Deref)]
 pub struct BoardPos(UVec2);
@@ -176,7 +177,7 @@ pub fn text_bundle(width: f32, text: &str, color: Color, assets: &StandardAssets
             text,
             TextStyle {
                 font: assets.font.clone(),
-                font_size: width,
+                font_size: width / 1.5,
                 color,
             },
             TextAlignment {
@@ -195,7 +196,7 @@ pub fn text_bundle(width: f32, text: &str, color: Color, assets: &StandardAssets
 pub fn text_background_shape(width: f32, transform: Transform, is_visible: bool) -> ShapeBundle {
     let shape = shapes::Rectangle {
         origin: RectangleOrigin::Center,
-        extents: Vec2::new(width / 2., width / 6.),
+        extents: Vec2::new(width / 2., width / 10.),
     };
     let mut bundle = GeometryBuilder::build_as(
         &shape,

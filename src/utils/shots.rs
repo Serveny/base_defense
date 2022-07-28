@@ -92,10 +92,6 @@ impl DamageInRadiusTargetPosShot {
         self.pos += (way.normalize() * distance_walked.min(distance)).into();
         self.fuel.fill -= distance_walked;
     }
-
-    pub fn is_fuel_empty(&self) -> bool {
-        self.fuel.fill <= 0.
-    }
 }
 
 impl Deref for DamagePerTimeShot {
