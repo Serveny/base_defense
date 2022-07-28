@@ -13,12 +13,12 @@ pub use vec2_board::Vec2Board;
 
 pub mod buffer;
 pub mod buildings;
-pub mod circle;
 pub mod energy;
 pub mod explosions;
 pub mod health_bar;
 mod ingame_time;
 pub mod materials;
+pub mod range_circle;
 pub mod resource_bar;
 pub mod shots;
 pub mod towers;

@@ -1,7 +1,7 @@
 use crate::{
     board::BoardCache,
     game::{actions::explosions::ExplosionEvent, enemies::Enemy},
-    utils::{circle::Circle, pos_to_quat, shots::DamageInRadiusTargetPosShot, Vec2Board},
+    utils::{pos_to_quat, shots::DamageInRadiusTargetPosShot, Vec2Board},
 };
 use bevy::prelude::*;
 
@@ -38,24 +38,14 @@ pub fn fly_system(
     for mut shot in q_shots.iter_mut() {
         if let Some(target_id) = shot.target_id {
             if let Ok((_, enemy)) = q_enemies.get(target_id) {
-                shot.fly(enemy.pos, frame_dur);
+                shot.fly_to(enemy.pos, frame_dur);
             } else if let Some(enemy) = find_nearest_enemy(&q_enemies, shot.pos) {
                 shot.target_id = Some(enemy);
             } else {
-                shot.target_id = None;
-                let range = Circle::new(shot.pos, shot.fuel.fill);
-                let posis = board_cache.road_path.iter().map(|step| step.start_pos);
-                if let Some(pos) = posis
-                    .clone()
-                    .zip(posis.skip(1))
-                    .find_map(|(vec_start, vec_end)| range.target_point(*vec_start, *vec_end))
-                {
-                    shot.target_pos = pos.into();
-                }
+                shot.set_target_point_to_likely(&board_cache.road_path);
             }
         } else {
-            let target_pos = shot.target_pos;
-            shot.fly(target_pos, frame_dur);
+            shot.fly(frame_dur);
         }
     }
 }

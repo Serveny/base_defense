@@ -1,12 +1,12 @@
 use super::Vec2Board;
 use bevy::prelude::*;
 
-pub struct Circle {
+pub struct RangeCircle {
     pub middle: Vec2Board,
     pub radius: f32,
 }
 
-impl Circle {
+impl RangeCircle {
     pub fn new(middle: Vec2Board, radius: f32) -> Self {
         Self { middle, radius }
     }
@@ -42,12 +42,12 @@ impl Circle {
 mod tests {
     use bevy::math::Vec2;
 
-    use super::Circle;
+    use super::RangeCircle;
     use crate::utils::Vec2Board;
 
     #[test]
     fn test_target_a() {
-        let circle = Circle::new(Vec2Board::new(0., 0.), 2.);
+        let circle = RangeCircle::new(Vec2Board::new(0., 0.), 2.);
         let start = Vec2::new(-1., 0.);
         let end = Vec2::new(1., 0.);
 
@@ -56,7 +56,7 @@ mod tests {
 
     #[test]
     fn test_target_b() {
-        let circle = Circle::new(Vec2Board::new(0., 0.), 2.);
+        let circle = RangeCircle::new(Vec2Board::new(0., 0.), 2.);
         let start = Vec2::new(-1., 1.);
         let end = Vec2::new(3., 1.);
 
@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn test_target_c() {
-        let circle = Circle::new(Vec2Board::new(0., 0.), 2.);
+        let circle = RangeCircle::new(Vec2Board::new(0., 0.), 2.);
         let start = Vec2::new(-3., 0.);
         let end = Vec2::new(1., 0.);
 
@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn test_target_d() {
-        let circle = Circle::new(Vec2Board::new(0., 0.), 2.);
+        let circle = RangeCircle::new(Vec2Board::new(0., 0.), 2.);
         let start = Vec2::new(-3., 0.);
         let end = Vec2::new(3., 0.);
 
@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn test_target_e() {
-        let circle = Circle::new(Vec2Board::new(0., 0.), 2.);
+        let circle = RangeCircle::new(Vec2Board::new(0., 0.), 2.);
         let start = Vec2::new(-3., 2.);
         let end = Vec2::new(3., 2.);
 
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn test_target_f() {
-        let circle = Circle::new(Vec2Board::new(0., 0.), 1.);
+        let circle = RangeCircle::new(Vec2Board::new(0., 0.), 1.);
         let start = Vec2::new(-3., 2.);
         let end = Vec2::new(3., 2.);
 

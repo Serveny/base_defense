@@ -1,4 +1,7 @@
+use crate::board::step::BoardStep;
+
 use super::buffer::Buffer;
+use super::range_circle::RangeCircle;
 use super::{IngameTimestamp, Materials, TilesPerSecond, Vec2Board};
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -84,13 +87,30 @@ pub struct DamageInRadiusTargetPosShot {
 }
 
 impl DamageInRadiusTargetPosShot {
-    pub fn fly(&mut self, pos: Vec2Board, frame_dur: Duration) {
-        let way = pos - self.pos;
-        let distance = pos.distance(self.pos.into());
-        let distance_walked = frame_dur.as_secs_f32() * self.speed;
+    pub fn fly_to(&mut self, pos: Vec2Board, frame_dur: Duration) {
         self.target_pos = pos;
+        self.fly(frame_dur)
+    }
+
+    pub fn fly(&mut self, frame_dur: Duration) {
+        let way = self.target_pos - self.pos;
+        let distance = self.target_pos.distance(self.pos.into());
+        let distance_walked = frame_dur.as_secs_f32() * self.speed;
         self.pos += (way.normalize() * distance_walked.min(distance)).into();
         self.fuel.fill -= distance_walked;
+    }
+
+    pub fn set_target_point_to_likely(&mut self, road_path: &[BoardStep]) {
+        self.target_id = None;
+        let range = RangeCircle::new(self.pos, self.fuel.fill);
+        let posis = road_path.iter().map(|step| step.start_pos);
+        if let Some(pos) = posis
+            .clone()
+            .zip(posis.skip(1))
+            .find_map(|(vec_start, vec_end)| range.target_point(*vec_start, *vec_end))
+        {
+            self.target_pos = pos.into();
+        }
     }
 }
 
