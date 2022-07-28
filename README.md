@@ -17,17 +17,22 @@ Base defense concept:
 - Controls:
   - Shift: Show all tower ranges
 - Enemies sometimes drop special items on death
+- Advanced road traffic system
+- Special event waves
+- tower self-destroy mode: kills evey enemy on board
 - Random special items:
 
+  - Bomb dropping
   - More temp. tower damage
   - Slower enemies
 
   TODO:
 
+  - Wave ticker ✓
   - Tower Target System
   - Soundsystem: Background Music, Ingame Sounds
   - Z-Layer Shots
-  - Wave ticker
   - Enemy resource drops at death
   - Upgrade system
   - tank enemy type
+  - fast forward function
