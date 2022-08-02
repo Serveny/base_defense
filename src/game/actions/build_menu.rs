@@ -10,7 +10,7 @@ use crate::{
             power_plant::{spawn_power_plant, PowerPlant},
             Building, BuildingBase,
         },
-        towers::{draw_tower, Tower, TowerBase},
+        towers::{draw_tower, Tower, TowerParent, TowerRangeCircle},
         Vec2Board,
     },
 };
@@ -22,28 +22,23 @@ type QueriesTowerMenuAction<'w, 's, 'a> = ParamSet<
     (
         QueryBuildMenuCircle<'w, 's, 'a>,
         QueryBuildMenu<'w, 's, 'a>,
-        QueryMenuBases<'w, 's, 'a, Tower, TowerBase>,
-        QueryMenuBases<'w, 's, 'a, Building, BuildingBase>,
+        QueryMenuParents<'w, 's, 'a, Tower, TowerParent>,
+        QueryMenuParents<'w, 's, 'a, Building, BuildingBase>,
     ),
 >;
 
 type QueryBuildMenuCircle<'w, 's, 'a> =
     Query<'w, 's, (&'a mut Visibility, &'a mut Transform), With<BuildMenuCircle>>;
 
-pub(in crate::game) type QueryMenuBases<'w, 's, 'a, TBuild, TBase> = Query<
+pub(in crate::game) type QueryMenuParents<'w, 's, 'a, TBuild, TBase> = Query<
     'w,
     's,
-    (
-        &'a mut Visibility,
-        &'a mut Transform,
-        &'a Children,
-        &'a TBuild,
-    ),
+    (&'a mut Visibility, &'a mut Transform, &'a TBuild),
     (With<TBase>, With<BuildMenuScreen>),
 >;
 
 type QueryBuildMenu<'w, 's, 'a> =
-    Query<'w, 's, (Entity, &'a mut Visibility), With<BuildMenuScreen>>;
+    Query<'w, 's, (Entity, &'a mut Visibility), (With<BuildMenuScreen>, Without<TowerRangeCircle>)>;
 
 pub enum BuildMenuActionsEvent {
     Open(UVec2),
@@ -60,21 +55,21 @@ pub(in crate::game) fn on_tower_menu_actions(
     mut cmds: Commands,
     mut board: ResMut<Board>,
     mut queries: QueriesTowerMenuAction,
-    mut tm: ResMut<BuildMenu>,
+    mut tbm: ResMut<BuildMenu>,
 ) {
     use BuildMenuActionsEvent::*;
     if !actions.is_empty() {
         for action in actions.iter() {
             match action {
-                Open(pos) => open(&mut tm, &mut queries, &board, pos),
-                Close => close(&mut tm, &mut queries.p1()),
-                ScollUp => scroll(&mut tm, &mut queries, &board, -1),
-                ScollDown => scroll(&mut tm, &mut queries, &board, 1),
+                Open(pos) => open(&mut tbm, &mut queries, &board, pos),
+                Close => close(&mut tbm, &mut queries.p1()),
+                ScollUp => scroll(&mut tbm, &mut queries, &board, -1),
+                ScollDown => scroll(&mut tbm, &mut queries, &board, 1),
                 Build => {
-                    on_build(&mut cmds, &mut board, &tm, &mut queries);
-                    close(&mut tm, &mut queries.p1());
+                    on_build(&mut cmds, &mut board, &tbm, &mut queries);
+                    close(&mut tbm, &mut queries.p1());
                 }
-                Hide => hide(&mut queries.p1()),
+                Hide => hide(&mut tbm, &mut queries.p1()),
             }
         }
     }
@@ -87,18 +82,20 @@ fn open(tbm: &mut BuildMenu, queries: &mut QueriesTowerMenuAction, board: &Board
         show_preview(tbm, queries, translation, tile);
         tbm.tile_pos = *pos;
         tbm.is_open = true;
+        tbm.is_visible = true;
     }
 }
 
 fn close(tbm: &mut BuildMenu, q_tm: &mut QueryBuildMenu) {
-    hide(q_tm);
+    hide(tbm, q_tm);
     tbm.is_open = false;
 }
 
-fn hide(q_tm: &mut QueryBuildMenu) {
+fn hide(tbm: &mut BuildMenu, q_tm: &mut QueryBuildMenu) {
     for (_, mut visi) in q_tm.iter_mut() {
         visi.is_visible = false;
     }
+    tbm.is_visible = false;
 }
 
 fn set_build_circle(q_tmc: &mut QueryBuildMenuCircle, translation: Vec3) {
@@ -113,59 +110,39 @@ fn show_preview(
     translation: Vec3,
     tile: &Tile,
 ) {
-    if let Some(tower_to_hide) = hide_preview_base(&mut queries.p2()) {
-        set_preview_children(&mut queries.p1(), tower_to_hide, false);
-    } else if let Some(building_to_hide) = hide_preview_base(&mut queries.p3()) {
-        set_preview_children(&mut queries.p1(), building_to_hide, false);
-    }
+    hide_preview_base(&mut queries.p2());
+    hide_preview_base(&mut queries.p3());
 
-    if *tile == Tile::TowerGround {
-        if let Some(to_show) =
-            show_preview_base(&mut queries.p2(), translation, tm.selected_tower_index)
-        {
-            set_preview_children(&mut queries.p1(), to_show, true);
+    match *tile {
+        Tile::TowerGround => {
+            show_preview_tower(&mut queries.p2(), translation, tm.selected_tower_index)
         }
-    } else if let Some(to_show) =
-        show_preview_base(&mut queries.p3(), translation, tm.selected_building_index)
-    {
-        set_preview_children(&mut queries.p1(), to_show, true);
-    };
+        _ => show_preview_tower(&mut queries.p3(), translation, tm.selected_building_index),
+    }
 }
 
-fn show_preview_base<TBuild: Component, TBase: Component>(
-    q_tm: &mut QueryMenuBases<TBuild, TBase>,
+fn show_preview_tower<TBuild: Component, TBase: Component>(
+    q_tm: &mut QueryMenuParents<TBuild, TBase>,
     translation: Vec3,
     selected_i: usize,
-) -> Option<Children> {
-    for (i, (mut visi, mut transform, children, _)) in q_tm.iter_mut().enumerate() {
+) {
+    for (i, (mut visi, mut transform, _)) in q_tm.iter_mut().enumerate() {
         if i == selected_i {
             transform.translation = translation;
             transform.scale = Vec3::new(0.5, 0.5, 1.);
             visi.is_visible = true;
-            return Some(children.clone());
         }
     }
-    None
 }
 
 fn hide_preview_base<TBuild: Component, TBase: Component>(
-    q_tm: &mut QueryMenuBases<TBuild, TBase>,
-) -> Option<Children> {
-    q_tm.iter_mut().find_map(|(mut visi, _, children, _)| {
+    q_tm: &mut QueryMenuParents<TBuild, TBase>,
+) {
+    q_tm.for_each_mut(|(mut visi, _, _)| {
         if visi.is_visible {
             visi.is_visible = false;
-            return Some(children.clone());
         }
-        None
-    })
-}
-
-fn set_preview_children(q_tms: &mut QueryBuildMenu, children: Children, is_visible: bool) {
-    for child in children.iter() {
-        if let Ok((_, mut visi)) = q_tms.get_mut(*child) {
-            visi.is_visible = is_visible;
-        }
-    }
+    });
 }
 
 fn scroll(tm: &mut BuildMenu, queries: &mut QueriesTowerMenuAction, board: &Board, additor: isize) {

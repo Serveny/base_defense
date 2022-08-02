@@ -1,3 +1,7 @@
+use super::{
+    actions::build_menu::{BuildMenuActionsEvent, QueryMenuParents},
+    BaseLevel,
+};
 use crate::{
     board::visualisation::TILE_SIZE,
     utils::{
@@ -6,17 +10,12 @@ use crate::{
             power_plant::{spawn_power_plant, PowerPlant},
             Building, BuildingBase,
         },
-        towers::{Tower, TowerBase},
+        towers::{Tower, TowerParent},
         Vec2Board,
     },
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
-
-use super::{
-    actions::build_menu::{BuildMenuActionsEvent, QueryMenuBases},
-    BaseLevel,
-};
 
 #[derive(Component, Default)]
 pub(super) struct BuildMenuScreen;
@@ -24,12 +23,16 @@ pub(super) struct BuildMenuScreen;
 #[derive(Default)]
 pub(super) struct BuildMenu {
     pub is_open: bool,
+    pub is_visible: bool,
     pub selected_tower_index: usize,
     pub selected_building_index: usize,
     pub tile_pos: UVec2,
 }
 
 impl BuildMenu {
+    pub fn should_open(&self, tile_pos: UVec2) -> bool {
+        !self.is_visible || self.tile_pos != tile_pos
+    }
     fn towers() -> [(BaseLevel, Tower); 2] {
         let pos = Vec2Board::default();
         [(1, Tower::laser(pos)), (1, Tower::rocket(pos))]
@@ -65,10 +68,10 @@ impl BuildMenu {
 
     pub fn get_selected<'a, TBuild: Component, TBase: Component>(
         &self,
-        q_bases: &'a QueryMenuBases<TBuild, TBase>,
+        q_bases: &'a QueryMenuParents<TBuild, TBase>,
         selected_i: usize,
     ) -> Option<&'a TBuild> {
-        for (i, (_, _, _, build)) in q_bases.iter().enumerate() {
+        for (i, (_, _, build)) in q_bases.iter().enumerate() {
             if i == selected_i {
                 return Some(build);
             }
@@ -78,14 +81,14 @@ impl BuildMenu {
 
     pub fn get_selected_tower<'a>(
         &self,
-        q_bases: &'a QueryMenuBases<Tower, TowerBase>,
+        q_bases: &'a QueryMenuParents<Tower, TowerParent>,
     ) -> Option<&'a Tower> {
         self.get_selected(q_bases, self.selected_tower_index)
     }
 
     pub fn get_selected_building<'a>(
         &self,
-        q_bases: &'a QueryMenuBases<Building, BuildingBase>,
+        q_bases: &'a QueryMenuParents<Building, BuildingBase>,
     ) -> Option<&'a Building> {
         self.get_selected(q_bases, self.selected_building_index)
     }
@@ -102,13 +105,10 @@ fn menu_circle_shape(tile_size: f32) -> ShapeBundle {
     GeometryBuilder::build_as(
         &shape,
         DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::rgba(0.75, 0.75, 0.75, 0.5)),
+            fill_mode: FillMode::color(Color::rgba(0.75, 0.75, 0.75, 0.)),
             outline_mode: StrokeMode::new(Color::rgba(0.25, 0.25, 0.25, 0.5), tile_size / 32.),
         },
-        Transform {
-            translation: Vec3::new(0., 0., 0.2),
-            ..Default::default()
-        },
+        Transform::from_translation(Vec3::new(0., 0., 3.)),
     )
 }
 

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_asset_loader::AssetCollection;
+use bevy_asset_loader::prelude::*;
 
 #[derive(AssetCollection)]
 pub struct StandardAssets {

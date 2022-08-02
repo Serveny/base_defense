@@ -96,7 +96,7 @@ impl TowerValues {
 pub struct TowerCannon;
 
 #[derive(Component)]
-pub struct TowerBase;
+pub struct TowerParent;
 
 #[derive(Component, Deref, DerefMut)]
 pub struct TowerRangeCircle(UVec2);
@@ -118,7 +118,7 @@ pub fn draw_tower<TScreen: Component + Default>(
     };
 }
 
-fn tower_base_shape(translation: Vec3, color: Color) -> ShapeBundle {
+fn tower_base_shape(color: Color) -> ShapeBundle {
     let shape = RegularPolygon {
         sides: 8,
         feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
@@ -130,10 +130,7 @@ fn tower_base_shape(translation: Vec3, color: Color) -> ShapeBundle {
             fill_mode: FillMode::color(color),
             outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
         },
-        Transform {
-            translation,
-            ..Default::default()
-        },
+        Transform::default(),
     )
 }
 
@@ -166,9 +163,6 @@ fn tower_range_circle_shape(radius: f32, color: Color) -> ShapeBundle {
             fill_mode: FillMode::color(Color::NONE),
             outline_mode: StrokeMode::new(color, 0.025 * TILE_SIZE),
         },
-        Transform {
-            translation: Vec3::new(0., 0., 0.3),
-            ..Default::default()
-        },
+        Transform::from_translation(Vec3::new(0., 0., 0.3)),
     )
 }

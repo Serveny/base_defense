@@ -1,4 +1,4 @@
-use bevy::{core::Stopwatch, prelude::*};
+use bevy::{prelude::*, time::Stopwatch};
 use serde::{Deserialize, Serialize};
 use std::{
     ops::{Add, AddAssign, Sub, SubAssign},

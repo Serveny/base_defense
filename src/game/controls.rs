@@ -79,7 +79,7 @@ fn tile_hover(
     ) {
         (true, true, _, false) => Some(BuildMenuActionsEvent::Build),
         (true, false, TowerGround | BuildingGround, false) => Some(Open(upos)),
-        (false, true, TowerGround | BuildingGround, false) => match tbm.tile_pos != upos {
+        (false, true, TowerGround | BuildingGround, false) => match tbm.should_open(upos) {
             true => Some(Open(upos)),
             false => None,
         },

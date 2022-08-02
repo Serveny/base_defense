@@ -1,9 +1,6 @@
 use assets::StandardAssets;
-use bevy::{
-    prelude::*,
-    render::camera::{Camera2d, ScalingMode},
-};
-use bevy_asset_loader::AssetLoader;
+use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy_asset_loader::prelude::*;
 use bevy_egui::{
     egui::{self, style::Selection, Color32, Stroke},
     EguiContext, EguiPlugin,
@@ -47,10 +44,14 @@ fn main() {
     app.insert_resource(ClearColor(BACKGROUND_COLOR))
         .insert_resource(window_setup)
         .insert_resource(Msaa { samples: 4 })
+        .add_loading_state(
+            LoadingState::new(GameState::Splash)
+                .continue_to_state(GameState::Menu)
+                .with_collection::<StandardAssets>(),
+        )
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
         .add_plugin(ShapePlugin)
-        .add_plugin(bevy_screen_diags::ScreenDiagsPlugin)
         .add_plugin(splash::SplashPlugin)
         .add_plugin(main_menu::MainMenuPlugin)
         .add_plugin(game::GamePlugin)
@@ -62,10 +63,10 @@ fn main() {
     //      .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
     //      .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin);
 
-    AssetLoader::new(GameState::Splash)
-        .continue_to_state(GameState::Menu)
-        .with_collection::<StandardAssets>()
-        .build(&mut app);
+    //AssetLoader::new(GameState::Splash)
+    //.continue_to_state(GameState::Menu)
+    //.with_collection::<StandardAssets>()
+    //.build(&mut app);
 
     app.insert_resource(Settings::new())
         .add_state(GameState::Splash)
@@ -75,10 +76,17 @@ fn main() {
 }
 
 fn setup_cameras(mut commands: Commands) {
-    let mut cam = OrthographicCameraBundle::new_2d();
-    cam.orthographic_projection.scaling_mode = ScalingMode::None;
-    commands.spawn_bundle(cam);
-    commands.spawn_bundle(UiCameraBundle::default());
+    // cam.orthographic_projection.scaling_mode = ScalingMode::None;
+    commands
+        .spawn_bundle(Camera2dBundle {
+            projection: OrthographicProjection {
+                scale: 1.0,
+                scaling_mode: ScalingMode::None,
+                ..default()
+            },
+            ..default()
+        })
+        .insert(UiCameraConfig { show_ui: false });
 }
 
 const fn font() -> &'static [u8; 78628] {

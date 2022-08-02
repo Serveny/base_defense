@@ -1,8 +1,7 @@
-use bevy::prelude::*;
-
 use crate::{
     board::visualisation::TILE_SIZE, game::actions::resources::ResourceAnimation, utils::IngameTime,
 };
+use bevy::prelude::*;
 
 pub fn resouce_animation_system(
     mut cmds: Commands,

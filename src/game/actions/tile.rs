@@ -1,12 +1,10 @@
-use bevy::prelude::*;
-
+use super::{set_range_circles, RangeCircleQuery};
 use crate::{
     board::{visualisation::HoverCrossQuery, Board, Tile},
     game::{BoardVisu, Game},
     utils::Vec2Board,
 };
-
-use super::{set_range_circles, RangeCircleQuery};
+use bevy::prelude::*;
 
 type TileActionQueries<'w, 's, 'a> =
     ParamSet<'w, 's, (HoverCrossQuery<'w, 's, 'a>, RangeCircleQuery<'w, 's, 'a>)>;
@@ -44,7 +42,7 @@ fn on_hover_tile(
     pos: &Vec2Board,
     tile: &Tile,
 ) {
-    draw_hover_cross(&mut queries.p0(), board_visu, pos, tile);
+    toggle_hover_cross(&mut queries.p0(), board_visu, pos, tile);
     if !game.is_overview {
         show_range_circle(&mut queries.p1(), &pos.as_uvec2());
     }
@@ -57,7 +55,7 @@ fn on_unhover_tile(queries: &mut TileActionQueries, game: &Game) {
     }
 }
 
-fn draw_hover_cross(
+fn toggle_hover_cross(
     query: &mut HoverCrossQuery,
     board_visu: &BoardVisu,
     pos: &Vec2Board,

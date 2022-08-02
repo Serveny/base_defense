@@ -14,7 +14,7 @@ use crate::{
     utils::{despawn_all_of, zoom_cam_to_board, GameState},
     CamMutQuery,
 };
-use bevy::{prelude::*, render::camera::Camera2d, window::WindowResized};
+use bevy::{prelude::*, window::WindowResized};
 
 mod actions;
 mod controls;

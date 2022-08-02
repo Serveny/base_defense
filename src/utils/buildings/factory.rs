@@ -39,12 +39,11 @@ pub fn spawn_factory<TScreen: Component + Default>(
     factory: Factory,
     tile_size: f32,
 ) {
-    let color = MATERIALS_COLOR;
-    cmds.spawn_bundle(building_base_shape(
-        factory.pos.to_scaled_vec3(1.),
-        tile_size / 1.1,
-        color,
-    ))
+    cmds.spawn_bundle(SpatialBundle {
+        transform: Transform::from_translation(factory.pos.to_scaled_vec3(1.)),
+        visibility: Visibility::visible(),
+        ..default()
+    })
     .with_children(|parent| factory_children::<TScreen>(parent, tile_size))
     .insert(BuildingBase)
     .insert(Building::Factory)
@@ -54,38 +53,30 @@ pub fn spawn_factory<TScreen: Component + Default>(
 }
 
 fn factory_children<TScreen: Component + Default>(parent: &mut ChildBuilder, tile_size: f32) {
-    parent
-        .spawn_bundle(factory_building_shape(tile_size, Color::GRAY))
-        .insert(TScreen::default());
-    parent
-        .spawn_bundle(factory_roof_shape(
-            tile_size,
-            Color::GRAY,
-            Vec3::new(-tile_size / 6., tile_size / 5., 0.1),
-        ))
-        .insert(TScreen::default());
-    parent
-        .spawn_bundle(factory_roof_shape(
-            tile_size,
-            Color::GRAY,
-            Vec3::new(0., tile_size / 5., 0.1),
-        ))
-        .insert(TScreen::default());
-    parent
-        .spawn_bundle(factory_roof_shape(
-            tile_size,
-            Color::GRAY,
-            Vec3::new(tile_size / 6., tile_size / 5., 0.1),
-        ))
-        .insert(TScreen::default());
-    parent
-        .spawn_bundle(factory_chimney_shape(
-            tile_size,
-            Color::GRAY,
-            Vec3::new(tile_size / 6., -tile_size / 4., 0.09),
-        ))
-        .insert(TScreen::default());
-    spawn_resource_bar::<TScreen>(
+    let color = MATERIALS_COLOR;
+    parent.spawn_bundle(building_base_shape(tile_size / 1.1, color));
+    parent.spawn_bundle(factory_building_shape(tile_size, Color::GRAY));
+    parent.spawn_bundle(factory_roof_shape(
+        tile_size,
+        Color::GRAY,
+        Vec3::new(-tile_size / 6., tile_size / 5., 0.1),
+    ));
+    parent.spawn_bundle(factory_roof_shape(
+        tile_size,
+        Color::GRAY,
+        Vec3::new(0., tile_size / 5., 0.1),
+    ));
+    parent.spawn_bundle(factory_roof_shape(
+        tile_size,
+        Color::GRAY,
+        Vec3::new(tile_size / 6., tile_size / 5., 0.1),
+    ));
+    parent.spawn_bundle(factory_chimney_shape(
+        tile_size,
+        Color::GRAY,
+        Vec3::new(tile_size / 6., -tile_size / 4., 0.09),
+    ));
+    spawn_resource_bar(
         parent,
         tile_size / 4.,
         Vec2Board::new(0.2, 0.),

@@ -47,7 +47,7 @@ pub struct BuildingBase;
 //};
 //}
 
-fn building_base_shape(translation: Vec3, tile_size: f32, color: Color) -> ShapeBundle {
+fn building_base_shape(tile_size: f32, color: Color) -> ShapeBundle {
     let shape = shapes::RegularPolygon {
         sides: 6,
         feature: shapes::RegularPolygonFeature::Radius(tile_size / 2.),
@@ -59,9 +59,6 @@ fn building_base_shape(translation: Vec3, tile_size: f32, color: Color) -> Shape
             fill_mode: FillMode::color(color),
             outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 20.),
         },
-        Transform {
-            translation,
-            ..Default::default()
-        },
+        Transform::default(),
     )
 }

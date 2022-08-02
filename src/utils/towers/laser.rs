@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use super::{
-    tower_base_shape, tower_circle_shape, tower_range_circle_shape, Tower, TowerBase, TowerCannon,
-    TowerRangeCircle, TowerValues,
+    tower_base_shape, tower_circle_shape, tower_range_circle_shape, Tower, TowerCannon,
+    TowerParent, TowerRangeCircle, TowerValues,
 };
 use crate::{
     board::visualisation::TILE_SIZE,
@@ -47,9 +47,10 @@ pub(super) fn spawn_laser_tower<TScreen: Component + Default>(
     if is_preview {
         color.set_a(0.9);
     }
-    cmds.spawn_bundle(tower_base_shape(vals.pos.to_scaled_vec3(1.), color))
+    let transform = Transform::from_translation(vals.pos.to_scaled_vec3(1.));
+    cmds.spawn_bundle(SpatialBundle::from_transform(transform))
         .with_children(|parent| laser_tower_children::<TScreen>(parent, &vals, color, is_preview))
-        .insert(TowerBase)
+        .insert(TowerParent)
         .insert(BoardPos(vals.pos.as_uvec2()))
         .insert(Tower::Laser(vals))
         .insert(TScreen::default());
@@ -61,16 +62,16 @@ fn laser_tower_children<TScreen: Component + Default>(
     color: Color,
     is_preview: bool,
 ) {
+    // Tower base
+    parent.spawn_bundle(tower_base_shape(color));
+
     // Tower circle
-    parent
-        .spawn_bundle(tower_circle_shape())
-        .insert(TScreen::default());
+    parent.spawn_bundle(tower_circle_shape());
 
     // Tower cannon
     parent
         .spawn_bundle(tower_laser_cannon())
-        .insert(TowerCannon)
-        .insert(TScreen::default());
+        .insert(TowerCannon);
 
     // Range circle
     let range_radius = match is_preview {
@@ -78,7 +79,7 @@ fn laser_tower_children<TScreen: Component + Default>(
         false => vals.range_radius,
     };
     let mut range_circle = tower_range_circle_shape(range_radius, color);
-    range_circle.visibility.is_visible = false;
+    range_circle.visibility.is_visible = is_preview;
     parent
         .spawn_bundle(range_circle)
         .insert(TowerRangeCircle(vals.pos.as_uvec2()))

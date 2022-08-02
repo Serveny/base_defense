@@ -3,8 +3,8 @@ use crate::{
     board::visualisation::TILE_SIZE,
     game::{Game, GameScreen},
     utils::{
-        energy::energy_symbol, materials::materials_symbol, text_background_shape, text_bundle,
-        Energy, IngameTime, IngameTimestamp, Materials, Vec2Board,
+        energy::energy_symbol, materials::materials_symbol, text_bundle, Energy, IngameTime,
+        IngameTimestamp, Materials, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -69,15 +69,14 @@ fn spawn_energy_animation(
     let (color, pos_y_add) = color_and_pos(energy);
     pos.x -= 0.25;
     pos.y += pos_y_add;
-    cmds.spawn_bundle(text_background_shape(
-        WIDTH,
-        Transform {
+    cmds.spawn_bundle(SpatialBundle {
+        transform: Transform {
             translation: pos.to_scaled_vec3(6.),
-            scale: Vec3::new(0.5, 0.5, 1.),
+            scale: Vec3::new(0.75, 0.75, 1.),
             ..default()
         },
-        false,
-    ))
+        ..default()
+    })
     .with_children(|parent| {
         parent.spawn_bundle(energy_symbol(
             Transform {
@@ -103,15 +102,14 @@ fn spawn_materials_animation(
     let (color, pos_y_add) = color_and_pos(materials);
     pos.x += 0.25;
     pos.y += pos_y_add;
-    cmds.spawn_bundle(text_background_shape(
-        WIDTH,
-        Transform {
+    cmds.spawn_bundle(SpatialBundle {
+        transform: Transform {
             translation: pos.to_scaled_vec3(6.),
-            scale: Vec3::new(0.5, 0.5, 1.),
+            scale: Vec3::new(0.75, 0.75, 1.),
             ..default()
         },
-        false,
-    ))
+        ..default()
+    })
     .insert(ResourceAnimation::new(now + RESOURCE_ANIMATION_TIME))
     .insert(GameScreen)
     .with_children(|parent| {

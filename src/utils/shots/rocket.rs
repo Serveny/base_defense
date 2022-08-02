@@ -63,7 +63,7 @@ fn rocket_shot_children<TScreen: Component + Default>(parent: &mut ChildBuilder)
     parent.spawn_bundle(rocket_bottom_shape(TILE_SIZE));
 
     // Fuel bar
-    spawn_resource_bar::<TScreen>(
+    spawn_resource_bar(
         parent,
         TILE_SIZE / 5.,
         Vec2Board::default(),

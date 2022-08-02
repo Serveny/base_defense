@@ -12,7 +12,7 @@ struct ResourceBar;
 #[derive(Component)]
 pub struct ResourceBarPercentage;
 
-pub fn spawn_resource_bar<TScreen: Component + Default>(
+pub fn spawn_resource_bar(
     parent: &mut ChildBuilder,
     bar_height_px: f32,
     pos: Vec2Board,
@@ -23,7 +23,6 @@ pub fn spawn_resource_bar<TScreen: Component + Default>(
             bar_height_px,
             pos.to_scaled_vec3(3.),
         ))
-        .insert(TScreen::default())
         .insert(ResourceBar);
     parent
         .spawn_bundle(resource_bar_percentage_shape(
@@ -31,7 +30,6 @@ pub fn spawn_resource_bar<TScreen: Component + Default>(
             pos.to_scaled_vec3(10.),
             color,
         ))
-        .insert(TScreen::default())
         .insert(ResourceBar)
         .insert(ResourceBarPercentage);
 }

@@ -36,7 +36,7 @@ fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let image_bundle = ImageBundle {
         style: Style {
             // This will center the logo
-            margin: Rect::all(Val::Auto),
+            margin: UiRect::all(Val::Auto),
             // This will set the logo to be 200px wide, and auto adjust its height
             size: Size::new(Val::Px(200.0), Val::Auto),
             ..default()
