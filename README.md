@@ -30,9 +30,10 @@ Base defense concept:
 
   - Wave ticker ✓
   - Z-Layer Shots ✓
+  - Enemy resource drops at death ✓
+  - Building/tower costs
+  - fast forward function
   - Tower Target System
   - Soundsystem: Background Music, Ingame Sounds
-  - Enemy resource drops at death
   - Upgrade system
   - tank enemy type
-  - fast forward function
