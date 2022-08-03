@@ -59,22 +59,22 @@ fn factory_children<TScreen: Component + Default>(parent: &mut ChildBuilder, til
     parent.spawn_bundle(factory_roof_shape(
         tile_size,
         Color::GRAY,
-        Vec3::new(-tile_size / 6., tile_size / 5., 0.1),
+        Vec3::new(-tile_size / 6., tile_size / 5., 0.01),
     ));
     parent.spawn_bundle(factory_roof_shape(
         tile_size,
         Color::GRAY,
-        Vec3::new(0., tile_size / 5., 0.1),
+        Vec3::new(0., tile_size / 5., 0.01),
     ));
     parent.spawn_bundle(factory_roof_shape(
         tile_size,
         Color::GRAY,
-        Vec3::new(tile_size / 6., tile_size / 5., 0.1),
+        Vec3::new(tile_size / 6., tile_size / 5., 0.01),
     ));
     parent.spawn_bundle(factory_chimney_shape(
         tile_size,
         Color::GRAY,
-        Vec3::new(tile_size / 6., -tile_size / 4., 0.09),
+        Vec3::new(tile_size / 6., -tile_size / 4., 0.011),
     ));
     spawn_resource_bar(
         parent,
@@ -135,7 +135,7 @@ fn factory_building_shape(tile_size: f32, color: Color) -> ShapeBundle {
             outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 20.),
         },
         Transform {
-            translation: Vec3::new(0., 0., 0.2),
+            translation: Vec3::new(0., 0., 0.02),
             ..default()
         },
     )

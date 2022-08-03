@@ -146,7 +146,7 @@ fn tower_circle_shape() -> ShapeBundle {
             outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
         },
         Transform {
-            translation: Vec3::new(0., 0., 0.2),
+            translation: Vec3::new(0., 0., 0.4),
             ..Default::default()
         },
     )

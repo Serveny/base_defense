@@ -21,13 +21,13 @@ pub fn spawn_resource_bar(
     parent
         .spawn_bundle(resource_bar_background_shape(
             bar_height_px,
-            pos.to_scaled_vec3(3.),
+            pos.to_scaled_vec3(0.1),
         ))
         .insert(ResourceBar);
     parent
         .spawn_bundle(resource_bar_percentage_shape(
             bar_height_px,
-            pos.to_scaled_vec3(10.),
+            pos.to_scaled_vec3(0.2),
             color,
         ))
         .insert(ResourceBar)

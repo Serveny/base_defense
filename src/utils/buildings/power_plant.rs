@@ -52,12 +52,12 @@ fn power_plant_children<TScreen: Component + Default>(parent: &mut ChildBuilder,
     parent.spawn_bundle(power_plant_chimney_shape(
         tile_size,
         Color::GRAY,
-        Vec3::new(tile_size / 4.5, -tile_size / 4., 0.1),
+        Vec3::new(tile_size / 4.5, -tile_size / 4., 0.01),
     ));
     parent.spawn_bundle(power_plant_chimney_shape(
         tile_size,
         Color::GRAY,
-        Vec3::new(tile_size / 20., -tile_size / 4., 0.1),
+        Vec3::new(tile_size / 20., -tile_size / 4., 0.01),
     ));
     spawn_resource_bar(
         parent,
@@ -97,7 +97,7 @@ fn power_plant_building_shape(tile_size: f32, color: Color) -> ShapeBundle {
             outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 20.),
         },
         Transform {
-            translation: Vec3::new(0., 0., 0.2),
+            translation: Vec3::new(0., 0., 0.02),
             ..default()
         },
     )

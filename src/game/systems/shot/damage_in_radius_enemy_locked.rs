@@ -35,7 +35,7 @@ pub fn fly_system(
     board_cache: Res<BoardCache>,
 ) {
     let frame_dur = time.delta();
-    for mut shot in q_shots.iter_mut() {
+    for mut shot in &mut q_shots {
         if let Some(target_id) = shot.target_id {
             if let Ok((_, enemy)) = q_enemies.get(target_id) {
                 shot.fly_to(enemy.pos, frame_dur);
@@ -64,7 +64,7 @@ fn find_nearest_enemy(q_enemies: &QueryEnemies, pos: Vec2Board) -> Option<Entity
 
 pub fn visual_system(mut q_shot: Query<(&mut Transform, &DamageInRadiusTargetPosShot)>) {
     for (mut transform, shot) in q_shot.iter_mut() {
-        transform.translation = shot.pos.to_scaled_vec3(1.);
+        transform.translation = shot.scaled_pos(transform.translation.z);
         transform.rotation = pos_to_quat(shot.pos, shot.target_pos);
     }
 }

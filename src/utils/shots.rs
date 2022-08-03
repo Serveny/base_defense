@@ -71,6 +71,7 @@ pub enum Target {
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DamageInRadiusTargetPosShotValues {
+    pub pos_start: Vec2Board,
     pub pos: Vec2Board,
     pub damage: f32,
     pub damage_radius: f32,
@@ -111,6 +112,22 @@ impl DamageInRadiusTargetPosShot {
         {
             self.target_pos = pos.into();
         }
+    }
+
+    pub fn scaled_pos(&self, old_z: f32) -> Vec3 {
+        self.pos.to_scaled_vec3(self.z_index(old_z))
+    }
+
+    fn z_index(&self, old_z: f32) -> f32 {
+        if old_z == 1. && !self.is_in_pos() {
+            3.
+        } else {
+            old_z
+        }
+    }
+
+    fn is_in_pos(&self) -> bool {
+        self.pos.as_uvec2() == self.pos_start.as_uvec2()
     }
 }
 

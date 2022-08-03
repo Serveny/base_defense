@@ -17,6 +17,7 @@ pub struct RocketShot;
 impl Shot {
     pub fn rocket(pos: Vec2Board) -> Self {
         Self::Rocket(DamageInRadiusTargetPosShotValues {
+            pos_start: pos,
             pos,
             damage: 100.,
             damage_radius: 0.5,
@@ -26,15 +27,18 @@ impl Shot {
         })
     }
 }
+
 pub fn spawn_shot_rocket<TScreen: Component + Default>(
     cmds: &mut Commands,
     shot: DamageInRadiusTargetPosShot,
 ) {
-    cmds.spawn_bundle(rocket_body_shape(TILE_SIZE))
-        .with_children(|parent| rocket_shot_children::<TScreen>(parent))
-        .insert(shot)
-        .insert(RocketShot)
-        .insert(TScreen::default());
+    cmds.spawn_bundle(SpatialBundle::from_transform(Transform::from_translation(
+        Vec3::new(0., 0., 1.),
+    )))
+    .with_children(|parent| rocket_shot_children::<TScreen>(parent))
+    .insert(shot)
+    .insert(RocketShot)
+    .insert(TScreen::default());
 }
 
 fn rocket_body_shape(tile_size: f32) -> ShapeBundle {
@@ -49,17 +53,13 @@ fn rocket_body_shape(tile_size: f32) -> ShapeBundle {
             fill_mode: FillMode::color(Color::PURPLE),
             outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 40.),
         },
-        Transform {
-            ..Default::default()
-        },
+        Transform::default(),
     )
 }
 
 fn rocket_shot_children<TScreen: Component + Default>(parent: &mut ChildBuilder) {
-    // Head
     parent.spawn_bundle(rocket_head_shape(TILE_SIZE));
-
-    // Body
+    parent.spawn_bundle(rocket_body_shape(TILE_SIZE));
     parent.spawn_bundle(rocket_bottom_shape(TILE_SIZE));
 
     // Fuel bar

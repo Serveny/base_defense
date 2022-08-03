@@ -101,7 +101,7 @@ fn tower_rocket_cannon() -> ShapeBundle {
             outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
         },
         Transform {
-            translation: Vec3::new(0., 0., 0.1),
+            translation: Vec3::new(0., 0., 0.3),
             rotation: Quat::from_rotation_z(0.),
             ..Default::default()
         },

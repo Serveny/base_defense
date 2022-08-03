@@ -29,9 +29,9 @@ Base defense concept:
   TODO:
 
   - Wave ticker ✓
+  - Z-Layer Shots ✓
   - Tower Target System
   - Soundsystem: Background Music, Ingame Sounds
-  - Z-Layer Shots
   - Enemy resource drops at death
   - Upgrade system
   - tank enemy type
