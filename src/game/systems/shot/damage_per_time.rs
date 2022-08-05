@@ -10,9 +10,9 @@ pub fn damage_system(
     mut dmg_ev: EventWriter<DamageEvent>,
     q_shots: Query<&DamagePerTimeShot>,
     q_enemies: EnemiesQuery,
-    time: Res<Time>,
+    time: Res<IngameTime>,
 ) {
-    let frame_dur = time.delta_seconds();
+    let frame_dur = time.delta_secs();
     for shot in q_shots.iter() {
         if let Some((enemy_entity, _)) = find_enemy_in_range(&q_enemies, shot) {
             dmg_ev.send(DamageEvent::new(enemy_entity, frame_dur * shot.damage));

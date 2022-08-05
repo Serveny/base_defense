@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use self::{
     actions::{build_menu::BuildMenuActionsEvent, GameActions},
     build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
@@ -57,18 +59,20 @@ pub(crate) struct Game {
     next_wave_spawn: Option<IngameTimestamp>,
     is_overview: bool,
     base_lvl: BaseLevel,
+    speed: f32,
 }
 
 impl Game {
     pub fn new(difficulty: Difficulty) -> Self {
         Self {
             difficulty,
-            energy: 100.,
-            materials: 100.,
+            energy: 1000.,
+            materials: 1000.,
             wave_no: 0,
             next_wave_spawn: Some(IngameTimestamp::new(1.)),
             is_overview: false,
             base_lvl: 1,
+            speed: 1.,
         }
     }
 }
@@ -108,8 +112,8 @@ fn game_setup(
     cmds.init_resource::<BuildMenu>();
 }
 
-fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>) {
-    timer.tick(time.delta());
+fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>, game: Res<Game>) {
+    timer.tick(Duration::from_secs_f32(time.delta_seconds() * game.speed));
 }
 
 fn clean_up_game(mut cmds: Commands) {

@@ -13,7 +13,7 @@ pub fn death_system(
     for (entity, enemy) in q_enemies.iter() {
         if enemy.health <= 0. {
             expl_actions.send(ExplosionEvent::death(enemy));
-            res_actions.send(ResourcesEvent::Materials(enemy.health_max / 20., enemy.pos));
+            res_actions.send(ResourcesEvent::Materials(enemy.health_max / 10., enemy.pos));
             cmds.entity(entity).despawn_recursive();
         }
     }

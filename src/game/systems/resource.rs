@@ -6,11 +6,10 @@ use bevy::prelude::*;
 pub fn resouce_animation_system(
     mut cmds: Commands,
     mut q_anims: Query<(Entity, &mut Transform, &ResourceAnimation)>,
-    ingame_time: Res<IngameTime>,
-    time: Res<Time>,
+    time: Res<IngameTime>,
 ) {
-    let delta = time.delta_seconds();
-    let now = ingame_time.now();
+    let delta = time.delta_secs();
+    let now = time.now();
     for (entity, mut transform, anim) in q_anims.iter_mut() {
         if now >= anim.die_time {
             cmds.entity(entity).despawn_recursive();

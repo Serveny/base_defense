@@ -16,6 +16,8 @@ use crate::{
 };
 use bevy::prelude::*;
 
+use super::resources::{consume, ResourcesEvent};
+
 type QueriesTowerMenuAction<'w, 's, 'a> = ParamSet<
     'w,
     's,
@@ -56,6 +58,7 @@ pub(in crate::game) fn on_tower_menu_actions(
     mut board: ResMut<Board>,
     mut queries: QueriesTowerMenuAction,
     mut tbm: ResMut<BuildMenu>,
+    mut res_actions: EventWriter<ResourcesEvent>,
 ) {
     use BuildMenuActionsEvent::*;
     if !actions.is_empty() {
@@ -66,7 +69,7 @@ pub(in crate::game) fn on_tower_menu_actions(
                 ScollUp => scroll(&mut tbm, &mut queries, &board, -1),
                 ScollDown => scroll(&mut tbm, &mut queries, &board, 1),
                 Build => {
-                    on_build(&mut cmds, &mut board, &tbm, &mut queries);
+                    on_build(&mut cmds, &mut board, &tbm, &mut queries, &mut res_actions);
                     close(&mut tbm, &mut queries.p1());
                 }
                 Hide => hide(&mut tbm, &mut queries.p1()),
@@ -171,34 +174,69 @@ fn on_build(
     board: &mut Board,
     tm: &BuildMenu,
     queries: &mut QueriesTowerMenuAction,
+    res_actions: &mut EventWriter<ResourcesEvent>,
 ) {
     if let Some(tile) = board.get_tile_mut(&tm.tile_pos) {
         match tile {
             Tile::TowerGround => {
-                place_tower(cmds, tm.get_selected_tower(&queries.p2()), &tm.tile_pos);
+                place_tower(
+                    cmds,
+                    res_actions,
+                    tm.get_selected_tower(&queries.p2()),
+                    &tm.tile_pos,
+                );
             }
             Tile::BuildingGround => {
-                place_building(cmds, tm.get_selected_building(&queries.p3()), &tm.tile_pos);
+                place_building(
+                    cmds,
+                    res_actions,
+                    tm.get_selected_building(&queries.p3()),
+                    &tm.tile_pos,
+                );
             }
             _ => (),
         }
     }
 }
 
-fn place_tower(cmds: &mut Commands, tower: Option<&Tower>, pos: &UVec2) {
+fn place_tower(
+    cmds: &mut Commands,
+    res_actions: &mut EventWriter<ResourcesEvent>,
+    tower: Option<&Tower>,
+    pos: &UVec2,
+) {
     if let Some(tower) = tower {
         let pos = Vec2Board::from_uvec2_middle(pos);
         draw_tower::<GameScreen>(cmds, pos, tower);
+        consume(
+            res_actions,
+            match *tower {
+                Tower::Laser(_) => (-100., -200.),
+                Tower::Microwave(_) => todo!(),
+                Tower::Rocket(_) => (-1000., -1000.),
+                Tower::Grenade(_) => todo!(),
+            },
+            pos,
+        );
     }
 }
 
-fn place_building(cmds: &mut Commands, building: Option<&Building>, pos: &UVec2) {
+fn place_building(
+    cmds: &mut Commands,
+    res_actions: &mut EventWriter<ResourcesEvent>,
+    building: Option<&Building>,
+    pos: &UVec2,
+) {
     let pos = Vec2Board::from_uvec2_middle(pos);
     match building {
         Some(Building::PowerPlant) => {
-            spawn_power_plant::<GameScreen>(cmds, PowerPlant::new(pos), TILE_SIZE)
+            spawn_power_plant::<GameScreen>(cmds, PowerPlant::new(pos), TILE_SIZE);
+            consume(res_actions, (-500., -600.), pos);
         }
-        Some(Building::Factory) => spawn_factory::<GameScreen>(cmds, Factory::new(pos), TILE_SIZE),
+        Some(Building::Factory) => {
+            spawn_factory::<GameScreen>(cmds, Factory::new(pos), TILE_SIZE);
+            consume(res_actions, (-10000., -1000.), pos);
+        }
         None => (),
     }
 }

@@ -5,12 +5,36 @@ use std::{
     time::Duration,
 };
 
-#[derive(Deref, DerefMut, Clone, Debug, Default)]
-pub struct IngameTime(Stopwatch);
+#[derive(Clone, Debug, Default)]
+pub struct IngameTime {
+    watch: Stopwatch,
+    delta: Duration,
+}
 
 impl IngameTime {
     pub fn now(&self) -> IngameTimestamp {
-        self.0.elapsed_secs().into()
+        self.watch.elapsed_secs().into()
+    }
+
+    pub fn tick(&mut self, delta: Duration) {
+        self.watch.tick(delta);
+        self.delta = delta
+    }
+
+    pub fn delta(&self) -> Duration {
+        self.delta
+    }
+
+    pub fn delta_secs(&self) -> f32 {
+        self.delta.as_secs_f32()
+    }
+}
+use std::ops::Deref as StdDeref;
+impl StdDeref for IngameTime {
+    type Target = Stopwatch;
+
+    fn deref(&self) -> &Self::Target {
+        &self.watch
     }
 }
 

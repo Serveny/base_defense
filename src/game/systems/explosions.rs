@@ -1,11 +1,14 @@
-use crate::{game::enemies::Enemy, utils::explosions::Explosion};
+use crate::{
+    game::enemies::Enemy,
+    utils::{explosions::Explosion, IngameTime},
+};
 use bevy::prelude::*;
 
 pub fn explosion_system(
     mut cmds: Commands,
     mut q_explosions: Query<(Entity, &mut Transform, &mut Explosion)>,
     mut q_enemies: Query<&mut Enemy>,
-    time: Res<Time>,
+    time: Res<IngameTime>,
 ) {
     for (entity, mut transform, mut expl) in q_explosions.iter_mut() {
         if expl.is_end() {

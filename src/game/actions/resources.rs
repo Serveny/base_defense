@@ -128,3 +128,12 @@ fn spawn_materials_animation(
 fn resource_text(number: f32, color: Color, assets: &StandardAssets) -> Text2dBundle {
     text_bundle(WIDTH, &format!("{number}"), color, assets)
 }
+
+pub fn consume(
+    res_actions: &mut EventWriter<ResourcesEvent>,
+    resources: (Energy, Materials),
+    pos: Vec2Board,
+) {
+    res_actions.send(ResourcesEvent::Energy(resources.0, pos));
+    res_actions.send(ResourcesEvent::Materials(resources.1, pos));
+}

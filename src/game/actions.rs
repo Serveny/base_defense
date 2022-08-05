@@ -33,6 +33,7 @@ pub enum GameActionEvent {
     BackToMainMenu,
     ActivateOverview,
     DeactivateOverview,
+    Speed(f32),
 }
 
 pub struct GameActions;
@@ -71,21 +72,23 @@ fn on_game_actions(
 ) {
     if !game_actions.is_empty() {
         for event in game_actions.iter() {
+            use GameActionEvent::*;
             match event {
-                GameActionEvent::BackToMainMenu => back_to_main_menu(
+                BackToMainMenu => back_to_main_menu(
                     &mut cmds,
                     &mut game_state,
                     &mut wave_state,
                     &mut queries.p0(),
                 ),
-                GameActionEvent::ActivateOverview => {
+                ActivateOverview => {
                     game.is_overview = true;
                     set_range_circles(&mut queries.p1(), true);
                 }
-                GameActionEvent::DeactivateOverview => {
+                DeactivateOverview => {
                     game.is_overview = false;
                     set_range_circles(&mut queries.p1(), false);
                 }
+                Speed(speed) => game.speed = *speed,
             }
         }
     }

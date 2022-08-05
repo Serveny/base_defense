@@ -30,8 +30,7 @@ pub(super) fn tower_target_system(
     mut res_acts: EventWriter<ResourcesEvent>,
     mut q_towers: Query<&mut Tower, Without<BuildMenuScreen>>,
     q_enemies: EnemiesQuery,
-    ingame_time: Res<IngameTime>,
-    time: Res<Time>,
+    time: Res<IngameTime>,
 ) {
     for mut tower in q_towers.iter_mut() {
         let vals = tower.values_mut();
@@ -41,7 +40,7 @@ pub(super) fn tower_target_system(
             &mut res_acts,
             vals,
             enemy,
-            ingame_time.now(),
+            time.now(),
             time.delta(),
         );
     }

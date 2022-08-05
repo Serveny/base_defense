@@ -1,7 +1,7 @@
 use crate::{
     board::BoardCache,
     game::{actions::explosions::ExplosionEvent, enemies::Enemy},
-    utils::{pos_to_quat, shots::DamageInRadiusTargetPosShot, Vec2Board},
+    utils::{pos_to_quat, shots::DamageInRadiusTargetPosShot, IngameTime, Vec2Board},
 };
 use bevy::prelude::*;
 
@@ -31,7 +31,7 @@ fn is_explode(shot: &DamageInRadiusTargetPosShot) -> bool {
 pub fn fly_system(
     mut q_shots: Query<&mut DamageInRadiusTargetPosShot>,
     q_enemies: QueryEnemies,
-    time: Res<Time>,
+    time: Res<IngameTime>,
     board_cache: Res<BoardCache>,
 ) {
     let frame_dur = time.delta();

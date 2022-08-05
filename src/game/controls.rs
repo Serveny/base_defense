@@ -15,14 +15,21 @@ use TileActionsEvent::*;
 type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos, With<GameScreen>>;
 
 pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter<GameActionEvent>) {
+    use GameActionEvent::*;
     if keys.just_released(KeyCode::Escape) {
-        actions.send(GameActionEvent::BackToMainMenu);
+        actions.send(BackToMainMenu);
     }
     if keys.just_pressed(KeyCode::LShift) {
-        actions.send(GameActionEvent::ActivateOverview);
+        actions.send(ActivateOverview);
     }
     if keys.just_released(KeyCode::LShift) {
-        actions.send(GameActionEvent::DeactivateOverview);
+        actions.send(DeactivateOverview);
+    }
+    if keys.just_pressed(KeyCode::F) {
+        actions.send(Speed(4.))
+    }
+    if keys.just_released(KeyCode::F) {
+        actions.send(Speed(1.))
     }
 }
 
