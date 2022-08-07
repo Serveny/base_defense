@@ -75,22 +75,18 @@ fn tile_hover(
     pos: Vec2Board,
     tile: Tile,
 ) {
-    use Tile::*;
     let upos = pos.as_uvec2();
     let is_tile_filled = p_pos.iter().any(|t_pos| upos == **t_pos);
+    let is_build_tile = tile.is_buildable();
     if let Some(ev) = match (
         mbi.just_pressed(MouseButton::Left),
         tbm.is_open,
-        &tile,
         is_tile_filled,
     ) {
-        (true, true, _, false) => Some(BuildMenuActionsEvent::Build),
-        (true, false, TowerGround | BuildingGround, false) => Some(Open(upos)),
-        (false, true, TowerGround | BuildingGround, false) => match tbm.should_open(upos) {
-            true => Some(Open(upos)),
-            false => None,
-        },
-        (false, true, _, _) => Some(Hide),
+        (true, true, false) => Some(BuildMenuActionsEvent::Build),
+        (true, false, false) if is_build_tile => Some(Open(upos)),
+        (false, true, _) if !is_build_tile => Some(Hide),
+        (false, true, false) if tbm.should_open(upos) => Some(Open(upos)),
         _ => None,
     } {
         tm_acts.send(ev);

@@ -16,6 +16,12 @@ pub enum Tile {
     Empty,
 }
 
+impl Tile {
+    pub fn is_buildable(&self) -> bool {
+        matches!(self, Tile::TowerGround | Tile::BuildingGround)
+    }
+}
+
 impl Default for Tile {
     fn default() -> Self {
         Tile::Empty
