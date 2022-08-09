@@ -378,6 +378,7 @@ mod road_end_mark {
             ));
         });
     }
+
     fn spawn_energy_sign<TScreen: Component + Default>(
         cmds: &mut Commands,
         assets: &StandardAssets,
