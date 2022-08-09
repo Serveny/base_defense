@@ -76,13 +76,10 @@ fn tile_hover(
     tile: Tile,
 ) {
     let upos = pos.as_uvec2();
+    let is_left_click = mbi.just_pressed(MouseButton::Left);
     let is_tile_filled = p_pos.iter().any(|t_pos| upos == **t_pos);
     let is_build_tile = tile.is_buildable();
-    if let Some(ev) = match (
-        mbi.just_pressed(MouseButton::Left),
-        tbm.is_open,
-        is_tile_filled,
-    ) {
+    if let Some(ev) = match (is_left_click, tbm.is_open, is_tile_filled) {
         (true, true, false) => Some(BuildMenuActionsEvent::Build),
         (true, false, false) if is_build_tile => Some(Open(upos)),
         (false, true, _) if !is_build_tile => Some(Hide),
@@ -111,12 +108,9 @@ fn mouse_wheel_handler(
     tile: &Tile,
 ) {
     for ev in ev_scroll.iter() {
-        // println!("{:?}", ev);
-        match (tile, tbm.is_open) {
-            (Tile::TowerGround | Tile::BuildingGround, true) => send_tbm_scroll_ev(ev, tm_actions),
-            (Tile::TowerGround | Tile::BuildingGround, false) => {
-                tm_actions.send(Open(pos.as_uvec2()))
-            }
+        match tile.is_buildable() {
+            true if tbm.is_open => send_tbm_scroll_ev(ev, tm_actions),
+            true => tm_actions.send(Open(pos.as_uvec2())),
             _ => (),
         }
     }

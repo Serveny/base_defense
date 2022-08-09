@@ -1,8 +1,8 @@
 use crate::board::BoardCache;
 use crate::game::actions::resources::ResourcesEvent;
 use crate::game::actions::wave::WaveActionsEvent;
-use crate::game::enemies::{spawn_enemy_component, Enemy, EnemyType};
-use crate::game::{BoardVisu, Game};
+use crate::game::enemies::{Enemy, EnemyType};
+use crate::game::Game;
 use crate::utils::{IngameTime, IngameTimestamp};
 use bevy::prelude::*;
 use std::time::Duration;
@@ -62,7 +62,6 @@ pub(in crate::game) fn wave_system(
     q_enemies: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
     time: Res<IngameTime>,
     board_cache: Res<BoardCache>,
-    board_visu: Res<BoardVisu>,
     wave_state: Res<State<WaveState>>,
 ) {
     if *wave_state.current() == WaveState::Running {
@@ -78,20 +77,22 @@ pub(in crate::game) fn wave_system(
 
         // Spawn enemy on next spawn time point
         if !is_wave_end && now >= wave.next_enemy_spawn {
-            spawn_enemy_and_prepare_next(&mut cmds, &mut wave, &board_cache, &board_visu);
+            spawn_enemy_and_prepare_next(&mut cmds, &mut wave, &board_cache);
         }
     }
 }
 
-fn spawn_enemy_and_prepare_next(
-    cmds: &mut Commands,
-    wave: &mut Wave,
-    board_cache: &BoardCache,
-    board_visu: &BoardVisu,
-) {
-    let enemy = Enemy::new(EnemyType::Normal, board_cache);
-    spawn_enemy_component(cmds, board_visu, enemy);
+fn spawn_enemy_and_prepare_next(cmds: &mut Commands, wave: &mut Wave, board_cache: &BoardCache) {
+    spawn_next_enemy(cmds, wave, board_cache);
     wave.prepare_next_enemy_spawn();
+}
+
+fn spawn_next_enemy(cmds: &mut Commands, wave: &Wave, board_cache: &BoardCache) {
+    let enemy_type = match wave.enemies_spawned.rem_euclid(10) {
+        0..=8 => EnemyType::Normal,
+        _ => EnemyType::Tank,
+    };
+    Enemy::new(enemy_type, board_cache).spawn(cmds);
 }
 
 pub(super) fn enemies_walk_until_wave_end(

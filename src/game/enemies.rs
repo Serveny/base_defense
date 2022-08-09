@@ -1,4 +1,4 @@
-use super::{BoardVisu, GameScreen};
+use super::GameScreen;
 use crate::{
     board::{step::BoardStep, visualisation::TILE_SIZE, BoardCache},
     utils::{health_bar::health_bar, TilesPerSecond, Vec2Board},
@@ -90,7 +90,7 @@ impl Enemy {
         current_step.distance += 0.5 - path_offset;
         Self {
             size_radius,
-            speed: 0.2,
+            speed: 0.5,
             health_max: 1000.,
             health: 1000.,
             pos: first_pos(&current_step, path_offset),
@@ -137,12 +137,20 @@ impl Enemy {
     pub fn health_as_percent(&self) -> f32 {
         self.health / self.health_max
     }
+
+    pub fn spawn(self, cmds: &mut Commands) {
+        match self.enemy_type {
+            EnemyType::Normal => spawn_normal_enemy(cmds, self),
+            EnemyType::Speeder => todo!(),
+            EnemyType::Tank => spawn_tank_enemy(cmds, self),
+        }
+    }
 }
 
-pub(super) fn spawn_enemy_component(cmds: &mut Commands, board_visu: &BoardVisu, enemy: Enemy) {
+pub(super) fn spawn_normal_enemy(cmds: &mut Commands, enemy: Enemy) {
     cmds.spawn_bundle(enemy_normal_shape(&enemy))
         .with_children(|parent| {
-            health_bar(parent, board_visu.inner_tile_size / 8.);
+            health_bar(parent, TILE_SIZE / 8.);
         })
         .insert(enemy)
         .insert(GameScreen);
@@ -171,6 +179,37 @@ fn enemy_normal_shape(enemy: &Enemy) -> ShapeBundle {
     )
 }
 
+pub(super) fn spawn_tank_enemy(cmds: &mut Commands, enemy: Enemy) {
+    cmds.spawn_bundle(enemy_tank_shape(&enemy))
+        .with_children(|parent| {
+            health_bar(parent, enemy.size_radius * TILE_SIZE);
+        })
+        .insert(enemy)
+        .insert(GameScreen);
+}
+
+fn enemy_tank_shape(enemy: &Enemy) -> ShapeBundle {
+    let line_width = TILE_SIZE / 24.;
+    let shape = shapes::RegularPolygon {
+        sides: 6,
+        feature: shapes::RegularPolygonFeature::Radius(
+            enemy.size_radius * TILE_SIZE - (line_width / 2.),
+        ),
+        ..shapes::RegularPolygon::default()
+    };
+
+    GeometryBuilder::build_as(
+        &shape,
+        DrawMode::Outlined {
+            fill_mode: FillMode::color(Color::OLIVE),
+            outline_mode: StrokeMode::new(Color::DARK_GRAY, line_width),
+        },
+        Transform {
+            translation: enemy.pos.to_scaled_vec3(1.),
+            ..Default::default()
+        },
+    )
+}
 pub fn next_step(path: &[BoardStep], last: &BoardStep, offset: f32) -> Option<BoardStep> {
     if let Some(next) = path.get(last.road_path_index + 1) {
         let mut new_step = next.clone();

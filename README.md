@@ -33,7 +33,7 @@ Base defense concept:
   - Enemy resource drops at death ✓
   - Building/tower costs ✓
   - fast forward function ✓
-  - Tower Target System
+  - Tower Target System: target setting
   - Soundsystem: Background Music, Ingame Sounds
   - Upgrade system
   - tank enemy type
