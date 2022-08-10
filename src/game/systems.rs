@@ -4,7 +4,7 @@ use self::{
     death::death_system,
     explosions::explosion_system,
     health_bar::health_bar_system,
-    resource::resouce_animation_system,
+    resource::{resource_animation_system, resource_symbol_fade_system, resource_text_fade_system},
     resource_bar::resource_bar_system,
     tower::{tower_overheat_system, tower_rotation_system, tower_target_system},
     wave::{wave_spawn_system, wave_system, WaveState},
@@ -39,7 +39,9 @@ impl Plugin for GameSystems {
                     .with_system(shot::damage_in_radius_enemy_locked::damage_and_despawn_system)
                     .with_system(power_plant_system)
                     .with_system(factory_system)
-                    .with_system(resouce_animation_system)
+                    .with_system(resource_animation_system)
+                    .with_system(resource_text_fade_system)
+                    .with_system(resource_symbol_fade_system)
                     .with_system(tower_target_system)
                     .with_system(tower_rotation_system)
                     .with_system(tower_overheat_system)

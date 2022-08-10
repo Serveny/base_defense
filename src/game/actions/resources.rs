@@ -24,6 +24,12 @@ pub struct ResourceAnimation {
     pub die_time: IngameTimestamp,
 }
 
+#[derive(Component)]
+pub struct ResourceTextFade;
+
+#[derive(Component)]
+pub struct ResourceSymbolFade;
+
 impl ResourceAnimation {
     fn new(die_time: IngameTimestamp) -> Self {
         Self { die_time }
@@ -67,7 +73,7 @@ fn spawn_energy_animation(
     now: IngameTimestamp,
 ) {
     let (color, pos_y_add) = color_and_pos(energy);
-    pos.x -= 0.25;
+    pos.x -= 0.4;
     pos.y += pos_y_add;
     cmds.spawn_bundle(SpatialBundle {
         transform: Transform {
@@ -78,15 +84,19 @@ fn spawn_energy_animation(
         ..default()
     })
     .with_children(|parent| {
-        parent.spawn_bundle(energy_symbol(
-            Transform {
-                translation: Vec3::new(-TILE_SIZE / 4., 0., 0.1),
-                scale: Vec3::new(0.5, 0.5, 1.),
-                ..default()
-            },
-            color,
-        ));
-        parent.spawn_bundle(resource_text(energy, color, assets));
+        parent
+            .spawn_bundle(energy_symbol(
+                Transform {
+                    translation: Vec3::new(-TILE_SIZE / 4., 0., 0.1),
+                    scale: Vec3::new(0.5, 0.5, 1.),
+                    ..default()
+                },
+                color,
+            ))
+            .insert(ResourceSymbolFade);
+        parent
+            .spawn_bundle(resource_text(energy, color, assets))
+            .insert(ResourceTextFade);
     })
     .insert(ResourceAnimation::new(now + RESOURCE_ANIMATION_TIME))
     .insert(GameScreen);
@@ -100,7 +110,7 @@ fn spawn_materials_animation(
     now: IngameTimestamp,
 ) {
     let (color, pos_y_add) = color_and_pos(materials);
-    pos.x += 0.25;
+    pos.x += 0.4;
     pos.y += pos_y_add;
     cmds.spawn_bundle(SpatialBundle {
         transform: Transform {
@@ -113,20 +123,30 @@ fn spawn_materials_animation(
     .insert(ResourceAnimation::new(now + RESOURCE_ANIMATION_TIME))
     .insert(GameScreen)
     .with_children(|parent| {
-        parent.spawn_bundle(materials_symbol(
-            Transform {
-                translation: Vec3::new(-TILE_SIZE / 4., 0., 0.1),
-                scale: Vec3::new(0.5, 0.5, 1.),
-                ..default()
-            },
-            color,
-        ));
-        parent.spawn_bundle(resource_text(materials, color, assets));
+        parent
+            .spawn_bundle(materials_symbol(
+                Transform {
+                    translation: Vec3::new(-TILE_SIZE / 4., 0., 0.1),
+                    scale: Vec3::new(0.5, 0.5, 1.),
+                    ..default()
+                },
+                color,
+            ))
+            .insert(ResourceSymbolFade);
+        parent
+            .spawn_bundle(resource_text(materials, color, assets))
+            .insert(ResourceTextFade);
     });
 }
 
 fn resource_text(number: f32, color: Color, assets: &StandardAssets) -> Text2dBundle {
-    text_bundle(WIDTH, &format!("{number}"), color, assets)
+    text_bundle(
+        WIDTH,
+        &format!("{number}"),
+        color,
+        assets,
+        Transform::from_translation(Vec3::new(-WIDTH / 9., WIDTH / 30., 1.)),
+    )
 }
 
 pub fn consume(

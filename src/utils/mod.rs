@@ -3,7 +3,6 @@ use crate::board::visualisation::TILE_SIZE;
 use crate::board::Board;
 use crate::{CamMutQuery, CamQuery};
 use bevy::prelude::*;
-use bevy::text::Text2dSize;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use euclid::Angle;
@@ -172,7 +171,13 @@ pub fn cursor_pos(wnds: Res<Windows>, q_cam: CamQuery) -> Option<Vec2Board> {
     None
 }
 
-pub fn text_bundle(width: f32, text: &str, color: Color, assets: &StandardAssets) -> Text2dBundle {
+pub fn text_bundle(
+    width: f32,
+    text: &str,
+    color: Color,
+    assets: &StandardAssets,
+    transform: Transform,
+) -> Text2dBundle {
     Text2dBundle {
         text: Text::from_section(
             text,
@@ -186,13 +191,7 @@ pub fn text_bundle(width: f32, text: &str, color: Color, assets: &StandardAssets
             horizontal: HorizontalAlign::Left,
             vertical: VerticalAlign::Center,
         }),
-        transform: Transform {
-            translation: Vec3::new(0., width / 30., 1.),
-            ..Default::default()
-        },
-        text_2d_size: Text2dSize {
-            size: Vec2::new(width, width / 30.),
-        },
+        transform,
         ..default()
     }
 }
