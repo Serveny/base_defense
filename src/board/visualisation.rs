@@ -366,6 +366,7 @@ mod road_end_mark {
                     &format!("{}", 0),
                     Color::GOLD,
                     assets,
+                    Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
                 ))
                 .insert(WaveText);
             parent.spawn_bundle(wave_symbol(
@@ -403,6 +404,7 @@ mod road_end_mark {
                     &format!("{}", 0),
                     ENERGY_COLOR,
                     assets,
+                    Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
                 ))
                 .insert(EnergyText);
             parent.spawn_bundle(energy_symbol(
@@ -440,6 +442,7 @@ mod road_end_mark {
                     &format!("{}", 0),
                     MATERIALS_COLOR,
                     assets,
+                    Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
                 ))
                 .insert(MaterialsText);
             parent.spawn_bundle(materials_symbol(
