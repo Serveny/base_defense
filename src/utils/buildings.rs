@@ -6,7 +6,7 @@ pub mod factory;
 pub mod power_plant;
 
 #[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct BuildingValues {}
 
 //impl Building {

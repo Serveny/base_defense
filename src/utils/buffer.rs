@@ -3,7 +3,7 @@ use std::time::Duration;
 use super::Amount;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct Buffer<T: Copy + Default> {
     pub fill: T,
     pub size: T,
