@@ -31,6 +31,9 @@ pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter
     if keys.just_released(KeyCode::F) {
         actions.send(Speed(1.))
     }
+    if keys.just_released(KeyCode::P) {
+        actions.send(Speed(0.))
+    }
 }
 
 #[allow(clippy::too_many_arguments)]

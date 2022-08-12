@@ -88,7 +88,13 @@ fn on_game_actions(
                     game.is_overview = false;
                     set_range_circles(&mut queries.p1(), false);
                 }
-                Speed(speed) => game.speed = *speed,
+                Speed(speed) => {
+                    game.speed = if game.speed == 0. && *speed == 0. {
+                        1.
+                    } else {
+                        *speed
+                    }
+                }
             }
         }
     }

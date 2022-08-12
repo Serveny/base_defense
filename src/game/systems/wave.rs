@@ -1,5 +1,4 @@
 use crate::board::BoardCache;
-use crate::game::actions::resources::ResourcesEvent;
 use crate::game::actions::wave::WaveActionsEvent;
 use crate::game::enemies::{Enemy, EnemyType};
 use crate::game::Game;
@@ -15,27 +14,28 @@ pub enum WaveState {
 
 #[derive(Clone)]
 pub struct Wave {
-    wave_no: u32,
     pub next_enemy_spawn: IngameTimestamp,
     enemies_spawned: u32,
+    max_enemies: u32,
 }
 
 impl Wave {
     pub fn new(wave_no: u32, next_enemy_spawn: IngameTimestamp) -> Self {
         Self {
-            wave_no,
             enemies_spawned: 0,
             next_enemy_spawn,
+            max_enemies: wave_no * 4,
         }
     }
 
     pub fn prepare_next_enemy_spawn(&mut self) {
         self.enemies_spawned += 1;
-        self.next_enemy_spawn += Duration::from_secs_f32(2. / self.wave_no as f32);
+        // self.next_enemy_spawn += Duration::from_secs_f32(2. / self.wave_no as f32);
+        self.next_enemy_spawn += Duration::from_secs_f32(0.01);
     }
 
     pub fn is_wave_end(&self) -> bool {
-        self.enemies_spawned >= self.wave_no * 4
+        self.enemies_spawned >= self.max_enemies
     }
 }
 
@@ -58,8 +58,7 @@ pub(in crate::game) fn wave_system(
     mut cmds: Commands,
     mut wave_acts: EventWriter<WaveActionsEvent>,
     mut wave: ResMut<Wave>,
-    res_acts: EventWriter<ResourcesEvent>,
-    q_enemies: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
+    q_enemies: Query<&Enemy>,
     time: Res<IngameTime>,
     board_cache: Res<BoardCache>,
     wave_state: Res<State<WaveState>>,
@@ -69,56 +68,29 @@ pub(in crate::game) fn wave_system(
         let now = IngameTimestamp::new(time.elapsed_secs());
 
         // Let enemies walk
-        if enemies_walk_until_wave_end(&mut cmds, res_acts, q_enemies, time.delta(), &board_cache)
-            && is_wave_end
-        {
+        if q_enemies.is_empty() && is_wave_end {
             wave_acts.send(WaveActionsEvent::EndWave);
         }
 
         // Spawn enemy on next spawn time point
         if !is_wave_end && now >= wave.next_enemy_spawn {
-            spawn_enemy_and_prepare_next(&mut cmds, &mut wave, &board_cache);
+            spawn_enemy_and_prepare_next(&mut cmds, &mut wave, &q_enemies, &board_cache);
         }
     }
 }
 
-fn spawn_enemy_and_prepare_next(cmds: &mut Commands, wave: &mut Wave, board_cache: &BoardCache) {
-    spawn_next_enemy(cmds, wave, board_cache);
-    wave.prepare_next_enemy_spawn();
-}
-
-fn spawn_next_enemy(cmds: &mut Commands, wave: &Wave, board_cache: &BoardCache) {
+fn spawn_enemy_and_prepare_next(
+    cmds: &mut Commands,
+    wave: &mut Wave,
+    q_enemies: &Query<&Enemy>,
+    board_cache: &BoardCache,
+) {
     let enemy_type = match wave.enemies_spawned.rem_euclid(10) {
         0..=8 => EnemyType::Normal,
         _ => EnemyType::Tank,
     };
-    Enemy::new(enemy_type, board_cache).spawn(cmds);
-}
-
-pub(super) fn enemies_walk_until_wave_end(
-    cmds: &mut Commands,
-    mut res_actions: EventWriter<ResourcesEvent>,
-    mut query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
-    dur: Duration,
-    board_cache: &BoardCache,
-) -> bool {
-    query.for_each_mut(|(entity, mut enemy, mut transform)| {
-        match enemy.walk_until_end(dur, board_cache) {
-            true => enemy_reached_base(cmds, &mut res_actions, &enemy, entity),
-            false => transform.translation = enemy.pos.to_scaled_vec3(1.),
-        }
-    });
-    query.is_empty()
-}
-
-fn enemy_reached_base(
-    cmds: &mut Commands,
-    res_actions: &mut EventWriter<ResourcesEvent>,
-    enemy: &Enemy,
-    entity: Entity,
-) {
-    let damage = (-enemy.health * 20.).round();
-    res_actions.send(ResourcesEvent::Energy(damage, enemy.pos));
-    res_actions.send(ResourcesEvent::Materials(damage, enemy.pos));
-    cmds.entity(entity).despawn_recursive();
+    if let Some(enemy) = Enemy::new(enemy_type, q_enemies, board_cache) {
+        enemy.spawn(cmds);
+        wave.prepare_next_enemy_spawn();
+    }
 }

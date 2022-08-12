@@ -1,7 +1,7 @@
 use super::GameScreen;
 use crate::{
-    board::{step::BoardStep, visualisation::TILE_SIZE, BoardCache},
-    utils::{health_bar::health_bar, TilesPerSecond, Vec2Board},
+    board::{spawn_line::SpawnLine, step::BoardStep, visualisation::TILE_SIZE, BoardCache},
+    utils::{health_bar::health_bar, range_circle::RangeCircle, TilesPerSecond, Vec2Board},
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
@@ -9,7 +9,7 @@ use bevy_prototype_lyon::prelude::*;
 use euclid::Angle;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::time::Duration;
+use std::{cmp::Ordering, ops::RangeInclusive, time::Duration};
 
 pub type IsRoadEnd = bool;
 
@@ -33,72 +33,107 @@ pub struct Enemy {
     // Tower can reserve damage, so other towers will not shoot at this enemy if damage == health
     pub reserved_damage: f32,
     pub path_offset: f32,
+    pub is_in_spawn: bool,
 }
 
 impl Enemy {
-    pub fn new(enemy_type: EnemyType, board_cache: &BoardCache) -> Self {
+    pub fn new(
+        enemy_type: EnemyType,
+        q_enemies: &Query<&Enemy>,
+        board_cache: &BoardCache,
+    ) -> Option<Self> {
         let first_step = board_cache.road_path.first().unwrap().clone();
         match enemy_type {
-            EnemyType::Normal => Self::new_normal(first_step),
-            EnemyType::Speeder => Self::new_speeder(first_step),
-            EnemyType::Tank => Self::new_tank(first_step),
+            EnemyType::Normal => Self::new_normal(first_step, q_enemies, board_cache),
+            EnemyType::Speeder => Self::new_speeder(first_step, q_enemies, board_cache),
+            EnemyType::Tank => Self::new_tank(first_step, q_enemies, board_cache),
         }
     }
 
-    fn generate_offset(size_radius: f32) -> f32 {
-        let offset_max = 0.5 - size_radius;
-        rand::thread_rng().gen_range((-offset_max)..(offset_max))
+    fn generate_offset(
+        size_radius: f32,
+        q_enemies: &Query<&Enemy>,
+        board_cache: &BoardCache,
+    ) -> Option<f32> {
+        let ranges = Self::find_free_ranges(q_enemies, size_radius, &board_cache.spawn_line);
+        if ranges.is_empty() {
+            None
+        } else {
+            let range = ranges[rand::thread_rng().gen_range(0..ranges.len())].clone();
+            Some(rand::thread_rng().gen_range(range) - 0.5 - *board_cache.spawn_line.range.start())
+        }
     }
 
-    pub fn new_normal(mut current_step: BoardStep) -> Self {
+    pub fn new_normal(
+        mut current_step: BoardStep,
+        q_enemies: &Query<&Enemy>,
+        board_cache: &BoardCache,
+    ) -> Option<Self> {
         let size_radius = 0.125;
-        let path_offset = Self::generate_offset(size_radius);
-        current_step.distance += 0.5 - path_offset;
-        Self {
-            size_radius,
-            speed: 1.,
-            health_max: 100.,
-            health: 100.,
-            pos: first_pos(&current_step, path_offset),
-            enemy_type: EnemyType::Normal,
-            current_step,
-            reserved_damage: 0.,
-            path_offset,
+        if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
+            current_step.distance += 0.5 - path_offset;
+            return Some(Self {
+                size_radius,
+                speed: 1.,
+                health_max: 100.,
+                health: 100.,
+                pos: first_pos(&current_step, path_offset),
+                enemy_type: EnemyType::Normal,
+                current_step,
+                reserved_damage: 0.,
+                path_offset,
+                is_in_spawn: true,
+            });
         }
+        None
     }
 
-    pub fn new_speeder(mut current_step: BoardStep) -> Self {
+    pub fn new_speeder(
+        mut current_step: BoardStep,
+        q_enemies: &Query<&Enemy>,
+        board_cache: &BoardCache,
+    ) -> Option<Self> {
         let size_radius = 0.075;
-        let path_offset = Self::generate_offset(size_radius);
-        current_step.distance += 0.5 - path_offset;
-        Self {
-            size_radius,
-            speed: 2.,
-            health_max: 10.,
-            health: 10.,
-            pos: first_pos(&current_step, path_offset),
-            enemy_type: EnemyType::Speeder,
-            current_step,
-            reserved_damage: 0.,
-            path_offset,
+        if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
+            current_step.distance += 0.5 - path_offset;
+            return Some(Self {
+                size_radius,
+                speed: 2.,
+                health_max: 10.,
+                health: 10.,
+                pos: first_pos(&current_step, path_offset),
+                enemy_type: EnemyType::Speeder,
+                current_step,
+                reserved_damage: 0.,
+                path_offset,
+                is_in_spawn: true,
+            });
         }
+        None
     }
 
-    pub fn new_tank(mut current_step: BoardStep) -> Self {
+    pub fn new_tank(
+        mut current_step: BoardStep,
+        q_enemies: &Query<&Enemy>,
+        board_cache: &BoardCache,
+    ) -> Option<Self> {
         let size_radius = 0.25;
-        let path_offset = Self::generate_offset(size_radius);
-        current_step.distance += 0.5 - path_offset;
-        Self {
-            size_radius,
-            speed: 0.5,
-            health_max: 1000.,
-            health: 1000.,
-            pos: first_pos(&current_step, path_offset),
-            enemy_type: EnemyType::Tank,
-            current_step,
-            reserved_damage: 0.,
-            path_offset,
+        if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
+            current_step.distance += 0.5 - path_offset;
+            return Some(Self {
+                size_radius,
+                speed: 0.5,
+                health_max: 1000.,
+                health: 1000.,
+                pos: first_pos(&current_step, path_offset),
+                enemy_type: EnemyType::Tank,
+                current_step,
+                reserved_damage: 0.,
+                path_offset,
+                is_in_spawn: true,
+            });
         }
+        None
     }
 
     pub fn distance_walked(speed: f32, dur: Duration) -> f32 {
@@ -145,8 +180,218 @@ impl Enemy {
             EnemyType::Tank => spawn_tank_enemy(cmds, self),
         }
     }
+
+    fn find_free_ranges(
+        q_enemies: &Query<&Enemy>,
+        mut new_enemy_radius: f32,
+        spawn_line: &SpawnLine,
+    ) -> Vec<RangeInclusive<f32>> {
+        new_enemy_radius *= 2.;
+        let start_range = (spawn_line.range.start() + new_enemy_radius)
+            ..=(spawn_line.range.end() - new_enemy_radius);
+        let enemies: Vec<&Enemy> = q_enemies.iter().filter(|enemy| enemy.is_in_spawn).collect();
+        if enemies.is_empty() {
+            vec![start_range]
+        } else {
+            find_gaps(
+                start_range.clone(),
+                enemies
+                    .iter()
+                    .filter_map(|enemy| {
+                        RangeCircle::new(enemy.pos, enemy.size_radius + new_enemy_radius)
+                            .intersection_range(spawn_line)
+                    })
+                    .filter_map(|range| Self::set_range_to_padding(range, &start_range))
+                    .collect(),
+            )
+            .into_iter()
+            .filter(|range| range.end() - range.start() > new_enemy_radius)
+            .collect()
+        }
+    }
+
+    fn set_range_to_padding(
+        range: RangeInclusive<f32>,
+        start_range: &RangeInclusive<f32>,
+    ) -> Option<RangeInclusive<f32>> {
+        if start_range.end() < range.start() || start_range.start() > range.end() {
+            return None;
+        }
+        let start = start_range.start().clamp(*range.start(), *range.end());
+        let end = start_range.end().clamp(*range.start(), *range.end());
+        Some(start..=end)
+    }
 }
 
+fn find_gaps(
+    main_range: RangeInclusive<f32>,
+    mut ranges: Vec<RangeInclusive<f32>>,
+) -> Vec<RangeInclusive<f32>> {
+    ranges = merge_ranges(ranges);
+    let mut gaps = vec![*main_range.start()..=*ranges.first().unwrap().start()];
+    ranges.windows(2).for_each(|two_ranges| {
+        gaps.push(*two_ranges[0].end()..=*two_ranges[1].start());
+    });
+    gaps.push(*ranges.last().unwrap().end()..=*main_range.end());
+    gaps
+}
+
+//fn merge_gaps(ranges: Vec<RangeInclusive<f32>>) -> Vec<RangeInclusive<f32>> {
+//let mut new_ranges = Vec::new();
+//while !ranges.is_empty() {
+//let range = ranges.first().unwrap();
+//let overlapping_ranges: Vec<&RangeInclusive<f32>> = ranges
+//.iter()
+//.filter(|range_in| {
+//*range_in.start() >= *range.start() && *range_in.end() <= *range.end()
+//})
+//.collect();
+//if overlapping_ranges.len() > 1 {
+//let min = overlapping_ranges
+//.iter()
+//.map(|range| *range.start())
+//.min_by(|a, b| a.total_cmp(b))
+//.unwrap();
+//let max = overlapping_ranges
+//.iter()
+//.map(|range| *range.end())
+//.max_by(|a, b| a.total_cmp(b))
+//.unwrap();
+//new_ranges.push(min..=max);
+//} else {
+//new_ranges.push(range.clone());
+//}
+//}
+//new_ranges
+//}
+
+fn sort_by_start_then_by_end(a: &RangeInclusive<f32>, b: &RangeInclusive<f32>) -> Ordering {
+    let comp = a.start().total_cmp(b.start());
+    match comp {
+        Ordering::Equal => a.end().total_cmp(b.end()),
+        _ => comp,
+    }
+}
+
+fn merge_ranges(mut ranges: Vec<RangeInclusive<f32>>) -> Vec<RangeInclusive<f32>> {
+    if ranges.is_empty() {
+        return ranges;
+    }
+    ranges.sort_by(sort_by_start_then_by_end);
+    let mut merged = Vec::new();
+    let mut current = ranges.first().unwrap().clone();
+
+    ranges[1..].iter().for_each(|other| {
+        if *current.end() < *other.start() {
+            merged.push(current.clone());
+            current = other.clone();
+        } else {
+            current = *current.start()..=(*other.end()).max(*current.end());
+        }
+    });
+    merged.push(current);
+    merged
+}
+
+#[cfg(test)]
+mod gaps_tests {
+    use super::find_gaps;
+
+    #[test]
+    fn test_find_gaps_sorted() {
+        let main_range = 0.0..=10.0;
+        let ranges = vec![1.0..=2.0, 4.0..=6.0];
+        assert_eq!(
+            find_gaps(main_range, ranges),
+            vec![0.0..=1.0, 2.0..=4.0, 6.0..=10.0]
+        )
+    }
+
+    #[test]
+    fn test_find_gaps_unsorted() {
+        let main_range = 0.0..=10.0;
+        let ranges = vec![4.0..=6.0, 1.0..=2.0];
+        assert_eq!(
+            find_gaps(main_range, ranges),
+            vec![0.0..=1.0, 2.0..=4.0, 6.0..=10.0]
+        )
+    }
+
+    #[test]
+    fn test_find_gaps_unsorted_overlapped() {
+        let main_range = 0.0..=10.0;
+        let ranges = vec![4.0..=6.0, 4.0..=5.0, 1.0..=2.0];
+        assert_eq!(
+            find_gaps(main_range, ranges),
+            vec![0.0..=1.0, 2.0..=4.0, 6.0..=10.0]
+        )
+    }
+
+    #[test]
+    fn test_find_gaps_range_in_range() {
+        let main_range = 0.0..=10.0;
+        let ranges = vec![4.0..=6.0, 4.5..=5.0, 4.6..=4.9, 1.0..=2.0];
+        assert_eq!(
+            find_gaps(main_range, ranges),
+            vec![0.0..=1.0, 2.0..=4.0, 6.0..=10.0]
+        )
+    }
+}
+
+#[cfg(test)]
+mod enemy_tests {
+    use super::Enemy;
+
+    #[test]
+    fn test_set_range_to_padding_range_inside() {
+        let start_range = 0.0..=4.0;
+        let range = 1.0..=3.0;
+        assert_eq!(
+            Enemy::set_range_to_padding(range.clone(), &start_range),
+            Some(range)
+        );
+    }
+
+    #[test]
+    fn test_set_range_to_padding_start_outside() {
+        let start_range = 1.0..=3.0;
+        let range = 0.0..=2.0;
+        assert_eq!(
+            Enemy::set_range_to_padding(range, &start_range),
+            Some(1.0..=2.0)
+        );
+    }
+
+    #[test]
+    fn test_set_range_to_padding_end_outside() {
+        let start_range = 0.0..=2.0;
+        let range = 0.0..=3.0;
+        assert_eq!(
+            Enemy::set_range_to_padding(range, &start_range),
+            Some(0.0..=2.0)
+        );
+    }
+
+    #[test]
+    fn test_set_range_to_padding_start_end_outside() {
+        let start_range = 1.0..=2.0;
+        let range = 1.0..=3.0;
+        assert_eq!(
+            Enemy::set_range_to_padding(range, &start_range),
+            Some(1.0..=2.0)
+        );
+    }
+
+    #[test]
+    fn test_set_range_to_padding_dec() {
+        let start_range = 1.0..=2.0;
+        let range = 0.69077474..=2.4369025;
+        assert_eq!(
+            Enemy::set_range_to_padding(range, &start_range),
+            Some(start_range)
+        );
+    }
+}
 pub(super) fn spawn_normal_enemy(cmds: &mut Commands, enemy: Enemy) {
     cmds.spawn_bundle(enemy_normal_shape(&enemy))
         .with_children(|parent| {

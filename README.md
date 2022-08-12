@@ -33,7 +33,9 @@ Base defense concept:
   - Enemy resource drops at death ✓
   - Building/tower costs ✓
   - fast forward function ✓
+  - tank enemy type ✓
+  - spawn anti collision system ✓
+  - anti enemy collision system (enemys getting slower if one slower enemy is before them)
   - Tower Target System: target setting
   - Soundsystem: Background Music, Ingame Sounds
   - Upgrade system
-  - tank enemy type

@@ -2,6 +2,7 @@ use self::{
     base::base_system,
     building::{factory_system, power_plant_system},
     death::death_system,
+    enemy::enemies_walk_system,
     explosions::explosion_system,
     health_bar::health_bar_system,
     resource::{resource_animation_system, resource_symbol_fade_system, resource_text_fade_system},
@@ -15,6 +16,7 @@ use bevy::prelude::*;
 pub mod base;
 pub mod building;
 pub mod death;
+pub mod enemy;
 pub mod explosions;
 pub mod health_bar;
 pub mod resource;
@@ -31,6 +33,7 @@ impl Plugin for GameSystems {
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
                     .with_system(wave_spawn_system)
+                    .with_system(enemies_walk_system)
                     .with_system(shot::damage_per_time::damage_system)
                     .with_system(shot::damage_per_time::visual_system)
                     .with_system(shot::damage_per_time::despawn_system)

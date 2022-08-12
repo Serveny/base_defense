@@ -1,4 +1,4 @@
-use super::{step::BoardStep, Board, Tile};
+use super::{spawn_line::SpawnLine, step::BoardStep, Board, Tile};
 use crate::utils::Vec2Board;
 use bevy::prelude::*;
 use indexmap::IndexSet;
@@ -13,6 +13,7 @@ pub struct BoardCache {
     pub road_start_pos: Option<UVec2>,
     pub road_end_pos: Option<UVec2>,
     pub road_path: Vec<BoardStep>,
+    pub spawn_line: SpawnLine,
 }
 
 // Static functions
@@ -31,6 +32,7 @@ impl BoardCache {
             }
         }
         Self {
+            spawn_line: SpawnLine::new(road_start, road_path.first()),
             tower_tile_posis,
             building_tile_posis,
             road_tile_posis,
@@ -81,15 +83,14 @@ impl BoardCache {
             pos,
         )];
         for (i, first_pos) in rt_posis.iter().enumerate() {
-            if let Some(third_pos) = rt_posis.get_index(i + 2) {
-                if let Some(step) = Self::next_step(rt_posis, i, first_pos, third_pos, path.len()) {
-                    path.push(step);
-                } else {
-                    let mut step = path.last_mut().unwrap();
-                    step.distance += 1.;
+            match rt_posis.get_index(i + 2) {
+                Some(third_pos) => {
+                    match Self::next_step(rt_posis, i, first_pos, third_pos, path.len()) {
+                        Some(step) => path.push(step),
+                        None => path.last_mut().unwrap().distance += 1.,
+                    }
                 }
-            } else {
-                break;
+                None => break,
             }
         }
         path

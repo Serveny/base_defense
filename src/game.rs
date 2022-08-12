@@ -68,7 +68,7 @@ impl Game {
             difficulty,
             energy: 1000.,
             materials: 1000.,
-            wave_no: 0,
+            wave_no: 29,
             next_wave_spawn: Some(IngameTimestamp::new(1.)),
             is_overview: false,
             base_lvl: 1,
@@ -107,6 +107,7 @@ fn game_setup(
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache, &assets);
     draw_build_menu(&mut cmds, tm_ev, game.base_lvl);
+
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
     cmds.init_resource::<BuildMenu>();
