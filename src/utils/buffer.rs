@@ -35,13 +35,6 @@ impl Buffer<f32> {
         }
     }
 
-    pub fn consume_at_start(&mut self) -> Option<f32> {
-        match self.package {
-            Some(Amount::Once(amount)) => self.change(amount, -1.),
-            _ => None,
-        }
-    }
-
     pub fn consume_during(&mut self, frame_dur: Duration) -> Option<f32> {
         match self.package {
             Some(Amount::PerSecond(amount)) => self.change(amount * frame_dur.as_secs_f32(), -1.),

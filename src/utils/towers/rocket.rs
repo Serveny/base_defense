@@ -7,9 +7,8 @@ use super::{
 use crate::{
     board::visualisation::TILE_SIZE,
     utils::{
-        buffer::Buffer,
         shots::{Shot, TowerStatus},
-        Amount, BoardPos, Energy, Materials, Vec2Board,
+        BoardPos, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -30,8 +29,7 @@ impl TowerValues {
             shot: Shot::rocket(pos),
             reload_duration: Duration::from_secs_f32(5.),
             shoot_duration: Duration::from_secs_f32(1.),
-            energy: Buffer::<Energy>::new(2., Amount::Once(2.)),
-            materials: Buffer::<Materials>::new(5., Amount::Once(5.)),
+
             target_lock: None,
             tower_status: TowerStatus::Waiting,
         }

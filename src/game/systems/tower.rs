@@ -1,10 +1,6 @@
 use crate::{
     board::visualisation::TILE_SIZE,
-    game::{
-        actions::{resources::ResourcesEvent, tower::TowerActionsEvent},
-        build_menus::BuildMenuScreen,
-        enemies::Enemy,
-    },
+    game::{actions::tower::TowerActionsEvent, build_menus::BuildMenuScreen, enemies::Enemy},
     utils::{
         pos_to_quat,
         shots::{Shot, TowerStatus},
@@ -27,7 +23,6 @@ type EntityEnemy<'a> = (Entity, &'a Enemy);
 
 pub(super) fn tower_target_system(
     mut tower_acts: EventWriter<TowerActionsEvent>,
-    mut res_acts: EventWriter<ResourcesEvent>,
     mut q_towers: Query<&mut Tower, Without<BuildMenuScreen>>,
     q_enemies: EnemiesQuery,
     time: Res<IngameTime>,
@@ -35,14 +30,7 @@ pub(super) fn tower_target_system(
     for mut tower in q_towers.iter_mut() {
         let vals = tower.values_mut();
         let enemy = lock_tower_to_enemy(vals, &q_enemies);
-        shoot_or_reload(
-            &mut tower_acts,
-            &mut res_acts,
-            vals,
-            enemy,
-            time.now(),
-            time.delta(),
-        );
+        shoot_or_reload(&mut tower_acts, vals, enemy, time.now());
     }
 }
 
@@ -196,11 +184,9 @@ fn time_to_percent_inverted(
 
 fn shoot_or_reload(
     actions: &mut EventWriter<TowerActionsEvent>,
-    res_acts: &mut EventWriter<ResourcesEvent>,
     vals: &mut TowerValues,
     enemy: Option<EntityEnemy>,
     now: IngameTimestamp,
-    frame_dur: Duration,
 ) {
     match vals.tower_status {
         TowerStatus::Reloading(time_finish) => {
@@ -210,17 +196,15 @@ fn shoot_or_reload(
         }
         TowerStatus::Waiting => {
             if shoot(actions, &vals.shot, enemy) {
-                consume_shot_start(res_acts, vals);
                 vals.tower_status = TowerStatus::Shooting(now + vals.shoot_duration);
             }
         }
-        TowerStatus::Shooting(time_finish) => match now >= time_finish || enemy.is_none() {
-            true => {
+        TowerStatus::Shooting(time_finish) => {
+            if now >= time_finish || enemy.is_none() {
                 let rl_dur = vals.reload_duration.as_secs_f32() - (*(time_finish - now)).abs();
                 set_tower_status_reload(vals, now + rl_dur);
             }
-            false => consume_during_shot(res_acts, vals, frame_dur),
-        },
+        }
     };
 }
 
@@ -248,26 +232,4 @@ fn shoot(
         }
     };
     false
-}
-
-fn consume_shot_start(res_acts: &mut EventWriter<ResourcesEvent>, vals: &mut TowerValues) {
-    if let Some(energy) = vals.energy.consume_at_start() {
-        res_acts.send(ResourcesEvent::Energy(energy, vals.pos));
-    }
-    if let Some(materials) = vals.materials.consume_at_start() {
-        res_acts.send(ResourcesEvent::Materials(materials, vals.pos));
-    }
-}
-
-fn consume_during_shot(
-    res_acts: &mut EventWriter<ResourcesEvent>,
-    vals: &mut TowerValues,
-    frame_dur: Duration,
-) {
-    if let Some(energy) = vals.energy.consume_during(frame_dur) {
-        res_acts.send(ResourcesEvent::Energy(energy, vals.pos));
-    }
-    if let Some(materials) = vals.materials.consume_during(frame_dur) {
-        res_acts.send(ResourcesEvent::Materials(materials, vals.pos));
-    }
 }
