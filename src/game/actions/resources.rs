@@ -146,6 +146,7 @@ fn resource_text(number: f32, color: Color, assets: &StandardAssets) -> Text2dBu
         color,
         assets,
         Transform::from_translation(Vec3::new(-WIDTH / 9., WIDTH / 30., 1.)),
+        HorizontalAlign::Left,
     )
 }
 

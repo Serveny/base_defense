@@ -34,8 +34,10 @@ Base defense concept:
   - Building/tower costs ✓
   - fast forward function ✓
   - tank enemy type ✓
-  - spawn anti collision system ✓
-  - anti enemy collision system (enemys getting slower if one slower enemy is before them)
+  - game over countdown ✓
+  - spawn anti collision system
+  - anti enemy collision system (enemys getting slower if one slower enemy is before them) ✓
+  - improve enemy collision system
   - Tower Target System: target setting
   - Soundsystem: Background Music, Ingame Sounds
   - Upgrade system

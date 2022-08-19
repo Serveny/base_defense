@@ -1,6 +1,7 @@
 use bevy::{prelude::*, time::Stopwatch};
 use serde::{Deserialize, Serialize};
 use std::{
+    fmt::Display,
     ops::{Add, AddAssign, Sub, SubAssign},
     time::Duration,
 };
@@ -29,6 +30,7 @@ impl IngameTime {
         self.delta.as_secs_f32()
     }
 }
+
 use std::ops::Deref as StdDeref;
 impl StdDeref for IngameTime {
     type Target = Stopwatch;
@@ -39,7 +41,13 @@ impl StdDeref for IngameTime {
 }
 
 #[derive(Default, Deref, Clone, Copy, Debug, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub struct IngameTimestamp(f32);
+pub struct IngameTimestamp(pub f32);
+
+impl Display for IngameTimestamp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl IngameTimestamp {
     pub fn new(now: f32) -> Self {

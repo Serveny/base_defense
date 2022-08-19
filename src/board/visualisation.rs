@@ -39,6 +39,9 @@ pub struct BoardRoadEndMark {
     is_child: bool,
 }
 
+#[derive(Component)]
+pub struct GameOverCountDownText;
+
 impl BoardRoadEndMark {
     pub fn child() -> Self {
         Self { is_child: true }
@@ -240,7 +243,7 @@ mod road_end_mark {
     use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
     use euclid::Angle;
 
-    use super::{BoardRoadEndMark, BoardScreen, TILE_SIZE};
+    use super::{BoardRoadEndMark, BoardScreen, GameOverCountDownText, TILE_SIZE};
     use crate::{
         assets::StandardAssets,
         board::BoardCache,
@@ -300,6 +303,34 @@ mod road_end_mark {
         let mut pos_materials = pos_board.to_scaled_vec3(3.1);
         pos_materials.y -= tile_size / 5.;
         spawn_materials_sign::<TScreen>(cmds, assets, tile_size / 1.25, pos_materials);
+
+        spawn_countdown_text::<TScreen>(
+            cmds,
+            assets,
+            tile_size / 1.25,
+            pos_board.to_scaled_vec3(3.2),
+        );
+    }
+
+    fn spawn_countdown_text<TScreen: Component + Default>(
+        cmds: &mut Commands,
+        assets: &StandardAssets,
+        size: f32,
+        translation: Vec3,
+    ) {
+        let mut bundle = text_bundle(
+            size,
+            "",
+            Color::ORANGE_RED,
+            assets,
+            Transform::from_translation(translation),
+            HorizontalAlign::Center,
+        );
+        bundle.visibility.is_visible = false;
+
+        cmds.spawn_bundle(bundle)
+            .insert(TScreen::default())
+            .insert(GameOverCountDownText);
     }
 
     fn road_end_shape(size_px: f32, transform: Transform, is_visible: bool) -> ShapeBundle {
@@ -312,7 +343,7 @@ mod road_end_mark {
         let mut shape_bundle = GeometryBuilder::build_as(
             &shape,
             DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::SEA_GREEN),
+                fill_mode: FillMode::color(Color::OLIVE),
                 outline_mode: StrokeMode::new(Color::DARK_GRAY, size_px / 10.),
             },
             transform,
@@ -330,7 +361,7 @@ mod road_end_mark {
         let mut shape_bundle = GeometryBuilder::build_as(
             &shape,
             DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::SEA_GREEN),
+                fill_mode: FillMode::color(Color::OLIVE),
                 outline_mode: StrokeMode::new(Color::DARK_GRAY, size_px / 32.),
             },
             Transform {
@@ -367,6 +398,7 @@ mod road_end_mark {
                     Color::GOLD,
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
+                    HorizontalAlign::Left,
                 ))
                 .insert(WaveText);
             parent.spawn_bundle(wave_symbol(
@@ -405,6 +437,7 @@ mod road_end_mark {
                     ENERGY_COLOR,
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
+                    HorizontalAlign::Left,
                 ))
                 .insert(EnergyText);
             parent.spawn_bundle(energy_symbol(
@@ -443,6 +476,7 @@ mod road_end_mark {
                     MATERIALS_COLOR,
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
+                    HorizontalAlign::Left,
                 ))
                 .insert(MaterialsText);
             parent.spawn_bundle(materials_symbol(

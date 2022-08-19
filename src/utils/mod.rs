@@ -39,6 +39,7 @@ pub enum GameState {
     Menu,
     Game,
     MapEditor,
+    GameOver,
 }
 
 #[derive(strum::EnumIter, strum::Display, PartialEq, Eq, Clone, Copy)]
@@ -179,6 +180,7 @@ pub fn text_bundle(
     color: Color,
     assets: &StandardAssets,
     transform: Transform,
+    horizontal_align: HorizontalAlign,
 ) -> Text2dBundle {
     Text2dBundle {
         text: Text::from_section(
@@ -190,7 +192,7 @@ pub fn text_bundle(
             },
         )
         .with_alignment(TextAlignment {
-            horizontal: HorizontalAlign::Left,
+            horizontal: horizontal_align,
             vertical: VerticalAlign::Center,
         }),
         transform,

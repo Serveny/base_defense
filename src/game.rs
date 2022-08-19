@@ -4,7 +4,7 @@ use self::{
     actions::{build_menu::BuildMenuActionsEvent, GameActions},
     build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
-    systems::{wave::Wave, GameSystems},
+    systems::{game_over::GameOverTimer, wave::Wave, GameSystems},
 };
 use crate::{
     assets::StandardAssets,
@@ -26,6 +26,7 @@ mod systems;
 type BoardVisu = BoardVisualisation<GameScreen>;
 type BaseLevel = u8;
 
+pub const GAME_OVER_COUNTDOWN_TIME: Duration = Duration::from_secs(60);
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
@@ -68,7 +69,7 @@ impl Game {
             difficulty,
             energy: 1000.,
             materials: 1000.,
-            wave_no: 4,
+            wave_no: 0,
             next_wave_spawn: Some(IngameTimestamp::new(1.)),
             is_overview: false,
             base_lvl: 1,
@@ -112,6 +113,7 @@ fn game_setup(
     cmds.init_resource::<IngameTime>();
     cmds.init_resource::<BuildMenu>();
     cmds.init_resource::<Collisions>();
+    cmds.init_resource::<GameOverTimer>();
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>, game: Res<Game>) {
@@ -126,4 +128,5 @@ fn clean_up_game(mut cmds: Commands) {
     cmds.remove_resource::<Wave>();
     cmds.remove_resource::<IngameTime>();
     cmds.remove_resource::<BuildMenu>();
+    cmds.remove_resource::<GameOverTimer>();
 }
