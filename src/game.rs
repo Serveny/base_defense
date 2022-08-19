@@ -10,8 +10,8 @@ use crate::{
     assets::StandardAssets,
     board::{visualisation::BoardVisualisation, Board, BoardCache},
     utils::{
-        despawn_all_of, zoom_cam_to_board, Difficulty, Energy, IngameTime, IngameTimestamp,
-        Materials,
+        collision::Collisions, despawn_all_of, zoom_cam_to_board, Difficulty, Energy, IngameTime,
+        IngameTimestamp, Materials,
     },
     CamMutQuery, GameState,
 };
@@ -68,7 +68,7 @@ impl Game {
             difficulty,
             energy: 1000.,
             materials: 1000.,
-            wave_no: 29,
+            wave_no: 0,
             next_wave_spawn: Some(IngameTimestamp::new(1.)),
             is_overview: false,
             base_lvl: 1,
@@ -111,6 +111,7 @@ fn game_setup(
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
     cmds.init_resource::<BuildMenu>();
+    cmds.init_resource::<Collisions>();
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>, game: Res<Game>) {

@@ -6,7 +6,7 @@ Base defense concept:
 
 - There is one Base board and one defense board
 - there are resources you can earn in power plants/factories and spend in defense
-- The game is over if you have no more resources
+- The game is over if you have no more resources and if you can't get positive count of resources again after a countdown
 - Energy (produced by power plants and gets stored in main base building)
 - Materials (produced by factories, factories need energy)
   (- Buildings and towers have levels)

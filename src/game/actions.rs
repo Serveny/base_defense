@@ -3,6 +3,10 @@ use bevy::prelude::*;
 
 use self::{
     build_menu::{on_tower_menu_actions, BuildMenuActionsEvent},
+    collision::{
+        on_enemy_collision_add, on_enemy_collision_remove, EnemyCollisionAddEvent,
+        EnemyCollisionRemoveEvent,
+    },
     damage::{on_damage, DamageEvent},
     explosions::{on_explosions, ExplosionEvent},
     resources::{on_change_resources, ResourcesEvent},
@@ -14,6 +18,7 @@ use self::{
 use super::{build_menus::BuildMenuScreen, systems::wave::WaveState, Game, GameScreen};
 
 pub(super) mod build_menu;
+pub(super) mod collision;
 pub(super) mod damage;
 pub(super) mod explosions;
 pub(super) mod resources;
@@ -48,6 +53,8 @@ impl Plugin for GameActions {
             .add_event::<BuildMenuActionsEvent>()
             .add_event::<DamageEvent>()
             .add_event::<ExplosionEvent>()
+            .add_event::<EnemyCollisionAddEvent>()
+            .add_event::<EnemyCollisionRemoveEvent>()
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
                     .with_system(on_game_actions.label("actions"))
@@ -57,6 +64,8 @@ impl Plugin for GameActions {
                     .with_system(on_tower_actions)
                     .with_system(on_tower_menu_actions)
                     .with_system(on_damage)
+                    .with_system(on_enemy_collision_add.label("collision_add"))
+                    .with_system(on_enemy_collision_remove.label("collision_remove"))
                     .with_system(on_explosions),
             );
     }

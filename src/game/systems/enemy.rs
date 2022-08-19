@@ -1,25 +1,73 @@
 use crate::{
     board::{step::BoardDirection, BoardCache},
-    game::{actions::resources::ResourcesEvent, enemies::Enemy},
-    utils::{IngameTime, Vec2Board},
+    game::{
+        actions::{collision::EnemyCollisionAddEvent, resources::ResourcesEvent},
+        enemies::Enemy,
+    },
+    utils::{
+        collision::{Collision, Collisions},
+        speed::Speed,
+        IngameTime, Vec2Board,
+    },
 };
 use bevy::prelude::*;
 
-pub(super) fn enemies_walk_system(
+type QEnemies<'w, 's, 'a> =
+    Query<'w, 's, (Entity, &'a mut Enemy, &'a mut Transform, &'a Speed), With<Enemy>>;
+
+pub(super) fn enemy_walk_system(
     mut cmds: Commands,
     mut res_actions: EventWriter<ResourcesEvent>,
-    mut query: Query<(Entity, &mut Enemy, &mut Transform), With<Enemy>>,
+    mut q_enemies: QEnemies,
     board_cache: Res<BoardCache>,
     time: Res<IngameTime>,
+    collisions: Res<Collisions>,
 ) {
     let dur = time.delta();
-    query.for_each_mut(|(entity, mut enemy, mut transform)| {
-        match enemy.walk_until_end(dur, &board_cache) {
-            true => enemy_reached_base(&mut cmds, &mut res_actions, &enemy, entity),
-            false => transform.translation = enemy.pos.to_scaled_vec3(1.),
+    q_enemies.for_each_mut(|(entity, mut enemy, mut transform, speed)| {
+        if !collisions
+            .iter()
+            .any(|coll| coll.enemy_behind == entity && coll.is_critical)
+        {
+            match enemy.walk_until_end(dur, speed.current, &board_cache) {
+                true => enemy_reached_base(&mut cmds, &mut res_actions, &enemy, entity),
+                false => transform.translation = enemy.pos.to_scaled_vec3(1.),
+            }
+            set_enemy_spawn_line_flag(&mut enemy, &board_cache);
         }
-        set_enemy_spawn_line_flag(&mut enemy, &board_cache);
     });
+}
+
+pub(super) fn enemy_collision_add_system(
+    mut add_ev: EventWriter<EnemyCollisionAddEvent>,
+    mut collisions: ResMut<Collisions>,
+    q_enemies: Query<(Entity, &Enemy)>,
+) {
+    q_enemies.for_each(|(entity, enemy)| {
+        q_enemies.for_each(|(other_entity, other_enemy)| {
+            if entity != other_entity {
+                let distance = enemy.pos.distance(*other_enemy.pos);
+                if distance <= enemy.break_radius + other_enemy.break_radius
+                    && !is_already_found(entity, other_entity, &collisions)
+                {
+                    let is_critical = distance <= enemy.size_radius + other_enemy.size_radius;
+                    collisions.push(if enemy.is_behind_of(other_enemy) {
+                        Collision::new(other_entity, entity, is_critical)
+                    } else {
+                        Collision::new(entity, other_entity, is_critical)
+                    });
+                    add_ev.send(EnemyCollisionAddEvent(entity, other_entity));
+                }
+            }
+        });
+    });
+}
+
+fn is_already_found(entity_0: Entity, entity_1: Entity, collisions: &[Collision]) -> bool {
+    collisions.iter().any(|ev| {
+        (entity_0 == ev.enemy_before && entity_1 == ev.enemy_behind)
+            || (entity_0 == ev.enemy_behind && entity_1 == ev.enemy_before)
+    })
 }
 
 fn enemy_reached_base(
@@ -77,7 +125,7 @@ mod tests {
         let start = Vec2Board::new(0., 4.);
         let direction = BoardDirection::East;
         let pos = Vec2Board::new(2.2, 3.);
-        let size_radius = 2.;
+        let size_radius = 1.;
         assert!(!is_in_spawn(start, pos, size_radius, direction))
     }
 }

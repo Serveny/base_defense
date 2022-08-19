@@ -13,6 +13,7 @@ pub use vec2_board::Vec2Board;
 
 pub mod buffer;
 pub mod buildings;
+pub mod collision;
 pub mod energy;
 pub mod explosions;
 pub mod health_bar;
@@ -21,6 +22,7 @@ pub mod materials;
 pub mod range_circle;
 pub mod resource_bar;
 pub mod shots;
+pub mod speed;
 pub mod towers;
 mod vec2_board;
 pub mod wave;

@@ -1,7 +1,14 @@
 use super::GameScreen;
 use crate::{
-    board::{spawn_line::SpawnLine, step::BoardStep, visualisation::TILE_SIZE, BoardCache},
-    utils::{health_bar::health_bar, range_circle::RangeCircle, TilesPerSecond, Vec2Board},
+    board::{
+        spawn_line::SpawnLine,
+        step::{BoardDirection, BoardStep},
+        visualisation::TILE_SIZE,
+        BoardCache,
+    },
+    utils::{
+        health_bar::health_bar, range_circle::RangeCircle, speed::Speed, TilesPerSecond, Vec2Board,
+    },
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
@@ -23,6 +30,7 @@ pub enum EnemyType {
 #[derive(Component, Clone, Serialize, Deserialize)]
 pub struct Enemy {
     pub size_radius: f32,
+    pub break_radius: f32,
     speed: TilesPerSecond,
     pub health_max: f32,
     pub health: f32,
@@ -72,9 +80,11 @@ impl Enemy {
         let size_radius = 0.125;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
             current_step.distance += 0.5 - path_offset;
+            let speed = 1.;
             return Some(Self {
                 size_radius,
-                speed: 1.,
+                break_radius: size_radius + (size_radius / 10.),
+                speed,
                 health_max: 100.,
                 health: 100.,
                 pos: first_pos(&current_step, path_offset),
@@ -96,9 +106,11 @@ impl Enemy {
         let size_radius = 0.075;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
             current_step.distance += 0.5 - path_offset;
+            let speed = 2.;
             return Some(Self {
                 size_radius,
-                speed: 2.,
+                break_radius: size_radius + (size_radius / 10.),
+                speed,
                 health_max: 10.,
                 health: 10.,
                 pos: first_pos(&current_step, path_offset),
@@ -120,9 +132,11 @@ impl Enemy {
         let size_radius = 0.25;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
             current_step.distance += 0.5 - path_offset;
+            let speed = 0.5;
             return Some(Self {
                 size_radius,
-                speed: 0.5,
+                break_radius: size_radius + (size_radius / 10.),
+                speed,
                 health_max: 1000.,
                 health: 1000.,
                 pos: first_pos(&current_step, path_offset),
@@ -136,15 +150,37 @@ impl Enemy {
         None
     }
 
+    #[allow(dead_code)]
+    pub fn new_dummy(pos: Vec2Board) -> Self {
+        Self {
+            size_radius: 1.,
+            break_radius: 2.,
+            speed: 1.,
+            health_max: 100.,
+            health: 100.,
+            pos,
+            enemy_type: EnemyType::Normal,
+            current_step: BoardStep::default(),
+            reserved_damage: 0.,
+            path_offset: 0.,
+            is_in_spawn: false,
+        }
+    }
+
     pub fn distance_walked(speed: f32, dur: Duration) -> f32 {
         speed * dur.as_secs_f32()
     }
 
     // Return true if end is reached
-    pub fn walk_until_end(&mut self, dur: Duration, board_cache: &BoardCache) -> IsRoadEnd {
+    pub fn walk_until_end(
+        &mut self,
+        dur: Duration,
+        speed: TilesPerSecond,
+        board_cache: &BoardCache,
+    ) -> IsRoadEnd {
         match self.current_step.is_end_reached() {
             true => self.step_end_reached(board_cache),
-            false => self.walk(dur),
+            false => self.walk(dur, speed),
         }
     }
 
@@ -157,9 +193,9 @@ impl Enemy {
         true
     }
 
-    fn walk(&mut self, dur: Duration) -> IsRoadEnd {
+    fn walk(&mut self, dur: Duration, speed: TilesPerSecond) -> IsRoadEnd {
         let mut step = &mut self.current_step;
-        let dist = Self::distance_walked(self.speed, dur);
+        let dist = Self::distance_walked(speed, dur);
         step.distance_walked += dist;
         self.pos.add_in_direction(dist, step.direction);
         false
@@ -221,6 +257,25 @@ impl Enemy {
         let end = start_range.end().clamp(*range.start(), *range.end());
         Some(start..=end)
     }
+
+    pub fn is_behind_of(&self, other: &Enemy) -> bool {
+        let s_step = &self.current_step;
+        let o_step = &other.current_step;
+
+        o_step.road_path_index > s_step.road_path_index
+            || (o_step.road_path_index == s_step.road_path_index
+                && self.is_behind_of_in_step(other))
+    }
+
+    fn is_behind_of_in_step(&self, other: &Enemy) -> bool {
+        use BoardDirection::*;
+        match self.current_step.direction {
+            East => other.pos.x > self.pos.x,
+            North => other.pos.y > self.pos.y,
+            West => other.pos.x < self.pos.x,
+            South => other.pos.y < self.pos.y,
+        }
+    }
 }
 
 fn find_gaps(
@@ -235,35 +290,6 @@ fn find_gaps(
     gaps.push(*ranges.last().unwrap().end()..=*main_range.end());
     gaps
 }
-
-//fn merge_gaps(ranges: Vec<RangeInclusive<f32>>) -> Vec<RangeInclusive<f32>> {
-//let mut new_ranges = Vec::new();
-//while !ranges.is_empty() {
-//let range = ranges.first().unwrap();
-//let overlapping_ranges: Vec<&RangeInclusive<f32>> = ranges
-//.iter()
-//.filter(|range_in| {
-//*range_in.start() >= *range.start() && *range_in.end() <= *range.end()
-//})
-//.collect();
-//if overlapping_ranges.len() > 1 {
-//let min = overlapping_ranges
-//.iter()
-//.map(|range| *range.start())
-//.min_by(|a, b| a.total_cmp(b))
-//.unwrap();
-//let max = overlapping_ranges
-//.iter()
-//.map(|range| *range.end())
-//.max_by(|a, b| a.total_cmp(b))
-//.unwrap();
-//new_ranges.push(min..=max);
-//} else {
-//new_ranges.push(range.clone());
-//}
-//}
-//new_ranges
-//}
 
 fn sort_by_start_then_by_end(a: &RangeInclusive<f32>, b: &RangeInclusive<f32>) -> Ordering {
     let comp = a.start().total_cmp(b.start());
@@ -340,6 +366,8 @@ mod gaps_tests {
 
 #[cfg(test)]
 mod enemy_tests {
+    use crate::utils::Vec2Board;
+
     use super::Enemy;
 
     #[test]
@@ -391,12 +419,29 @@ mod enemy_tests {
             Some(start_range)
         );
     }
+
+    #[test]
+    fn test_is_in_front() {
+        let enemy_1 = Enemy::new_dummy(Vec2Board::new(1., 0.));
+        let mut enemy_2 = Enemy::new_dummy(Vec2Board::new(2., 0.));
+        enemy_2.current_step.distance_walked = 1.;
+        assert!(enemy_1.is_behind_of(&enemy_2));
+    }
+
+    #[test]
+    fn test_is_not_in_front() {
+        let enemy_1 = Enemy::new_dummy(Vec2Board::new(1., 0.));
+        let mut enemy_2 = Enemy::new_dummy(Vec2Board::new(4., 0.));
+        enemy_2.current_step.distance_walked = 4.;
+        assert!(enemy_1.is_behind_of(&enemy_2));
+    }
 }
 pub(super) fn spawn_normal_enemy(cmds: &mut Commands, enemy: Enemy) {
     cmds.spawn_bundle(enemy_normal_shape(&enemy))
         .with_children(|parent| {
             health_bar(parent, TILE_SIZE / 8.);
         })
+        .insert(Speed::new(enemy.speed))
         .insert(enemy)
         .insert(GameScreen);
 }
@@ -429,6 +474,7 @@ pub(super) fn spawn_tank_enemy(cmds: &mut Commands, enemy: Enemy) {
         .with_children(|parent| {
             health_bar(parent, enemy.size_radius * TILE_SIZE);
         })
+        .insert(Speed::new(enemy.speed))
         .insert(enemy)
         .insert(GameScreen);
 }

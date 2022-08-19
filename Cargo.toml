@@ -5,24 +5,20 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.8"
-bevy_asset_loader = "0.12.0"
+bevy_asset_loader = "0.12"
 bevy_egui = "0.15"
-# bevy-inspector-egui = { version = "0.11", optional = true }
-# bevy_editor_pls = {git = "https://github.com/jakobhellermann/bevy_editor_pls"}
+bevy-inspector-egui = { version = "0.12", optional = true }
 serde= "1.0"
 serde_json="1.0"
 bevy_prototype_lyon = "0.6"
 strum = { version = "0.24", features = ["derive"] }
 strum_macros = "0.24"
 indexmap = "1.9"
-# bevy_screen_diags = "0.4"
 euclid = { features = ["serde"], version = "0.22"}
 rand = "0.8"
-# heron = { version = "3", features = ["2d"] }
 
 [features]
-default = []
-# debug = ["bevy-inspector-egui"]
+debug = ["bevy-inspector-egui"]
 
 [workspace]
 resolver = "2"
