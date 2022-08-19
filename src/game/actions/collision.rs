@@ -25,8 +25,10 @@ pub(super) fn on_enemy_collision_add(
     mut q_speeds: Query<&mut Speed>,
 ) {
     for ev in events.iter() {
-        if let Ok([mut speed_1, mut speed_2]) = q_speeds.get_many_mut([ev.0, ev.1]) {
-            std::mem::swap(&mut speed_1.target, &mut speed_2.target);
+        if let Ok([mut speed_before, mut speed_behind]) = q_speeds.get_many_mut([ev.0, ev.1]) {
+            if speed_before.current < speed_behind.current {
+                std::mem::swap(&mut speed_before.current, &mut speed_behind.current);
+            }
         }
     }
 }

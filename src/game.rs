@@ -68,7 +68,7 @@ impl Game {
             difficulty,
             energy: 1000.,
             materials: 1000.,
-            wave_no: 0,
+            wave_no: 4,
             next_wave_spawn: Some(IngameTimestamp::new(1.)),
             is_overview: false,
             base_lvl: 1,
