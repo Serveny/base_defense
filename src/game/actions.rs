@@ -15,7 +15,9 @@ use self::{
     wave::{on_wave_actions, WaveActionsEvent},
 };
 
-use super::{build_menus::BuildMenuScreen, systems::wave::WaveState, Game, GameScreen};
+use super::{
+    build_menus::BuildMenuScreen, systems::wave::WaveState, Game, GameScreen, IngameState,
+};
 
 pub(super) mod build_menu;
 pub(super) mod collision;
@@ -39,6 +41,7 @@ pub enum GameActionEvent {
     ActivateOverview,
     DeactivateOverview,
     Speed(f32),
+    Pause,
 }
 
 pub struct GameActions;
@@ -78,6 +81,7 @@ fn on_game_actions(
     mut wave_state: ResMut<State<WaveState>>,
     mut game_actions: EventReader<GameActionEvent>,
     mut queries: GameActionQueries,
+    mut ingame_state: ResMut<State<IngameState>>,
 ) {
     if !game_actions.is_empty() {
         for event in game_actions.iter() {
@@ -104,6 +108,9 @@ fn on_game_actions(
                         *speed
                     }
                 }
+                Pause => ingame_state
+                    .set(IngameState::Pause)
+                    .unwrap_or_else(|_| ingame_state.set(IngameState::Running).unwrap()),
             }
         }
     }

@@ -46,8 +46,9 @@ pub(super) fn on_enemy_collision_remove(
 }
 
 fn remove_collision(collisions: &mut Collisions, ev: &EnemyCollisionRemoveEvent) {
-    let index = collisions.iter().position(|coll| *ev == *coll).unwrap();
-    collisions.remove(index);
+    if let Some(index) = collisions.iter().position(|coll| *ev == *coll) {
+        collisions.remove(index);
+    }
 }
 
 fn set_speed_to_normal(q_speeds: &mut Query<&mut Speed>, entity: Entity) {

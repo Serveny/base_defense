@@ -39,7 +39,6 @@ pub enum GameState {
     Menu,
     Game,
     MapEditor,
-    GameOver,
 }
 
 #[derive(strum::EnumIter, strum::Display, PartialEq, Eq, Clone, Copy)]

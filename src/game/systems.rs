@@ -13,8 +13,9 @@ use self::{
     tower::{tower_overheat_system, tower_rotation_system, tower_target_system},
     wave::{wave_spawn_system, wave_system, WaveState},
 };
-use crate::utils::GameState;
 use bevy::prelude::*;
+
+use super::IngameState;
 
 pub mod base;
 pub mod building;
@@ -37,7 +38,7 @@ impl Plugin for GameSystems {
     fn build(&self, app: &mut App) {
         app.add_state(WaveState::None)
             .add_system_set(
-                SystemSet::on_update(GameState::Game)
+                SystemSet::on_update(IngameState::Running)
                     .with_system(wave_spawn_system)
                     .with_system(acceleration_system)
                     .with_system(enemy_walk_system)

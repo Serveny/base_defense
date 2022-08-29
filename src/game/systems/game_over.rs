@@ -1,7 +1,7 @@
 use crate::{
     board::visualisation::{BoardRoadEndMark, GameOverCountDownText},
-    game::{Game, GAME_OVER_COUNTDOWN_TIME},
-    utils::{GameState, IngameTime, IngameTimestamp},
+    game::{Game, IngameState, GAME_OVER_COUNTDOWN_TIME},
+    utils::{IngameTime, IngameTimestamp},
 };
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::DrawMode;
@@ -56,13 +56,13 @@ fn set_base_color(mut q_base: Query<&mut DrawMode, With<BoardRoadEndMark>>, time
 }
 
 pub(super) fn game_over_system(
-    mut game_state: ResMut<State<GameState>>,
+    mut ingame_state: ResMut<State<IngameState>>,
     go_timer: Res<GameOverTimer>,
     time: Res<IngameTime>,
 ) {
     if let GameOverTimer::Active(time_game_over) = go_timer.as_ref() {
         if *time_game_over <= time.now() {
-            game_state.set(GameState::GameOver).unwrap();
+            ingame_state.set(IngameState::GameOver).unwrap();
         }
     }
 }

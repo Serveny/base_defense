@@ -4,7 +4,12 @@ use self::{
     actions::{build_menu::BuildMenuActionsEvent, GameActions},
     build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
-    systems::{game_over::GameOverTimer, wave::Wave, GameSystems},
+    game_over::setup_game_over_screen,
+    systems::{
+        game_over::GameOverTimer,
+        wave::{Wave, WaveState},
+        GameSystems,
+    },
 };
 use crate::{
     assets::StandardAssets,
@@ -21,31 +26,46 @@ mod actions;
 mod build_menus;
 mod controls;
 mod enemies;
+mod game_over;
 mod systems;
 
 type BoardVisu = BoardVisualisation<GameScreen>;
 type BaseLevel = u8;
+
+#[derive(Component, Clone, Copy, PartialEq, Eq, Debug, Hash)]
+enum IngameState {
+    Running,
+    Pause,
+    GameOver,
+    None,
+}
 
 pub const GAME_OVER_COUNTDOWN_TIME: Duration = Duration::from_secs(60);
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(GameSystems)
+        app.add_state(IngameState::None)
+            .add_plugin(GameSystems)
             .add_plugin(GameActions)
             .add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
-                    .with_system(tick_ingame_timer)
                     .with_system(keyboard_input)
                     .with_system(mouse_input)
                     .with_system(on_resize),
+            )
+            .add_system_set(
+                SystemSet::on_update(IngameState::Running).with_system(tick_ingame_timer),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Game)
                     .with_system(clean_up_game)
                     .with_system(despawn_all_of::<GameScreen>)
                     .with_system(despawn_all_of::<BuildMenuScreen>),
+            )
+            .add_system_set(
+                SystemSet::on_enter(IngameState::GameOver).with_system(setup_game_over_screen),
             );
     }
 }
@@ -96,6 +116,7 @@ fn on_resize(
 #[allow(clippy::too_many_arguments)]
 fn game_setup(
     mut cmds: Commands,
+    mut ingame_state: ResMut<State<IngameState>>,
     tm_ev: EventWriter<BuildMenuActionsEvent>,
     cam_query: CamMutQuery,
     windows: Res<Windows>,
@@ -114,13 +135,21 @@ fn game_setup(
     cmds.init_resource::<BuildMenu>();
     cmds.init_resource::<Collisions>();
     cmds.init_resource::<GameOverTimer>();
+
+    ingame_state.set(IngameState::Running).unwrap();
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>, game: Res<Game>) {
     timer.tick(Duration::from_secs_f32(time.delta_seconds() * game.speed));
 }
 
-fn clean_up_game(mut cmds: Commands) {
+fn clean_up_game(
+    mut cmds: Commands,
+    mut wave_state: ResMut<State<WaveState>>,
+    mut ingame_state: ResMut<State<IngameState>>,
+) {
+    wave_state.set(WaveState::None).unwrap_or_default();
+    ingame_state.set(IngameState::None).unwrap();
     cmds.remove_resource::<Game>();
     cmds.remove_resource::<Board>();
     cmds.remove_resource::<BoardCache>();

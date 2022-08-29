@@ -32,7 +32,7 @@ pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter
         actions.send(Speed(1.))
     }
     if keys.just_released(KeyCode::P) {
-        actions.send(Speed(0.))
+        actions.send(Pause)
     }
 }
 

@@ -86,7 +86,7 @@ fn setup_cameras(mut commands: Commands) {
             },
             ..default()
         })
-        .insert(UiCameraConfig { show_ui: false });
+        .insert(UiCameraConfig { show_ui: true });
 }
 
 const fn font() -> &'static [u8; 78628] {
