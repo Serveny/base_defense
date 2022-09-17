@@ -1,7 +1,7 @@
 use super::{
     actions::{build_menu::BuildMenuActionsEvent, tile::TileActionsEvent, GameActionEvent},
     build_menus::BuildMenu,
-    GameScreen,
+    GameScreen, IngameState,
 };
 use crate::{
     board::{Board, Tile},
@@ -14,10 +14,19 @@ use TileActionsEvent::*;
 
 type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos, With<GameScreen>>;
 
-pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter<GameActionEvent>) {
+pub(super) fn keyboard_input(
+    keys: Res<Input<KeyCode>>,
+    mut actions: EventWriter<GameActionEvent>,
+    ingame_state: Res<State<IngameState>>,
+) {
     use GameActionEvent::*;
     if keys.just_released(KeyCode::Escape) {
         actions.send(BackToMainMenu);
+    }
+
+    // Ingame keys
+    if *ingame_state.current() != IngameState::Running {
+        return;
     }
     if keys.just_pressed(KeyCode::LShift) {
         actions.send(ActivateOverview);

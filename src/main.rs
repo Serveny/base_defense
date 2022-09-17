@@ -1,10 +1,10 @@
-use assets::StandardAssets;
-use bevy::{prelude::*, render::camera::ScalingMode};
-use bevy_asset_loader::prelude::*;
-use bevy_egui::{
+use ::bevy_egui::{
     egui::{self, style::Selection, Color32, Stroke},
     EguiContext, EguiPlugin,
 };
+use assets::StandardAssets;
+use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy_asset_loader::prelude::*;
 use bevy_prototype_lyon::plugin::ShapePlugin;
 use user::Settings;
 use utils::GameState;

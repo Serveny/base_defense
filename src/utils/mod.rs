@@ -110,6 +110,20 @@ pub fn add_row(label: &str, widget: impl bevy_egui::egui::Widget, ui: &mut bevy_
         ui.add_sized([width_right_col, 60.0], widget);
     });
 }
+pub fn add_text_row(label: &str, text: &str, ui: &mut bevy_egui::egui::Ui) {
+    let width_right_col = ui.available_width() - 200.0;
+    ui.horizontal(|ui| {
+        ui.set_style(bevy_egui::egui::Style {
+            spacing: bevy_egui::egui::style::Spacing {
+                slider_width: width_right_col - 60.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+        ui.add_sized([200., 60.], bevy_egui::egui::Label::new(label));
+        ui.add_sized([200., 60.], bevy_egui::egui::Label::new(text));
+    });
+}
 
 pub fn add_error_box(err_text: &str, ui: &mut bevy_egui::egui::Ui) {
     bevy_egui::egui::Frame::none()
