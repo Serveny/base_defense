@@ -14,7 +14,11 @@ use TileActionsEvent::*;
 
 type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos, With<GameScreen>>;
 
-pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter<GameActionEvent>) {
+pub(super) fn keyboard_input(
+    keys: Res<Input<KeyCode>>,
+    mut actions: EventWriter<GameActionEvent>,
+    mut tm_actions: EventWriter<BuildMenuActionsEvent>,
+) {
     use GameActionEvent::*;
     if keys.just_released(KeyCode::Escape) {
         actions.send(BackToMainMenu);
@@ -33,6 +37,12 @@ pub(super) fn keyboard_input(keys: Res<Input<KeyCode>>, mut actions: EventWriter
     }
     if keys.just_released(KeyCode::P) {
         actions.send(Pause)
+    }
+    if keys.just_released(KeyCode::Up) {
+        tm_actions.send(BuildMenuActionsEvent::EntryBefore);
+    }
+    if keys.just_released(KeyCode::Down) {
+        tm_actions.send(BuildMenuActionsEvent::EntryAfter);
     }
 }
 
@@ -120,7 +130,7 @@ fn mouse_wheel_handler(
 }
 
 fn send_tbm_scroll_ev(ev: &MouseWheel, tm_actions: &mut EventWriter<BuildMenuActionsEvent>) {
-    tm_actions.send(if ev.y > 0. { ScollUp } else { ScollDown });
+    tm_actions.send(if ev.y > 0. { EntryBefore } else { EntryAfter });
 }
 
 fn get_hover_pos_and_tile(

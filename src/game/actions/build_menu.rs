@@ -44,8 +44,8 @@ type QueryBuildMenu<'w, 's, 'a> =
 
 pub enum BuildMenuActionsEvent {
     Open(UVec2),
-    ScollUp,
-    ScollDown,
+    EntryBefore,
+    EntryAfter,
     Close,
     Build,
     Hide,
@@ -66,8 +66,16 @@ pub(in crate::game) fn on_tower_menu_actions(
             match action {
                 Open(pos) => open(&mut tbm, &mut queries, &board, pos),
                 Close => close(&mut tbm, &mut queries.p1()),
-                ScollUp => scroll(&mut tbm, &mut queries, &board, -1),
-                ScollDown => scroll(&mut tbm, &mut queries, &board, 1),
+                EntryBefore => {
+                    if tbm.is_open {
+                        scroll(&mut tbm, &mut queries, &board, -1);
+                    }
+                }
+                EntryAfter => {
+                    if tbm.is_open {
+                        scroll(&mut tbm, &mut queries, &board, 1);
+                    }
+                }
                 Build => {
                     on_build(&mut cmds, &mut board, &tbm, &mut queries, &mut res_actions);
                     close(&mut tbm, &mut queries.p1());
