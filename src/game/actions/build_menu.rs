@@ -26,6 +26,8 @@ type QueriesTowerMenuAction<'w, 's, 'a> = ParamSet<
         QueryBuildMenu<'w, 's, 'a>,
         QueryMenuParents<'w, 's, 'a, Tower, TowerParent>,
         QueryMenuParents<'w, 's, 'a, Building, BuildingBase>,
+        Query<'w, 's, &'a Tower>,
+        Query<'w, 's, &'a Building>,
     ),
 >;
 
@@ -51,7 +53,6 @@ pub enum BuildMenuActionsEvent {
     Hide,
 }
 
-#[allow(clippy::too_many_arguments)]
 pub(in crate::game) fn on_tower_menu_actions(
     mut actions: EventReader<BuildMenuActionsEvent>,
     mut cmds: Commands,
@@ -77,7 +78,13 @@ pub(in crate::game) fn on_tower_menu_actions(
                     }
                 }
                 Build => {
-                    on_build(&mut cmds, &mut board, &tbm, &mut queries, &mut res_actions);
+                    on_build(
+                        &mut cmds,
+                        &mut board,
+                        &mut tbm,
+                        &mut queries,
+                        &mut res_actions,
+                    );
                     close(&mut tbm, &mut queries.p1());
                 }
                 Hide => hide(&mut tbm, &mut queries.p1()),
@@ -91,9 +98,9 @@ fn open(tbm: &mut BuildMenu, queries: &mut QueriesTowerMenuAction, board: &Board
         let translation = Vec2Board::from_uvec2_middle(pos).to_scaled_vec3(3.);
         set_build_circle(&mut queries.p0(), translation);
         show_preview(tbm, queries, translation, tile);
-        tbm.tile_pos = *pos;
         tbm.is_open = true;
         tbm.is_visible = true;
+        tbm.tile_pos = *pos;
     }
 }
 
@@ -180,31 +187,39 @@ fn scroll(tm: &mut BuildMenu, queries: &mut QueriesTowerMenuAction, board: &Boar
 fn on_build(
     cmds: &mut Commands,
     board: &mut Board,
-    tm: &BuildMenu,
+    tbm: &mut BuildMenu,
     queries: &mut QueriesTowerMenuAction,
     res_actions: &mut EventWriter<ResourcesEvent>,
 ) {
-    if let Some(tile) = board.get_tile_mut(&tm.tile_pos) {
-        match tile {
-            Tile::TowerGround => {
-                place_tower(
-                    cmds,
-                    res_actions,
-                    tm.get_selected_tower(&queries.p2()),
-                    &tm.tile_pos,
-                );
-            }
-            Tile::BuildingGround => {
-                place_building(
-                    cmds,
-                    res_actions,
-                    tm.get_selected_building(&queries.p3()),
-                    &tm.tile_pos,
-                );
-            }
-            _ => (),
+    if let Some(tile) = board.get_tile_mut(&tbm.tile_pos) {
+        if !is_tile_occupied_tower(queries.p4(), tbm.tile_pos) {
+            match tile {
+                Tile::TowerGround => {
+                    place_tower(
+                        cmds,
+                        res_actions,
+                        tbm.get_selected_tower(&queries.p2()),
+                        &tbm.tile_pos,
+                    );
+                }
+                Tile::BuildingGround => {
+                    place_building(
+                        cmds,
+                        res_actions,
+                        tbm.get_selected_building(&queries.p3()),
+                        &tbm.tile_pos,
+                    );
+                }
+                _ => (),
+            };
         }
     }
+}
+
+fn is_tile_occupied_tower(query: Query<&Tower>, tile_pos: UVec2) -> bool {
+    query
+        .iter()
+        .any(|tower| tower.values().pos.as_uvec2() == tile_pos)
 }
 
 fn place_tower(

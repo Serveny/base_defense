@@ -35,8 +35,8 @@ fn main() {
     let mut app = App::new();
     let window_setup = WindowDescriptor {
         title: TITLE.to_string(),
-        width: 1920.,
-        height: 1080.,
+        width: 800.,
+        height: 600.,
         //position: Some(Vec2::new(3000., 200.)),
         ..Default::default()
     };

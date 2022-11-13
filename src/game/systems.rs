@@ -15,7 +15,7 @@ use self::{
 };
 use bevy::prelude::*;
 
-use super::IngameState;
+use super::{controls::hovered_tile, IngameState};
 
 pub mod base;
 pub mod building;
@@ -64,6 +64,7 @@ impl Plugin for GameSystems {
                     .with_system(explosion_system)
                     .with_system(death_system)
                     .with_system(game_over_timer_system)
+                    .with_system(hovered_tile)
                     .with_system(game_over_system),
             )
             .add_system_set(

@@ -1,7 +1,7 @@
 use super::{
     actions::{build_menu::BuildMenuActionsEvent, tile::TileActionsEvent, GameActionEvent},
     build_menus::BuildMenu,
-    GameScreen,
+    GameScreen, HoveredTile,
 };
 use crate::{
     board::{Board, Tile},
@@ -38,27 +38,38 @@ pub(super) fn keyboard_input(
     if keys.just_released(KeyCode::P) {
         actions.send(Pause)
     }
+
+    // Build Menu
     if keys.just_released(KeyCode::Up) {
         tm_actions.send(BuildMenuActionsEvent::EntryBefore);
     }
     if keys.just_released(KeyCode::Down) {
         tm_actions.send(BuildMenuActionsEvent::EntryAfter);
     }
+    if keys.just_released(KeyCode::Return) {
+        tm_actions.send(BuildMenuActionsEvent::Build);
+    }
 }
 
-#[allow(clippy::too_many_arguments)]
+pub(super) fn hovered_tile(
+    mut current_tile: ResMut<HoveredTile>,
+    wnds: Res<Windows>,
+    board: Res<Board>,
+    q_cam: CamQuery,
+) {
+    current_tile.0 = get_hover_pos_and_tile(wnds, q_cam, board);
+}
+
 pub(super) fn mouse_input(
     mut tile_ac: EventWriter<TileActionsEvent>,
     mut tm_ac: EventWriter<BuildMenuActionsEvent>,
+    hovered_tile: Res<HoveredTile>,
     ev_scroll: EventReader<MouseWheel>,
     mbi: Res<Input<MouseButton>>,
-    q_cam: CamQuery,
     q_pos: QueryPos,
-    wnds: Res<Windows>,
-    board: Res<Board>,
     tbm: Res<BuildMenu>,
 ) {
-    match get_hover_pos_and_tile(wnds, q_cam, board) {
+    match hovered_tile.0.clone() {
         Some((pos, tile)) => tile_hover(
             &mut tile_ac,
             &mut tm_ac,
@@ -95,6 +106,7 @@ fn tile_hover(
     if let Some(ev) = match (is_left_click, tbm.is_open, is_tile_filled) {
         (true, true, false) => Some(BuildMenuActionsEvent::Build),
         (true, false, false) if is_build_tile => Some(Open(upos)),
+        (false, true, true) => Some(Hide),
         (false, true, _) if !is_build_tile => Some(Hide),
         (false, true, false) if tbm.should_open(upos) => Some(Open(upos)),
         _ => None,
@@ -110,7 +122,7 @@ fn tile_unhover(
     tm_ac: &mut EventWriter<BuildMenuActionsEvent>,
 ) {
     tile_ac.send(UnhoverTile);
-    tm_ac.send(Close);
+    tm_ac.send(Hide);
 }
 
 fn mouse_wheel_handler(

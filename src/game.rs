@@ -13,10 +13,10 @@ use self::{
 };
 use crate::{
     assets::StandardAssets,
-    board::{visualisation::BoardVisualisation, Board, BoardCache},
+    board::{visualisation::BoardVisualisation, Board, BoardCache, Tile},
     utils::{
         collision::Collisions, despawn_all_of, zoom_cam_to_board, Difficulty, Energy, IngameTime,
-        IngameTimestamp, Materials,
+        IngameTimestamp, Materials, Vec2Board,
     },
     CamMutQuery, GameState,
 };
@@ -39,6 +39,9 @@ enum IngameState {
     GameOver,
     None,
 }
+
+#[derive(Default, Clone)]
+struct HoveredTile(Option<(Vec2Board, Tile)>);
 
 pub const GAME_OVER_COUNTDOWN_TIME: Duration = Duration::from_secs(60);
 pub struct GamePlugin;
@@ -135,6 +138,7 @@ fn game_setup(
     cmds.init_resource::<BuildMenu>();
     cmds.init_resource::<Collisions>();
     cmds.init_resource::<GameOverTimer>();
+    cmds.init_resource::<HoveredTile>();
 
     ingame_state.set(IngameState::Running).unwrap();
 }
