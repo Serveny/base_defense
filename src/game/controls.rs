@@ -1,7 +1,7 @@
 use super::{
     actions::{build_menu::BuildMenuActionsEvent, tile::TileActionsEvent, GameActionEvent},
     build_menus::BuildMenu,
-    GameScreen, HoveredTile,
+    GameScreen, HoveredTile, IngameState,
 };
 use crate::{
     board::{Board, Tile},
@@ -18,10 +18,16 @@ pub(super) fn keyboard_input(
     keys: Res<Input<KeyCode>>,
     mut actions: EventWriter<GameActionEvent>,
     mut tm_actions: EventWriter<BuildMenuActionsEvent>,
+    ingame_state: Res<State<IngameState>>,
 ) {
     use GameActionEvent::*;
     if keys.just_released(KeyCode::Escape) {
         actions.send(BackToMainMenu);
+    }
+
+    // Ingame keys
+    if *ingame_state.current() != IngameState::Running {
+        return;
     }
     if keys.just_pressed(KeyCode::LShift) {
         actions.send(ActivateOverview);

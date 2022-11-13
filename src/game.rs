@@ -4,7 +4,6 @@ use self::{
     actions::{build_menu::BuildMenuActionsEvent, GameActions},
     build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
-    game_over::setup_game_over_screen,
     systems::{
         game_over::GameOverTimer,
         wave::{Wave, WaveState},
@@ -26,7 +25,6 @@ mod actions;
 mod build_menus;
 mod controls;
 mod enemies;
-mod game_over;
 mod systems;
 
 type BoardVisu = BoardVisualisation<GameScreen>;
@@ -55,20 +53,18 @@ impl Plugin for GamePlugin {
             .add_system_set(
                 SystemSet::on_update(GameState::Game)
                     .with_system(keyboard_input)
-                    .with_system(mouse_input)
                     .with_system(on_resize),
             )
             .add_system_set(
-                SystemSet::on_update(IngameState::Running).with_system(tick_ingame_timer),
+                SystemSet::on_update(IngameState::Running)
+                    .with_system(tick_ingame_timer)
+                    .with_system(mouse_input),
             )
             .add_system_set(
                 SystemSet::on_exit(GameState::Game)
                     .with_system(clean_up_game)
                     .with_system(despawn_all_of::<GameScreen>)
                     .with_system(despawn_all_of::<BuildMenuScreen>),
-            )
-            .add_system_set(
-                SystemSet::on_enter(IngameState::GameOver).with_system(setup_game_over_screen),
             );
     }
 }

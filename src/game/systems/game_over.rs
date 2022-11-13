@@ -1,9 +1,13 @@
 use crate::{
     board::visualisation::{BoardRoadEndMark, GameOverCountDownText},
     game::{Game, IngameState, GAME_OVER_COUNTDOWN_TIME},
-    utils::{IngameTime, IngameTimestamp},
+    utils::{add_text_row, GameState, IngameTime, IngameTimestamp},
 };
 use bevy::prelude::*;
+use bevy_egui::{
+    egui::{CentralPanel, Frame, Label, RichText, ScrollArea, Stroke, TopBottomPanel},
+    EguiContext,
+};
 use bevy_prototype_lyon::prelude::DrawMode;
 
 pub(in crate::game) enum GameOverTimer {
@@ -65,4 +69,45 @@ pub(super) fn game_over_system(
             ingame_state.set(IngameState::GameOver).unwrap();
         }
     }
+}
+
+pub(super) fn game_over_screen(
+    mut egui_ctx: ResMut<EguiContext>,
+    mut game_state: ResMut<State<GameState>>,
+    game: Res<Game>,
+) {
+    CentralPanel::default().show(egui_ctx.ctx_mut(), |ui| {
+        ui.set_height(ui.available_height());
+        ui.vertical_centered(|ui| ui.add(Label::new(RichText::new("GAME OVER").heading())));
+
+        // Game Over Infos
+        ScrollArea::vertical().show(ui, |ui| {
+            add_text_row("Wave", format!("{}", game.wave_no).as_str(), ui);
+        });
+
+        // Back to main menu button
+        TopBottomPanel::bottom("bottom_panel")
+            .resizable(false)
+            .default_height(60.)
+            .frame(Frame {
+                stroke: Stroke {
+                    width: 0.,
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .show_inside(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    if ui
+                        .add_sized(
+                            [400., 60.],
+                            bevy_egui::egui::widgets::Button::new("Back To Main Menu"),
+                        )
+                        .clicked()
+                    {
+                        game_state.set(GameState::Menu).unwrap();
+                    }
+                });
+            });
+    });
 }
