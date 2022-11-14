@@ -5,7 +5,7 @@ use indexmap::IndexSet;
 
 const TILE_NEIGHBOR_MATRIX: [(i32, i32); 4] = [(1, 0), (0, 1), (-1, 0), (0, -1)];
 
-#[derive(Clone)]
+#[derive(Resource, Clone)]
 pub struct BoardCache {
     pub tower_tile_posis: IndexSet<UVec2>,
     pub building_tile_posis: IndexSet<UVec2>,

@@ -38,7 +38,7 @@ enum IngameState {
     None,
 }
 
-#[derive(Default, Clone)]
+#[derive(Resource, Default, Clone)]
 struct HoveredTile(Option<(Vec2Board, Tile)>);
 
 pub const GAME_OVER_COUNTDOWN_TIME: Duration = Duration::from_secs(60);
@@ -70,7 +70,7 @@ impl Plugin for GamePlugin {
 }
 
 #[allow(dead_code)]
-#[derive(Clone)]
+#[derive(Resource, Clone)]
 pub(crate) struct Game {
     difficulty: Difficulty,
     energy: Energy,

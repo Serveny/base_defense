@@ -1,7 +1,8 @@
 use bevy::prelude::*;
-pub type Collisions = Vec<Collision>;
+#[derive(Resource, Deref, DerefMut)]
+pub struct Collisions(Vec<Collision>);
 
-#[derive(Debug)]
+#[derive(Resource, Debug)]
 pub struct Collision {
     pub enemy_before: Entity,
     pub enemy_behind: Entity,

@@ -6,7 +6,7 @@ use std::{
     time::Duration,
 };
 
-#[derive(Clone, Debug, Default)]
+#[derive(Resource, Clone, Debug, Default)]
 pub struct IngameTime {
     watch: Stopwatch,
     delta: Duration,

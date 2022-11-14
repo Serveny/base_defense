@@ -1,5 +1,7 @@
 use self::settings::{DisplayQuality, Volume};
+use bevy::prelude::*;
 
+#[derive(Resource)]
 pub struct Settings {
     pub display_quality: DisplayQuality,
     pub volume: Volume,

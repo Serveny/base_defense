@@ -10,6 +10,7 @@ use bevy_egui::{
 };
 use bevy_prototype_lyon::prelude::DrawMode;
 
+#[derive(Resource)]
 pub(in crate::game) enum GameOverTimer {
     Active(IngameTimestamp),
     Inactive,

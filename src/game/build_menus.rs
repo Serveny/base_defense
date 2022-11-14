@@ -20,7 +20,7 @@ use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 #[derive(Component, Default)]
 pub(super) struct BuildMenuScreen;
 
-#[derive(Default)]
+#[derive(Resource, Default)]
 pub(super) struct BuildMenu {
     pub is_open: bool,
     pub is_visible: bool,

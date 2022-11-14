@@ -24,6 +24,7 @@ pub type HoverCrossQuery<'w, 's, 'a> =
     Query<'w, 's, (&'a mut Visibility, &'a mut Transform), With<BoardHoverCross>>;
 
 // Ingame Visualisationtile_size
+#[derive(Resource)]
 pub struct BoardVisualisation<TScreen> {
     pub inner_tile_size: f32,
     tile_size_vec: Vec2,

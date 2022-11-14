@@ -31,7 +31,7 @@ const TOP_BAR_HEIGHT_PX: f32 = 40.0;
 const LEFT_BAR_WIDTH_PX: f32 = 140.0;
 // const EDITOR_BOARD_START: (f32, f32) = (LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX + 10.);
 
-#[derive(Default)]
+#[derive(Resource, Default)]
 struct BoardEditor {
     err_text: Option<String>,
 }

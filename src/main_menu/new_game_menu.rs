@@ -11,6 +11,7 @@ use bevy_egui::{
 };
 use std::error::Error;
 
+#[derive(Resource)]
 pub(super) struct NewGameMenu {
     boards: Vec<(Board, BoardCache)>,
     selected_board_index: usize,

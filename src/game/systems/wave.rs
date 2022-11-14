@@ -12,7 +12,7 @@ pub enum WaveState {
     None,
 }
 
-#[derive(Clone)]
+#[derive(Resource, Clone)]
 pub struct Wave {
     pub next_enemy_spawn: IngameTimestamp,
     enemies_spawned: u32,

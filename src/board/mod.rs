@@ -13,7 +13,7 @@ mod tile;
 pub mod visualisation;
 
 // Struct only for holding data, which can be de/serialized
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct Board {
     pub name: String,
     pub width: u8,

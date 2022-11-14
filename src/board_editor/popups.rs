@@ -9,6 +9,7 @@ use bevy_egui::{
     EguiContext,
 };
 
+#[derive(Resource)]
 pub(super) enum Popups {
     Load(LoadBoardWindow),
     Save(SaveBoardWindow),

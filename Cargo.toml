@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = "0.8"
-bevy_asset_loader = "0.12"
-bevy_egui = "0.16"
-bevy-inspector-egui = { version = "0.12", optional = true }
+bevy = "0.9"
+bevy_asset_loader = "0.13"
+bevy_egui = "0.17"
+bevy-inspector-egui = { version = "0.13", optional = true }
 serde= "1.0"
 serde_json="1.0"
 bevy_prototype_lyon = "0.6"
