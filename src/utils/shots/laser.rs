@@ -25,7 +25,7 @@ pub fn spawn_shot_laser<TScreen: Component + Default>(
     cmds: &mut Commands,
     shot: DamagePerTimeShot,
 ) {
-    cmds.spawn_bundle(laser_shape(TILE_SIZE))
+    cmds.spawn(laser_shape(TILE_SIZE))
         .insert(shot)
         .insert(LaserShot)
         .insert(TScreen::default());

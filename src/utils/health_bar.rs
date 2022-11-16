@@ -9,13 +9,13 @@ pub struct HealthBarPercentage;
 
 pub fn health_bar(parent: &mut ChildBuilder, bar_width_px: f32) {
     parent
-        .spawn_bundle(health_bar_background_shape(
+        .spawn(health_bar_background_shape(
             bar_width_px,
             Vec3::new(0., 0., 0.1),
         ))
         .insert(HealthBar);
     parent
-        .spawn_bundle(health_bar_percentage_shape(bar_width_px))
+        .spawn(health_bar_percentage_shape(bar_width_px))
         .insert(HealthBar)
         .insert(HealthBarPercentage);
 }

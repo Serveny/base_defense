@@ -437,7 +437,7 @@ mod enemy_tests {
     }
 }
 pub(super) fn spawn_normal_enemy(cmds: &mut Commands, enemy: Enemy) {
-    cmds.spawn_bundle(enemy_normal_shape(&enemy))
+    cmds.spawn(enemy_normal_shape(&enemy))
         .with_children(|parent| {
             health_bar(parent, TILE_SIZE / 8.);
         })
@@ -470,7 +470,7 @@ fn enemy_normal_shape(enemy: &Enemy) -> ShapeBundle {
 }
 
 pub(super) fn spawn_tank_enemy(cmds: &mut Commands, enemy: Enemy) {
-    cmds.spawn_bundle(enemy_tank_shape(&enemy))
+    cmds.spawn(enemy_tank_shape(&enemy))
         .with_children(|parent| {
             health_bar(parent, enemy.size_radius * TILE_SIZE);
         })

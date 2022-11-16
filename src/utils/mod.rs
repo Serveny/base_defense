@@ -1,4 +1,3 @@
-use crate::assets::StandardAssets;
 use crate::board::visualisation::TILE_SIZE;
 use crate::board::Board;
 use crate::{CamMutQuery, CamQuery};
@@ -64,6 +63,7 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
     }
 }
 
+use crate::assets::FONT_QUICKSAND;
 use std::error::Error;
 use std::fs::{read_dir, read_to_string, DirEntry, File};
 use std::io::Write;
@@ -191,7 +191,7 @@ pub fn text_bundle(
     width: f32,
     text: &str,
     color: Color,
-    assets: &StandardAssets,
+    assets: &AssetServer,
     transform: Transform,
     horizontal_align: HorizontalAlign,
 ) -> Text2dBundle {
@@ -199,7 +199,7 @@ pub fn text_bundle(
         text: Text::from_section(
             text,
             TextStyle {
-                font: assets.font.clone(),
+                font: assets.load(FONT_QUICKSAND),
                 font_size: width / 1.5,
                 color,
             },

@@ -2,9 +2,7 @@ use ::bevy_egui::{
     egui::{self, style::Selection, Color32, Stroke},
     EguiContext, EguiPlugin,
 };
-use assets::StandardAssets;
 use bevy::{prelude::*, render::camera::ScalingMode};
-use bevy_asset_loader::prelude::*;
 use bevy_prototype_lyon::plugin::ShapePlugin;
 use user::Settings;
 use utils::GameState;
@@ -33,23 +31,17 @@ const BACKGROUND_COLOR: Color = Color::rgba(35.0 / 255.0, 33.0 / 255.0, 38.0 / 2
 
 fn main() {
     let mut app = App::new();
-    let window_setup = WindowDescriptor {
-        title: TITLE.to_string(),
-        width: 800.,
-        height: 600.,
-        //position: Some(Vec2::new(3000., 200.)),
-        ..Default::default()
-    };
 
     app.insert_resource(ClearColor(BACKGROUND_COLOR))
-        .insert_resource(window_setup)
-        .insert_resource(Msaa { samples: 4 })
-        .add_loading_state(
-            LoadingState::new(GameState::Splash)
-                .continue_to_state(GameState::Menu)
-                .with_collection::<StandardAssets>(),
-        )
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                title: TITLE.to_string(),
+                width: 800.0,
+                height: 600.,
+                ..default()
+            },
+            ..default()
+        }))
         .add_plugin(EguiPlugin)
         .add_plugin(ShapePlugin)
         .add_plugin(splash::SplashPlugin)
@@ -65,7 +57,7 @@ fn main() {
 
     //AssetLoader::new(GameState::Splash)
     //.continue_to_state(GameState::Menu)
-    //.with_collection::<StandardAssets>()
+    //.with_collection::<AssetServer>()
     //.build(&mut app);
 
     app.insert_resource(Settings::new())
@@ -78,7 +70,7 @@ fn main() {
 fn setup_cameras(mut commands: Commands) {
     // cam.orthographic_projection.scaling_mode = ScalingMode::None;
     commands
-        .spawn_bundle(Camera2dBundle {
+        .spawn(Camera2dBundle {
             projection: OrthographicProjection {
                 scale: 1.0,
                 scaling_mode: ScalingMode::None,

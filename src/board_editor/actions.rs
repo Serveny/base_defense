@@ -1,6 +1,5 @@
 use super::{popups::Popups, BoardEditor, BoardVisu};
 use crate::{
-    assets::StandardAssets,
     board::{
         visualisation::{BoardScreen, BoardScreenQuery, BoardVisualTile, RoadEndMarkQuery},
         Board, BoardCache, Tile,
@@ -39,7 +38,7 @@ struct EditorActionParams<'w, 's, 'a> {
     board_cache: &'a mut BoardCache,
     windows: &'a Windows,
     popups: &'a mut Popups,
-    assets: &'a StandardAssets,
+    assets: &'a AssetServer,
 }
 
 //struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu, 'ass> {
@@ -51,7 +50,7 @@ struct EditorActionParams<'w, 's, 'a> {
 //board_cache: &'bc mut BoardCache,
 //windows: &'win Windows,
 //popups: &'pu mut Popups,
-//assets: &'ass StandardAssets,
+//assets: &'ass AssetServer,
 //}
 
 #[allow(clippy::too_many_arguments)]
@@ -66,7 +65,7 @@ pub(super) fn board_editor_actions(
     mut popups: ResMut<Popups>,
     mut editor_actions: EventReader<EditorActionEvent>,
     windows: Res<Windows>,
-    assets: Res<StandardAssets>,
+    assets: Res<AssetServer>,
 ) {
     if !editor_actions.is_empty() {
         let mut ea_params = EditorActionParams {
@@ -125,7 +124,7 @@ fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to
     }
 }
 
-fn repaint(ea_params: &mut EditorActionParams, query: BoardScreenQuery, assets: &StandardAssets) {
+fn repaint(ea_params: &mut EditorActionParams, query: BoardScreenQuery, assets: &AssetServer) {
     *ea_params.visu = BoardVisu::new(0.9);
     ea_params.visu.repaint(
         &mut ea_params.cmds,

@@ -11,7 +11,6 @@ use self::{
     },
 };
 use crate::{
-    assets::StandardAssets,
     board::{visualisation::BoardVisualisation, Board, BoardCache, Tile},
     utils::{
         collision::Collisions, despawn_all_of, zoom_cam_to_board, Difficulty, Energy, IngameTime,
@@ -122,7 +121,7 @@ fn game_setup(
     board: Res<Board>,
     board_cache: Res<BoardCache>,
     game: Res<Game>,
-    assets: Res<StandardAssets>,
+    assets: Res<AssetServer>,
 ) {
     zoom_cam_to_board(&board, cam_query, &windows);
     let visu = BoardVisu::new(1.);

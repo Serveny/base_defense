@@ -32,7 +32,7 @@ pub fn spawn_shot_rocket<TScreen: Component + Default>(
     cmds: &mut Commands,
     shot: DamageInRadiusTargetPosShot,
 ) {
-    cmds.spawn_bundle(SpatialBundle::from_transform(Transform::from_translation(
+    cmds.spawn(SpatialBundle::from_transform(Transform::from_translation(
         Vec3::new(0., 0., 1.),
     )))
     .with_children(|parent| rocket_shot_children::<TScreen>(parent))
@@ -58,9 +58,9 @@ fn rocket_body_shape(tile_size: f32) -> ShapeBundle {
 }
 
 fn rocket_shot_children<TScreen: Component + Default>(parent: &mut ChildBuilder) {
-    parent.spawn_bundle(rocket_head_shape(TILE_SIZE));
-    parent.spawn_bundle(rocket_body_shape(TILE_SIZE));
-    parent.spawn_bundle(rocket_bottom_shape(TILE_SIZE));
+    parent.spawn(rocket_head_shape(TILE_SIZE));
+    parent.spawn(rocket_body_shape(TILE_SIZE));
+    parent.spawn(rocket_bottom_shape(TILE_SIZE));
 
     // Fuel bar
     spawn_resource_bar(

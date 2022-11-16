@@ -1,7 +1,6 @@
 use self::road_end_mark::spawn_road_end_mark;
 use super::Tile;
 use crate::{
-    assets::StandardAssets,
     board::{cache::BoardCache, Board},
     utils::Vec2Board,
 };
@@ -83,7 +82,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         cmds: &mut Commands,
         board: &Board,
         board_cache: &BoardCache,
-        assets: &StandardAssets,
+        assets: &AssetServer,
     ) {
         // Board tiles
         for (y, row) in board.tiles.iter().enumerate() {
@@ -100,7 +99,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     }
 
     fn spawn_tile(&self, cmds: &mut Commands, pos: Vec2Board, tile: &Tile) {
-        cmds.spawn_bundle(SpriteBundle {
+        cmds.spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(self.tile_size_vec),
                 color: Self::get_tile_color(tile),
@@ -123,7 +122,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         &self,
         cmds: &mut Commands,
         board_cache: &BoardCache,
-        assets: &StandardAssets,
+        assets: &AssetServer,
     ) {
         spawn_road_end_mark::<TScreen>(cmds, board_cache, self.inner_tile_size, assets);
     }
@@ -162,7 +161,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     fn spawn_hover_cross(&self, cmds: &mut Commands) {
         let mut shape = Self::hover_cross_shape();
         shape.visibility.is_visible = false;
-        cmds.spawn_bundle(shape)
+        cmds.spawn(shape)
             .insert(BoardHoverCross)
             .insert(BoardScreen)
             .insert(TScreen::default());
@@ -193,7 +192,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         mut query: Query<Entity, With<BoardScreen>>,
         board: &Board,
         board_cache: &BoardCache,
-        assets: &StandardAssets,
+        assets: &AssetServer,
     ) {
         for entity in query.iter_mut() {
             cmds.entity(entity).despawn_recursive();
@@ -246,7 +245,6 @@ mod road_end_mark {
 
     use super::{BoardRoadEndMark, BoardScreen, GameOverCountDownText, TILE_SIZE};
     use crate::{
-        assets::StandardAssets,
         board::BoardCache,
         utils::{
             energy::{energy_symbol, EnergyText, ENERGY_COLOR},
@@ -261,7 +259,7 @@ mod road_end_mark {
         cmds: &mut Commands,
         board_cache: &BoardCache,
         tile_size: f32,
-        assets: &StandardAssets,
+        assets: &AssetServer,
     ) {
         let is_visible =
             board_cache.road_path.last().is_some() && board_cache.road_end_pos.is_some();
@@ -274,7 +272,7 @@ mod road_end_mark {
         let pos = board_cache.road_end_pos.unwrap_or_default();
         let pos_board = Vec2Board::from_uvec2_tilesize_middle(&pos, tile_size / TILE_SIZE);
 
-        cmds.spawn_bundle(road_end_shape(
+        cmds.spawn(road_end_shape(
             tile_size,
             Transform {
                 translation: pos_board.to_scaled_vec3(3.),
@@ -285,7 +283,7 @@ mod road_end_mark {
         ))
         .with_children(|parent| {
             parent
-                .spawn_bundle(road_end_entry_shape(tile_size, is_visible))
+                .spawn(road_end_entry_shape(tile_size, is_visible))
                 .insert(BoardRoadEndMark::child());
         })
         .insert(BoardRoadEndMark::parent())
@@ -315,7 +313,7 @@ mod road_end_mark {
 
     fn spawn_countdown_text<TScreen: Component + Default>(
         cmds: &mut Commands,
-        assets: &StandardAssets,
+        assets: &AssetServer,
         size: f32,
         translation: Vec3,
     ) {
@@ -329,7 +327,7 @@ mod road_end_mark {
         );
         bundle.visibility.is_visible = false;
 
-        cmds.spawn_bundle(bundle)
+        cmds.spawn(bundle)
             .insert(TScreen::default())
             .insert(GameOverCountDownText);
     }
@@ -376,11 +374,11 @@ mod road_end_mark {
 
     fn spawn_wave_sign<TScreen: Component + Default>(
         cmds: &mut Commands,
-        assets: &StandardAssets,
+        assets: &AssetServer,
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn_bundle(text_background_shape(
+        cmds.spawn(text_background_shape(
             width,
             Transform {
                 translation,
@@ -393,7 +391,7 @@ mod road_end_mark {
         .insert(TScreen::default())
         .with_children(|parent| {
             parent
-                .spawn_bundle(text_bundle(
+                .spawn(text_bundle(
                     width / 6.,
                     &format!("{}", 0),
                     Color::GOLD,
@@ -402,7 +400,7 @@ mod road_end_mark {
                     HorizontalAlign::Left,
                 ))
                 .insert(WaveText);
-            parent.spawn_bundle(wave_symbol(
+            parent.spawn(wave_symbol(
                 Transform {
                     translation: Vec3::new(-width / 6., 0., 0.),
                     scale: Vec3::new(1., 1., 1.),
@@ -415,11 +413,11 @@ mod road_end_mark {
 
     fn spawn_energy_sign<TScreen: Component + Default>(
         cmds: &mut Commands,
-        assets: &StandardAssets,
+        assets: &AssetServer,
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn_bundle(text_background_shape(
+        cmds.spawn(text_background_shape(
             width,
             Transform {
                 translation,
@@ -432,7 +430,7 @@ mod road_end_mark {
         .insert(TScreen::default())
         .with_children(|parent| {
             parent
-                .spawn_bundle(text_bundle(
+                .spawn(text_bundle(
                     width / 6.,
                     &format!("{}", 0),
                     ENERGY_COLOR,
@@ -441,7 +439,7 @@ mod road_end_mark {
                     HorizontalAlign::Left,
                 ))
                 .insert(EnergyText);
-            parent.spawn_bundle(energy_symbol(
+            parent.spawn(energy_symbol(
                 Transform {
                     translation: Vec3::new(-width / 6., 0., 0.),
                     scale: Vec3::new(0.1, 0.1, 1.),
@@ -454,11 +452,11 @@ mod road_end_mark {
 
     fn spawn_materials_sign<TScreen: Component + Default>(
         cmds: &mut Commands,
-        assets: &StandardAssets,
+        assets: &AssetServer,
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn_bundle(text_background_shape(
+        cmds.spawn(text_background_shape(
             width,
             Transform {
                 translation,
@@ -471,7 +469,7 @@ mod road_end_mark {
         .insert(TScreen::default())
         .with_children(|parent| {
             parent
-                .spawn_bundle(text_bundle(
+                .spawn(text_bundle(
                     width / 6.,
                     &format!("{}", 0),
                     MATERIALS_COLOR,
@@ -480,7 +478,7 @@ mod road_end_mark {
                     HorizontalAlign::Left,
                 ))
                 .insert(MaterialsText);
-            parent.spawn_bundle(materials_symbol(
+            parent.spawn(materials_symbol(
                 Transform {
                     translation: Vec3::new(-width / 6., 0., 0.),
                     scale: Vec3::new(0.1, 0.1, 1.),

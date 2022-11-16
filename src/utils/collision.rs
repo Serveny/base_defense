@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-#[derive(Resource, Deref, DerefMut)]
+#[derive(Resource, Deref, DerefMut, Default)]
 pub struct Collisions(Vec<Collision>);
 
 #[derive(Resource, Debug)]

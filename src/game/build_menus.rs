@@ -117,7 +117,7 @@ pub fn draw_build_menu(
     mut actions: EventWriter<BuildMenuActionsEvent>,
     base_lvl: BaseLevel,
 ) {
-    cmds.spawn_bundle(menu_circle_shape(TILE_SIZE))
+    cmds.spawn(menu_circle_shape(TILE_SIZE))
         .insert(BuildMenuCircle)
         .insert(BuildMenuScreen);
 

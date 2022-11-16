@@ -35,7 +35,7 @@ impl Explosion {
 }
 
 pub fn spawn_explosion<TScreen: Component + Default>(cmds: &mut Commands, expl: Explosion) {
-    cmds.spawn_bundle(explosion_shape(expl.target_radius * TILE_SIZE, expl.pos))
+    cmds.spawn(explosion_shape(expl.target_radius * TILE_SIZE, expl.pos))
         .insert(expl)
         .insert(TScreen::default());
 }

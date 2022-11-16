@@ -39,9 +39,9 @@ pub fn spawn_factory<TScreen: Component + Default>(
     factory: Factory,
     tile_size: f32,
 ) {
-    cmds.spawn_bundle(SpatialBundle {
+    cmds.spawn(SpatialBundle {
         transform: Transform::from_translation(factory.pos.to_scaled_vec3(1.)),
-        visibility: Visibility::visible(),
+        visibility: Visibility::VISIBLE,
         ..default()
     })
     .with_children(|parent| factory_children::<TScreen>(parent, tile_size))
@@ -54,24 +54,24 @@ pub fn spawn_factory<TScreen: Component + Default>(
 
 fn factory_children<TScreen: Component + Default>(parent: &mut ChildBuilder, tile_size: f32) {
     let color = MATERIALS_COLOR;
-    parent.spawn_bundle(building_base_shape(tile_size / 1.1, color));
-    parent.spawn_bundle(factory_building_shape(tile_size, Color::GRAY));
-    parent.spawn_bundle(factory_roof_shape(
+    parent.spawn(building_base_shape(tile_size / 1.1, color));
+    parent.spawn(factory_building_shape(tile_size, Color::GRAY));
+    parent.spawn(factory_roof_shape(
         tile_size,
         Color::GRAY,
         Vec3::new(-tile_size / 6., tile_size / 5., 0.01),
     ));
-    parent.spawn_bundle(factory_roof_shape(
+    parent.spawn(factory_roof_shape(
         tile_size,
         Color::GRAY,
         Vec3::new(0., tile_size / 5., 0.01),
     ));
-    parent.spawn_bundle(factory_roof_shape(
+    parent.spawn(factory_roof_shape(
         tile_size,
         Color::GRAY,
         Vec3::new(tile_size / 6., tile_size / 5., 0.01),
     ));
-    parent.spawn_bundle(factory_chimney_shape(
+    parent.spawn(factory_chimney_shape(
         tile_size,
         Color::GRAY,
         Vec3::new(tile_size / 6., -tile_size / 4., 0.011),

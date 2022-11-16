@@ -46,7 +46,7 @@ pub(super) fn spawn_rocket_tower<TScreen: Component + Default>(
         color.set_a(0.9);
     }
     let transform = Transform::from_translation(vals.pos.to_scaled_vec3(1.));
-    cmds.spawn_bundle(SpatialBundle::from_transform(transform))
+    cmds.spawn(SpatialBundle::from_transform(transform))
         .with_children(|parent| {
             rocket_tower_children::<TScreen>(parent, &vals, color, is_preview);
         })
@@ -63,15 +63,13 @@ fn rocket_tower_children<TScreen: Component + Default>(
     is_preview: bool,
 ) {
     // Tower base
-    parent.spawn_bundle(tower_base_shape(color));
+    parent.spawn(tower_base_shape(color));
 
     // Tower circle
-    parent.spawn_bundle(tower_circle_shape());
+    parent.spawn(tower_circle_shape());
 
     // Tower cannon
-    parent
-        .spawn_bundle(tower_rocket_cannon())
-        .insert(TowerCannon);
+    parent.spawn(tower_rocket_cannon()).insert(TowerCannon);
 
     // Range circle
     let range_radius = match is_preview {
@@ -81,7 +79,7 @@ fn rocket_tower_children<TScreen: Component + Default>(
     let mut range_circle = tower_range_circle_shape(range_radius, color);
     range_circle.visibility.is_visible = is_preview;
     parent
-        .spawn_bundle(range_circle)
+        .spawn(range_circle)
         .insert(TowerRangeCircle(vals.pos.as_uvec2()))
         .insert(TScreen::default());
 }

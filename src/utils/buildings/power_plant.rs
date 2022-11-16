@@ -32,9 +32,9 @@ pub fn spawn_power_plant<TScreen: Component + Default>(
     power_plant: PowerPlant,
     tile_size: f32,
 ) {
-    cmds.spawn_bundle(SpatialBundle {
+    cmds.spawn(SpatialBundle {
         transform: Transform::from_translation(power_plant.pos.to_scaled_vec3(1.)),
-        visibility: Visibility::visible(),
+        visibility: Visibility::VISIBLE,
         ..default()
     })
     .with_children(|parent| power_plant_children::<TScreen>(parent, tile_size))
@@ -47,14 +47,14 @@ pub fn spawn_power_plant<TScreen: Component + Default>(
 
 fn power_plant_children<TScreen: Component + Default>(parent: &mut ChildBuilder, tile_size: f32) {
     let color = ENERGY_COLOR;
-    parent.spawn_bundle(building_base_shape(tile_size / 1.1, color));
-    parent.spawn_bundle(power_plant_building_shape(tile_size, Color::GRAY));
-    parent.spawn_bundle(power_plant_chimney_shape(
+    parent.spawn(building_base_shape(tile_size / 1.1, color));
+    parent.spawn(power_plant_building_shape(tile_size, Color::GRAY));
+    parent.spawn(power_plant_chimney_shape(
         tile_size,
         Color::GRAY,
         Vec3::new(tile_size / 4.5, -tile_size / 4., 0.01),
     ));
-    parent.spawn_bundle(power_plant_chimney_shape(
+    parent.spawn(power_plant_chimney_shape(
         tile_size,
         Color::GRAY,
         Vec3::new(tile_size / 20., -tile_size / 4., 0.01),

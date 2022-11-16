@@ -1,5 +1,4 @@
 use crate::{
-    assets::StandardAssets,
     board::visualisation::TILE_SIZE,
     game::{Game, GameScreen},
     utils::{
@@ -40,7 +39,7 @@ pub(super) fn on_change_resources(
     mut cmds: Commands,
     mut events: EventReader<ResourcesEvent>,
     mut game: ResMut<Game>,
-    assets: Res<StandardAssets>,
+    assets: Res<AssetServer>,
     time: Res<IngameTime>,
 ) {
     for ev in events.iter() {
@@ -69,13 +68,13 @@ fn spawn_energy_animation(
     cmds: &mut Commands,
     energy: Energy,
     mut pos: Vec2Board,
-    assets: &StandardAssets,
+    assets: &AssetServer,
     now: IngameTimestamp,
 ) {
     let (color, pos_y_add) = color_and_pos(energy);
     pos.x -= 0.4;
     pos.y += pos_y_add;
-    cmds.spawn_bundle(SpatialBundle {
+    cmds.spawn(SpatialBundle {
         transform: Transform {
             translation: pos.to_scaled_vec3(6.),
             scale: Vec3::new(0.75, 0.75, 1.),
@@ -85,7 +84,7 @@ fn spawn_energy_animation(
     })
     .with_children(|parent| {
         parent
-            .spawn_bundle(energy_symbol(
+            .spawn(energy_symbol(
                 Transform {
                     translation: Vec3::new(-TILE_SIZE / 4., 0., 0.1),
                     scale: Vec3::new(0.5, 0.5, 1.),
@@ -95,7 +94,7 @@ fn spawn_energy_animation(
             ))
             .insert(ResourceSymbolFade);
         parent
-            .spawn_bundle(resource_text(energy, color, assets))
+            .spawn(resource_text(energy, color, assets))
             .insert(ResourceTextFade);
     })
     .insert(ResourceAnimation::new(now + RESOURCE_ANIMATION_TIME))
@@ -106,13 +105,13 @@ fn spawn_materials_animation(
     cmds: &mut Commands,
     materials: Materials,
     mut pos: Vec2Board,
-    assets: &StandardAssets,
+    assets: &AssetServer,
     now: IngameTimestamp,
 ) {
     let (color, pos_y_add) = color_and_pos(materials);
     pos.x += 0.4;
     pos.y += pos_y_add;
-    cmds.spawn_bundle(SpatialBundle {
+    cmds.spawn(SpatialBundle {
         transform: Transform {
             translation: pos.to_scaled_vec3(6.),
             scale: Vec3::new(0.75, 0.75, 1.),
@@ -124,7 +123,7 @@ fn spawn_materials_animation(
     .insert(GameScreen)
     .with_children(|parent| {
         parent
-            .spawn_bundle(materials_symbol(
+            .spawn(materials_symbol(
                 Transform {
                     translation: Vec3::new(-TILE_SIZE / 4., 0., 0.1),
                     scale: Vec3::new(0.5, 0.5, 1.),
@@ -134,12 +133,12 @@ fn spawn_materials_animation(
             ))
             .insert(ResourceSymbolFade);
         parent
-            .spawn_bundle(resource_text(materials, color, assets))
+            .spawn(resource_text(materials, color, assets))
             .insert(ResourceTextFade);
     });
 }
 
-fn resource_text(number: f32, color: Color, assets: &StandardAssets) -> Text2dBundle {
+fn resource_text(number: f32, color: Color, assets: &AssetServer) -> Text2dBundle {
     text_bundle(
         WIDTH,
         &format!("{number}"),
