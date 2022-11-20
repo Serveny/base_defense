@@ -35,6 +35,12 @@ pub(super) fn keyboard_input(
     if keys.just_released(KeyCode::LShift) {
         actions.send(DeactivateOverview);
     }
+    if keys.just_pressed(KeyCode::Comma) {
+        actions.send(SpeedDown)
+    }
+    if keys.just_pressed(KeyCode::Period) {
+        actions.send(SpeedUp)
+    }
     if keys.just_pressed(KeyCode::F) {
         actions.send(Speed(4.))
     }

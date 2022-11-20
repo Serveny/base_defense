@@ -40,6 +40,8 @@ pub enum GameActionEvent {
     BackToMainMenu,
     ActivateOverview,
     DeactivateOverview,
+    SpeedUp,
+    SpeedDown,
     Speed(f32),
     Pause,
 }
@@ -101,6 +103,8 @@ fn on_game_actions(
                     game.is_overview = false;
                     set_range_circles(&mut queries.p1(), false);
                 }
+                SpeedUp => game.speed = (game.speed + 1.).clamp(0., 30.),
+                SpeedDown => game.speed = (game.speed - 1.).clamp(0., 30.),
                 Speed(speed) => {
                     game.speed = if game.speed == 0. && *speed == 0. {
                         1.
@@ -108,6 +112,7 @@ fn on_game_actions(
                         *speed
                     }
                 }
+
                 Pause => ingame_state
                     .set(IngameState::Pause)
                     .unwrap_or_else(|_| ingame_state.set(IngameState::Running).unwrap()),

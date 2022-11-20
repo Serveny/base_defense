@@ -36,7 +36,7 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
                 title: TITLE.to_string(),
-                width: 800.0,
+                width: 1200.0,
                 height: 600.,
                 ..default()
             },
