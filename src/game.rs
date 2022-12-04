@@ -4,6 +4,7 @@ use self::{
     actions::{build_menu::BuildMenuActionsEvent, GameActions},
     build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
+    statistics::EnemyKillCount,
     systems::{
         game_over::GameOverTimer,
         wave::{Wave, WaveState},
@@ -24,6 +25,7 @@ mod actions;
 mod build_menus;
 mod controls;
 mod enemies;
+mod statistics;
 mod systems;
 
 type BoardVisu = BoardVisualisation<GameScreen>;
@@ -134,6 +136,7 @@ fn game_setup(
     cmds.init_resource::<Collisions>();
     cmds.init_resource::<GameOverTimer>();
     cmds.init_resource::<HoveredTile>();
+    cmds.init_resource::<EnemyKillCount>();
 
     ingame_state.set(IngameState::Running).unwrap();
 }
