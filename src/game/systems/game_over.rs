@@ -113,6 +113,8 @@ pub(super) fn game_over_screen(
             );
             add_text_row("Wave", &format!("{}", game.wave_no), ui);
             add_text_row("Enemies Killed", &format!("{}", kill_count.0), ui);
+            add_text_row("Energy", &format!("{}", game.energy), ui);
+            add_text_row("Materials", &format!("{}", game.materials), ui);
         });
 
         // Back to main menu button
