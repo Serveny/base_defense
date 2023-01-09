@@ -110,15 +110,19 @@ pub(super) fn game_over_screen(
         ui.vertical_centered(|ui| {
             ui.add(Label::new(RichText::new("GAME OVER").heading()));
 
-            // Game Over Infos
-            ScrollArea::vertical().show(ui, |ui| {
-                let time = time.elapsed_secs_f64();
-                add_text_row("Ingame Time", &format_secs_time(time), ui);
-                add_text_row("Wave", &format!("{}", game.wave_no), ui);
-                add_text_row("Enemies Killed", &format!("{}", kill_count.0), ui);
-                add_text_row("Laser Shots Fired", &format!("{}", laser_count.0), ui);
-                add_text_row("Rockets Fired", &format!("{}", rocket_count.0), ui);
-            });
+        // Game Over Infos
+        ScrollArea::vertical().show(ui, |ui| {
+            add_text_row(
+                "Ingame Time",
+                &format_secs_time(time.elapsed_secs_f64()),
+                ui,
+            );
+            add_text_row("Wave", &format!("{}", game.wave_no), ui);
+            add_text_row("Enemies Killed", &format!("{}", kill_count.0), ui);
+            add_text_row("Energy", &format!("{}", game.energy), ui);
+            add_text_row("Materials", &format!("{}", game.materials), ui);
+            add_text_row("Laser Shots Fired", &format!("{}", laser_count.0), ui);
+            add_text_row("Rockets Fired", &format!("{}", rocket_count.0), ui);
         });
 
         // Back to main menu button
