@@ -1,5 +1,8 @@
 use crate::{
-    game::GameScreen,
+    game::{
+        statistics::{LaserShotsFired, RocketsFired},
+        GameScreen,
+    },
     utils::{
         shots::{
             laser::spawn_shot_laser, rocket::spawn_shot_rocket, DamageInRadiusTargetPosShotValues,
@@ -18,6 +21,8 @@ pub enum TowerActionsEvent {
 pub fn on_tower_actions(
     mut cmds: Commands,
     mut actions: EventReader<TowerActionsEvent>,
+    mut laser_count: ResMut<LaserShotsFired>,
+    mut rocket_count: ResMut<RocketsFired>,
     time: Res<IngameTime>,
 ) {
     use TowerActionsEvent::*;
@@ -28,9 +33,11 @@ pub fn on_tower_actions(
                     &mut cmds,
                     shot.new_shot(*enemy_entity, time.now() + shot.lifetime),
                 );
+                laser_count.0 += 1;
             }
             ShootRocket(shot, enemy) => {
-                spawn_shot_rocket::<GameScreen>(&mut cmds, shot.new_shot(*enemy))
+                spawn_shot_rocket::<GameScreen>(&mut cmds, shot.new_shot(*enemy));
+                rocket_count.0 += 1;
             }
         }
     }

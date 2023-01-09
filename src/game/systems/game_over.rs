@@ -1,6 +1,9 @@
 use crate::{
     board::visualisation::{BoardRoadEndMark, GameOverCountDownText},
-    game::{statistics::EnemyKillCount, Game, IngameState, GAME_OVER_COUNTDOWN_TIME},
+    game::{
+        statistics::{EnemyKillCount, LaserShotsFired, RocketsFired},
+        Game, IngameState, GAME_OVER_COUNTDOWN_TIME,
+    },
     utils::{add_text_row, GameState, IngameTime, IngameTimestamp},
 };
 use bevy::prelude::*;
@@ -98,21 +101,24 @@ pub(super) fn game_over_screen(
     mut game_state: ResMut<State<GameState>>,
     game: Res<Game>,
     kill_count: Res<EnemyKillCount>,
+    laser_count: Res<LaserShotsFired>,
+    rocket_count: Res<RocketsFired>,
     time: Res<IngameTime>,
 ) {
     CentralPanel::default().show(egui_ctx.ctx_mut(), |ui| {
         ui.set_height(ui.available_height());
-        ui.vertical_centered(|ui| ui.add(Label::new(RichText::new("GAME OVER").heading())));
+        ui.vertical_centered(|ui| {
+            ui.add(Label::new(RichText::new("GAME OVER").heading()));
 
-        // Game Over Infos
-        ScrollArea::vertical().show(ui, |ui| {
-            add_text_row(
-                "Ingame Time",
-                &format_secs_time(time.elapsed_secs_f64()),
-                ui,
-            );
-            add_text_row("Wave", &format!("{}", game.wave_no), ui);
-            add_text_row("Enemies Killed", &format!("{}", kill_count.0), ui);
+            // Game Over Infos
+            ScrollArea::vertical().show(ui, |ui| {
+                let time = time.elapsed_secs_f64();
+                add_text_row("Ingame Time", &format_secs_time(time), ui);
+                add_text_row("Wave", &format!("{}", game.wave_no), ui);
+                add_text_row("Enemies Killed", &format!("{}", kill_count.0), ui);
+                add_text_row("Laser Shots Fired", &format!("{}", laser_count.0), ui);
+                add_text_row("Rockets Fired", &format!("{}", rocket_count.0), ui);
+            });
         });
 
         // Back to main menu button
