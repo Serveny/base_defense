@@ -82,20 +82,6 @@ fn format_secs_time(secs: f64) -> String {
     format!("{:02}:{:02}:{:02}", hours, mins, secs)
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_format_secs_time_1() {
-        assert_eq!(format_secs_time(3661.), String::from("01:01:01"));
-    }
-    #[test]
-    fn test_format_secs_time_2() {
-        assert_eq!(format_secs_time(1.), String::from("00:00:01"));
-    }
-}
-
 pub(super) fn game_over_screen(
     mut egui_ctx: ResMut<EguiContext>,
     mut game_state: ResMut<State<GameState>>,
@@ -111,7 +97,7 @@ pub(super) fn game_over_screen(
             ui.add(Label::new(RichText::new("GAME OVER").heading()));
 
             // Game Over Infos
-            ScrollArea::vertical().show(ui, |ui| {
+            ScrollArea::vertical().max_width(400.).show(ui, |ui| {
                 let time = time.elapsed_secs_f64();
                 add_text_row("Ingame Time", &format_secs_time(time), ui);
                 add_text_row("Wave", &format!("{}", game.wave_no), ui);
@@ -148,4 +134,18 @@ pub(super) fn game_over_screen(
                 });
             });
     });
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_format_secs_time_1() {
+        assert_eq!(format_secs_time(3661.), String::from("01:01:01"));
+    }
+    #[test]
+    fn test_format_secs_time_2() {
+        assert_eq!(format_secs_time(1.), String::from("00:00:01"));
+    }
 }
