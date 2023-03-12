@@ -1,6 +1,6 @@
 # base_defense
 <p align="center">
-![Base Defense Demo](assets/demo-animation.gif)
+  <img src="assets/demo-animation.gif"/>
 </p>
 
 A litte tower defense game with Rust and Bevy engine. It's my first litte game project, only to learn Rust/Bevy.
