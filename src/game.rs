@@ -4,7 +4,7 @@ use self::{
     actions::{build_menu::BuildMenuActionsEvent, GameActions},
     build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
-    statistics::EnemyKillCount,
+    statistics::{EnemyKillCount, LaserShotsFired, RocketsFired},
     systems::{
         game_over::GameOverTimer,
         wave::{Wave, WaveState},
@@ -137,6 +137,8 @@ fn game_setup(
     cmds.init_resource::<GameOverTimer>();
     cmds.init_resource::<HoveredTile>();
     cmds.init_resource::<EnemyKillCount>();
+    cmds.init_resource::<LaserShotsFired>();
+    cmds.init_resource::<RocketsFired>();
 
     ingame_state.set(IngameState::Running).unwrap();
 }
@@ -160,4 +162,7 @@ fn clean_up_game(
     cmds.remove_resource::<IngameTime>();
     cmds.remove_resource::<BuildMenu>();
     cmds.remove_resource::<GameOverTimer>();
+    cmds.remove_resource::<EnemyKillCount>();
+    cmds.remove_resource::<LaserShotsFired>();
+    cmds.remove_resource::<RocketsFired>();
 }
