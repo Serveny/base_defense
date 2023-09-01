@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 bevy = "0.9"
 bevy_egui = "0.19"
-bevy-inspector-egui = { version = "0.17", optional = true }
+bevy-inspector-egui = { version = "0.17" }
 serde= "1.0"
 serde_json="1.0"
 bevy_prototype_lyon = "0.7"
@@ -15,9 +15,6 @@ strum_macros = "0.24"
 indexmap = "1.9"
 euclid = { features = ["serde"], version = "0.22"}
 rand = "0.8"
-
-[features]
-debug = ["bevy-inspector-egui"]
 
 [workspace]
 resolver = "2"

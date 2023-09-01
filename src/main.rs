@@ -7,9 +7,9 @@ use bevy_prototype_lyon::plugin::ShapePlugin;
 use user::Settings;
 use utils::GameState;
 
-#[cfg(feature = "debug")]
 //use bevy_editor_pls::*;
-use bevy_inspector_egui::*;
+#[cfg(debug_assertions)]
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 mod assets;
 mod board;
@@ -49,8 +49,8 @@ fn main() {
         .add_plugin(game::GamePlugin)
         .add_plugin(board_editor::BoardEditorPlugin);
 
-    #[cfg(feature = "debug")]
-    app.add_plugin(WorldInspectorPlugin::new());
+    #[cfg(debug_assertions)]
+    app.add_plugin(WorldInspectorPlugin);
     //   app.add_plugin(EditorPlugin)
     //      .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
     //      .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin);

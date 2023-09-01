@@ -22,7 +22,7 @@ pub fn explosion_system(
     }
 }
 
-fn damage_enemies_in_range<'a>(q_enemies: &'a mut Query<&mut Enemy>, expl: &Explosion) {
+fn damage_enemies_in_range(q_enemies: &mut Query<&mut Enemy>, expl: &Explosion) {
     for mut enemy in q_enemies.iter_mut() {
         if enemy.is_in_range(expl.pos, expl.target_radius) {
             enemy.health -= expl.damage;

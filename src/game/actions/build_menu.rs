@@ -168,14 +168,14 @@ fn scroll(tm: &mut BuildMenu, queries: &mut QueriesTowerMenuAction, board: &Boar
         let translation = Vec2Board::from_uvec2_middle(&tm.tile_pos).to_scaled_vec3(3.);
         if *tile == Tile::TowerGround {
             let count = queries.p2().iter().count();
-            let new_i = tm.selected_tower_index as isize + additor as isize;
+            let new_i = tm.selected_tower_index as isize + additor;
             if count > 1 {
                 tm.selected_tower_index = new_i.rem_euclid(count as isize) as usize;
                 show_preview(tm, queries, translation, tile);
             }
         } else {
             let count = queries.p3().iter().count();
-            let new_i = tm.selected_building_index as isize + additor as isize;
+            let new_i = tm.selected_building_index as isize + additor;
             if count > 1 {
                 tm.selected_building_index = new_i.rem_euclid(count as isize) as usize;
                 show_preview(tm, queries, translation, tile);

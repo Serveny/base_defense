@@ -194,7 +194,7 @@ impl Enemy {
     }
 
     fn walk(&mut self, dur: Duration, speed: TilesPerSecond) -> IsRoadEnd {
-        let mut step = &mut self.current_step;
+        let step = &mut self.current_step;
         let dist = Self::distance_walked(speed, dur);
         step.distance_walked += dist;
         self.pos.add_in_direction(dist, step.direction);

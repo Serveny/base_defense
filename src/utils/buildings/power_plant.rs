@@ -37,7 +37,7 @@ pub fn spawn_power_plant<TScreen: Component + Default>(
         visibility: Visibility::VISIBLE,
         ..default()
     })
-    .with_children(|parent| power_plant_children::<TScreen>(parent, tile_size))
+    .with_children(|parent| power_plant_children(parent, tile_size))
     .insert(BuildingBase)
     .insert(Building::PowerPlant)
     .insert(BoardPos(power_plant.pos.as_uvec2()))
@@ -45,7 +45,7 @@ pub fn spawn_power_plant<TScreen: Component + Default>(
     .insert(TScreen::default());
 }
 
-fn power_plant_children<TScreen: Component + Default>(parent: &mut ChildBuilder, tile_size: f32) {
+fn power_plant_children(parent: &mut ChildBuilder, tile_size: f32) {
     let color = ENERGY_COLOR;
     parent.spawn(building_base_shape(tile_size / 1.1, color));
     parent.spawn(power_plant_building_shape(tile_size, Color::GRAY));

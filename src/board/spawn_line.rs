@@ -27,7 +27,7 @@ impl SpawnLine {
             (Some(start), Some(step)) => match step.direction {
                 East | West => {
                     let start = Vec2Board::from(start);
-                    let end = Vec2Board::new(start.x as f32, start.y as f32 + 1.);
+                    let end = Vec2Board::new(start.x, start.y + 1.);
                     Self {
                         start,
                         end,
@@ -36,10 +36,10 @@ impl SpawnLine {
                 }
                 North | South => {
                     let start = Vec2Board::from(start);
-                    let end = Vec2Board::new(start.x as f32 + 1., start.y as f32);
+                    let end = Vec2Board::new(start.x + 1., start.y);
                     Self {
                         start,
-                        end: Vec2Board::new(start.x as f32, start.y as f32 + 1.),
+                        end: Vec2Board::new(start.x, start.y + 1.),
                         range: start.x..=end.x,
                     }
                 }

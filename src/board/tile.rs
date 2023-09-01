@@ -1,9 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 // Place on the board
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum Tile {
     // A place where towers can be built
+    #[default]
     TowerGround,
 
     // A place where base buildings can be built
@@ -19,11 +20,5 @@ pub enum Tile {
 impl Tile {
     pub fn is_buildable(&self) -> bool {
         matches!(self, Tile::TowerGround | Tile::BuildingGround)
-    }
-}
-
-impl Default for Tile {
-    fn default() -> Self {
-        Tile::Empty
     }
 }

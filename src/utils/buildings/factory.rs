@@ -44,7 +44,7 @@ pub fn spawn_factory<TScreen: Component + Default>(
         visibility: Visibility::VISIBLE,
         ..default()
     })
-    .with_children(|parent| factory_children::<TScreen>(parent, tile_size))
+    .with_children(|parent| factory_children(parent, tile_size))
     .insert(BuildingBase)
     .insert(Building::Factory)
     .insert(BoardPos(factory.pos.as_uvec2()))
@@ -52,7 +52,7 @@ pub fn spawn_factory<TScreen: Component + Default>(
     .insert(TScreen::default());
 }
 
-fn factory_children<TScreen: Component + Default>(parent: &mut ChildBuilder, tile_size: f32) {
+fn factory_children(parent: &mut ChildBuilder, tile_size: f32) {
     let color = MATERIALS_COLOR;
     parent.spawn(building_base_shape(tile_size / 1.1, color));
     parent.spawn(factory_building_shape(tile_size, Color::GRAY));
