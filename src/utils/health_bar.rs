@@ -20,37 +20,36 @@ pub fn health_bar(parent: &mut ChildBuilder, bar_width_px: f32) {
         .insert(HealthBarPercentage);
 }
 
-fn health_bar_background_shape(bar_width: f32, translation: Vec3) -> ShapeBundle {
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::Center,
-        extents: Vec2::new(bar_width, bar_width / 4.),
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::BLACK, bar_width / 16.),
+fn health_bar_background_shape(bar_width: f32, translation: Vec3) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Rectangle {
+                origin: RectangleOrigin::Center,
+                extents: Vec2::new(bar_width, bar_width / 4.),
+            }),
+            transform: Transform::from_translation(translation),
+            ..default()
         },
-        Transform {
-            translation,
-            ..Default::default()
-        },
+        Fill::color(Color::SILVER),
+        Stroke::new(Color::BLACK, bar_width / 16.),
     )
 }
 
-fn health_bar_percentage_shape(bar_width: f32) -> ShapeBundle {
+fn health_bar_percentage_shape(bar_width: f32) -> impl Bundle {
     let margin = 0.01;
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::BottomLeft,
-        extents: Vec2::new(bar_width - margin, bar_width / 4. - margin),
-    };
-
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Fill(FillMode::color(Color::GREEN)),
-        Transform {
-            translation: Vec3::new(-bar_width / 2. + margin, -bar_width / 8. + margin, 0.2),
-            ..Default::default()
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Rectangle {
+                origin: RectangleOrigin::BottomLeft,
+                extents: Vec2::new(bar_width - margin, bar_width / 4. - margin),
+            }),
+            transform: Transform::from_translation(Vec3::new(
+                -bar_width / 2. + margin,
+                -bar_width / 8. + margin,
+                0.2,
+            )),
+            ..default()
         },
+        Fill::color(Color::GREEN),
     )
 }

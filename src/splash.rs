@@ -10,18 +10,14 @@ impl Plugin for SplashPlugin {
         // As this plugin is managing the splash screen, it will focus on the state `GameState::Splash`
         app
             // When entering the state, spawn everything needed for this screen
-            .add_system_set(SystemSet::on_enter(GameState::Splash).with_system(splash_setup))
+            .add_systems(OnEnter(GameState::Splash), splash_setup)
             // While in this state, run the `countdown` system
-            .add_system_set(
-                SystemSet::on_update(GameState::Splash)
-                    .with_system(animation)
-                    .with_system(timer),
+            .add_systems(
+                Update,
+                (animation, timer).run_if(in_state(GameState::Splash)),
             )
             // When exiting the state, despawn everything that was spawned for this screen
-            .add_system_set(
-                SystemSet::on_exit(GameState::Splash)
-                    .with_system(despawn_all_of::<OnLoadingScreen>),
-            );
+            .add_systems(OnExit(GameState::Splash), despawn_all_of::<OnLoadingScreen>);
     }
 }
 
@@ -39,13 +35,12 @@ struct LogoImage;
 fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let image_bundle = ImageBundle {
         style: Style {
-            // This will center the logo
             margin: UiRect::all(Val::Auto),
-            // This will set the logo to be 200px wide, and auto adjust its height
-            size: Size::new(Val::Px(200.0), Val::Auto),
+            width: Val::Px(200.),
+            height: Val::Px(200.),
             ..default()
         },
-        image: UiImage(asset_server.load("textures/bevy-icon.png")),
+        image: UiImage::new(asset_server.load("textures/bevy-icon.png")),
         ..default()
     };
     // Display the logo
@@ -65,8 +60,8 @@ fn animation(mut query: Query<(&mut Transform, With<OnLoadingScreen>)>) {
     transform.rotate(Quat::from_rotation_z(0.01));
 }
 
-fn timer(mut state: ResMut<State<GameState>>, time: Res<Time>) {
+fn timer(mut state: ResMut<NextState<GameState>>, time: Res<Time>) {
     if time.elapsed_seconds() >= 2. {
-        state.set(GameState::Menu).unwrap_or_default();
+        state.set(GameState::Menu);
     }
 }

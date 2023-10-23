@@ -34,41 +34,36 @@ pub fn spawn_resource_bar(
         .insert(ResourceBarPercentage);
 }
 
-fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> ShapeBundle {
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::Center,
-        extents: Vec2::new(bar_height / 4., bar_height),
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::BLACK, LINE_WIDTH),
+fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Rectangle {
+                origin: RectangleOrigin::Center,
+                extents: Vec2::new(bar_height / 4., bar_height),
+            }),
+            transform: Transform::from_translation(translation),
+            ..default()
         },
-        Transform {
-            translation,
-            ..Default::default()
-        },
+        Fill::color(Color::SILVER),
+        Stroke::new(Color::BLACK, LINE_WIDTH),
     )
 }
 
-fn resource_bar_percentage_shape(bar_height: f32, translation: Vec3, color: Color) -> ShapeBundle {
+fn resource_bar_percentage_shape(bar_height: f32, translation: Vec3, color: Color) -> impl Bundle {
     let margin = LINE_WIDTH / 2.;
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::BottomLeft,
-        extents: Vec2::new(bar_height / 4. - (margin * 2.), bar_height - (margin * 2.)),
-    };
-
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Fill(FillMode::color(color)),
-        Transform {
-            translation: Vec3::new(
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Rectangle {
+                origin: RectangleOrigin::BottomLeft,
+                extents: Vec2::new(bar_height / 4. - (margin * 2.), bar_height - (margin * 2.)),
+            }),
+            transform: Transform::from_translation(Vec3::new(
                 translation.x - bar_height / 8. + margin,
                 translation.y - bar_height / 2. + margin,
                 translation.z,
-            ),
-            ..Default::default()
+            )),
+            ..default()
         },
+        Fill::color(color),
     )
 }

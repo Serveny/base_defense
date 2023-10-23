@@ -2,7 +2,7 @@ use self::road_end_mark::spawn_road_end_mark;
 use super::Tile;
 use crate::{
     board::{cache::BoardCache, Board},
-    utils::Vec2Board,
+    utils::{range_circle::RangeCircle, towers::TowerRangeCircle, Vec2Board},
 };
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
@@ -19,8 +19,12 @@ pub type RoadEndMarkQuery<'w, 's, 'a> = Query<
     (&'a mut Visibility, &'a mut Transform, &'a BoardRoadEndMark),
     With<BoardRoadEndMark>,
 >;
-pub type HoverCrossQuery<'w, 's, 'a> =
-    Query<'w, 's, (&'a mut Visibility, &'a mut Transform), With<BoardHoverCross>>;
+pub type HoverCrossQuery<'w, 's, 'a> = Query<
+    'w,
+    's,
+    (&'a mut Visibility, &'a mut Transform),
+    (With<BoardHoverCross>, Without<TowerRangeCircle>),
+>;
 
 // Ingame Visualisationtile_size
 #[derive(Resource)]
@@ -152,15 +156,15 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     pub fn show_hover_cross(&self, query: &mut HoverCrossQuery, pos: &Vec2Board) {
         let (mut visi, mut transform) = query.single_mut();
         transform.translation = Vec3::new(pos.x.floor() * TILE_SIZE, pos.y.ceil() * TILE_SIZE, 0.1);
-        visi.is_visible = true;
+        *visi = Visibility::Visible;
     }
 
     pub fn hide_hover_cross(query: &mut HoverCrossQuery) {
-        query.single_mut().0.is_visible = false;
+        *query.single_mut().0 = Visibility::Hidden;
     }
+
     fn spawn_hover_cross(&self, cmds: &mut Commands) {
         let mut shape = Self::hover_cross_shape();
-        shape.visibility.is_visible = false;
         cmds.spawn(shape)
             .insert(BoardHoverCross)
             .insert(BoardScreen)
@@ -178,12 +182,12 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
                             Angle::degrees(last_step.angle().to_degrees()).radians,
                         );
                     }
-                    visi.is_visible = true;
+                    *visi = Visibility::Visible;
                 });
                 return;
             }
         }
-        query.for_each_mut(|(mut visi, _, _)| visi.is_visible = false);
+        query.for_each_mut(|(mut visi, _, _)| *visi = Visibility::Hidden);
     }
 
     pub fn repaint(
@@ -200,11 +204,15 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         self.draw_board(cmds, board, board_cache, assets);
     }
 
-    fn hover_cross_shape() -> ShapeBundle {
-        GeometryBuilder::build_as(
-            &Self::hover_cross_path(),
-            DrawMode::Stroke(StrokeMode::new(Color::SILVER, TILE_SIZE / 8.)),
-            Transform::default(),
+    fn hover_cross_shape() -> impl Bundle {
+        (
+            ShapeBundle {
+                path: Self::hover_cross_path(),
+                visibility: Visibility::Hidden,
+                ..default()
+            },
+            Fill::color(Color::rgba(1., 1., 1., 0.05)),
+            Stroke::new(Color::SILVER, TILE_SIZE / 8.),
         )
     }
 
@@ -249,7 +257,7 @@ mod road_end_mark {
         utils::{
             energy::{energy_symbol, EnergyText, ENERGY_COLOR},
             materials::{materials_symbol, MaterialsText, MATERIALS_COLOR},
-            text_background_shape, text_bundle,
+            text_background_shape, text_bundle, visible,
             wave::{wave_symbol, WaveText},
             Vec2Board,
         },
@@ -261,8 +269,8 @@ mod road_end_mark {
         tile_size: f32,
         assets: &AssetServer,
     ) {
-        let is_visible =
-            board_cache.road_path.last().is_some() && board_cache.road_end_pos.is_some();
+        let visibility =
+            visible(board_cache.road_path.last().is_some() && board_cache.road_end_pos.is_some());
 
         let angle = if let Some(last_step) = board_cache.road_path.last() {
             Angle::degrees(last_step.angle().to_degrees())
@@ -279,11 +287,11 @@ mod road_end_mark {
                 scale: Vec3::new(2., 2., 1.),
                 rotation: Quat::from_rotation_z(angle.radians),
             },
-            is_visible,
+            visibility,
         ))
         .with_children(|parent| {
             parent
-                .spawn(road_end_entry_shape(tile_size, is_visible))
+                .spawn(road_end_entry_shape(tile_size, visibility))
                 .insert(BoardRoadEndMark::child());
         })
         .insert(BoardRoadEndMark::parent())
@@ -323,53 +331,45 @@ mod road_end_mark {
             Color::ORANGE_RED,
             assets,
             Transform::from_translation(translation),
-            HorizontalAlign::Center,
         );
-        bundle.visibility.is_visible = false;
+        bundle.visibility = Visibility::Hidden;
 
         cmds.spawn(bundle)
             .insert(TScreen::default())
             .insert(GameOverCountDownText);
     }
 
-    fn road_end_shape(size_px: f32, transform: Transform, is_visible: bool) -> ShapeBundle {
-        let shape = shapes::RegularPolygon {
-            sides: 8,
-            feature: shapes::RegularPolygonFeature::Radius(size_px / 3.),
-            ..shapes::RegularPolygon::default()
-        };
-
-        let mut shape_bundle = GeometryBuilder::build_as(
-            &shape,
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::OLIVE),
-                outline_mode: StrokeMode::new(Color::DARK_GRAY, size_px / 10.),
+    fn road_end_shape(size_px: f32, transform: Transform, visibility: Visibility) -> impl Bundle {
+        (
+            ShapeBundle {
+                path: GeometryBuilder::build_as(&shapes::RegularPolygon {
+                    sides: 8,
+                    feature: shapes::RegularPolygonFeature::Radius(size_px / 3.),
+                    ..shapes::RegularPolygon::default()
+                }),
+                transform,
+                visibility,
+                ..default()
             },
-            transform,
-        );
-        shape_bundle.visibility = Visibility { is_visible };
-        shape_bundle
+            Fill::color(Color::OLIVE),
+            Stroke::new(Color::SILVER, size_px / 10.),
+        )
     }
 
-    fn road_end_entry_shape(size_px: f32, is_visible: bool) -> ShapeBundle {
-        let shape = shapes::Rectangle {
-            origin: RectangleOrigin::Center,
-            extents: Vec2::new(size_px / 4., size_px / 2.),
-        };
-
-        let mut shape_bundle = GeometryBuilder::build_as(
-            &shape,
-            DrawMode::Outlined {
-                fill_mode: FillMode::color(Color::OLIVE),
-                outline_mode: StrokeMode::new(Color::DARK_GRAY, size_px / 32.),
+    fn road_end_entry_shape(size_px: f32, visibility: Visibility) -> impl Bundle {
+        (
+            ShapeBundle {
+                path: GeometryBuilder::build_as(&shapes::Rectangle {
+                    origin: RectangleOrigin::Center,
+                    extents: Vec2::new(size_px / 4., size_px / 2.),
+                }),
+                transform: Transform::from_translation(Vec3::new(size_px / 3., 0., -0.1)),
+                visibility,
+                ..default()
             },
-            Transform {
-                translation: Vec3::new(size_px / 3., 0., -0.1),
-                ..Default::default()
-            },
-        );
-        shape_bundle.visibility.is_visible = is_visible;
-        shape_bundle
+            Fill::color(Color::OLIVE),
+            Stroke::new(Color::DARK_GRAY, size_px / 32.),
+        )
     }
 
     fn spawn_wave_sign<TScreen: Component + Default>(
@@ -385,7 +385,7 @@ mod road_end_mark {
                 scale: Vec3::new(2., 2., 1.),
                 ..Default::default()
             },
-            true,
+            Visibility::Visible,
         ))
         .insert(BoardScreen)
         .insert(TScreen::default())
@@ -397,7 +397,6 @@ mod road_end_mark {
                     Color::GOLD,
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
-                    HorizontalAlign::Left,
                 ))
                 .insert(WaveText);
             parent.spawn(wave_symbol(
@@ -424,7 +423,7 @@ mod road_end_mark {
                 scale: Vec3::new(2., 2., 1.),
                 ..Default::default()
             },
-            true,
+            Visibility::Visible,
         ))
         .insert(BoardScreen)
         .insert(TScreen::default())
@@ -436,7 +435,6 @@ mod road_end_mark {
                     ENERGY_COLOR,
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
-                    HorizontalAlign::Left,
                 ))
                 .insert(EnergyText);
             parent.spawn(energy_symbol(
@@ -463,7 +461,7 @@ mod road_end_mark {
                 scale: Vec3::new(2., 2., 1.),
                 ..Default::default()
             },
-            true,
+            Visibility::Visible,
         ))
         .insert(BoardScreen)
         .insert(TScreen::default())
@@ -475,7 +473,6 @@ mod road_end_mark {
                     MATERIALS_COLOR,
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
-                    HorizontalAlign::Left,
                 ))
                 .insert(MaterialsText);
             parent.spawn(materials_symbol(

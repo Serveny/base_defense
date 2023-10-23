@@ -8,7 +8,7 @@ use crate::{
     board::visualisation::TILE_SIZE,
     utils::{
         shots::{Shot, TowerStatus},
-        BoardPos, Vec2Board,
+        visible, BoardPos, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -73,29 +73,28 @@ fn laser_tower_children<TScreen: Component + Default>(
         true => vals.range_radius * 2.,
         false => vals.range_radius,
     };
-    let mut range_circle = tower_range_circle_shape(range_radius, color);
-    range_circle.visibility.is_visible = is_preview;
+    let range_circle = tower_range_circle_shape(range_radius, color, visible(is_preview));
     parent
         .spawn(range_circle)
         .insert(TowerRangeCircle(vals.pos.as_uvec2()))
         .insert(TScreen::default());
 }
 
-fn tower_laser_cannon() -> ShapeBundle {
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::CustomCenter(Vec2::new(0., TILE_SIZE / 4.)),
-        extents: Vec2::new(TILE_SIZE / 6., TILE_SIZE / 2.),
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
+fn tower_laser_cannon() -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Rectangle {
+                origin: RectangleOrigin::CustomCenter(Vec2::new(0., TILE_SIZE / 4.)),
+                extents: Vec2::new(TILE_SIZE / 6., TILE_SIZE / 2.),
+            }),
+            transform: Transform {
+                translation: Vec3::new(0., 0., 0.1),
+                rotation: Quat::from_rotation_z(0.),
+                ..Default::default()
+            },
+            ..default()
         },
-        Transform {
-            translation: Vec3::new(0., 0., 0.1),
-            rotation: Quat::from_rotation_z(0.),
-            ..Default::default()
-        },
+        Fill::color(Color::SILVER),
+        Stroke::new(Color::DARK_GRAY, TILE_SIZE / 16.),
     )
 }

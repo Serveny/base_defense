@@ -7,6 +7,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
+#[derive(Event)]
 pub struct ExplosionEvent {
     pos: Vec2Board,
     radius: f32,

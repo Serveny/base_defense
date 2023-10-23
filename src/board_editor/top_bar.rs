@@ -7,11 +7,11 @@ use crate::{board::Board, utils::add_error_box};
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, Response, TopBottomPanel, Ui},
-    EguiContext,
+    EguiContexts,
 };
 
 pub(super) fn add_top_menu_bar(
-    mut egui_ctx: ResMut<EguiContext>,
+    mut egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
     mut actions: EventWriter<EditorActionEvent>,
     state: Res<BoardEditor>,

@@ -15,7 +15,7 @@ use self::{
 };
 use bevy::prelude::*;
 
-use super::{controls::hovered_tile, IngameState};
+use super::{actions::Labels, controls::hovered_tile, IngameState};
 
 pub mod base;
 pub mod building;
@@ -36,42 +36,65 @@ pub struct GameSystems;
 
 impl Plugin for GameSystems {
     fn build(&self, app: &mut App) {
-        app.add_state(WaveState::None)
-            .add_system_set(
-                SystemSet::on_update(IngameState::Running)
-                    .with_system(wave_spawn_system)
-                    .with_system(acceleration_system)
-                    .with_system(enemy_walk_system)
-                    .with_system(enemy_collision_add_system.before("collision_add"))
-                    .with_system(enemy_collision_remove_system.before("collision_remove"))
-                    .with_system(shot::damage_per_time::damage_system)
-                    .with_system(shot::damage_per_time::visual_system)
-                    .with_system(shot::damage_per_time::despawn_system)
-                    .with_system(shot::damage_in_radius_enemy_locked::fly_system)
-                    .with_system(shot::damage_in_radius_enemy_locked::visual_system)
-                    .with_system(shot::damage_in_radius_enemy_locked::damage_and_despawn_system)
-                    .with_system(power_plant_system)
-                    .with_system(factory_system)
-                    .with_system(resource_animation_system)
-                    .with_system(resource_text_fade_system)
-                    .with_system(resource_symbol_fade_system)
-                    .with_system(tower_target_system)
-                    .with_system(tower_rotation_system)
-                    .with_system(tower_overheat_system)
-                    .with_system(health_bar_system)
-                    .with_system(resource_bar_system)
-                    .with_system(base_system)
-                    .with_system(explosion_system)
-                    .with_system(death_system)
-                    .with_system(game_over_timer_system)
-                    .with_system(hovered_tile)
-                    .with_system(game_over_system),
+        app.add_state::<WaveState>()
+            .add_systems(
+                Update,
+                (
+                    wave_spawn_system,
+                    acceleration_system,
+                    enemy_walk_system,
+                    power_plant_system,
+                    factory_system,
+                    resource_animation_system,
+                    resource_text_fade_system,
+                    resource_symbol_fade_system,
+                    tower_target_system,
+                    tower_rotation_system,
+                    tower_overheat_system,
+                    health_bar_system,
+                    resource_bar_system,
+                    base_system,
+                    explosion_system,
+                    death_system,
+                    game_over_timer_system,
+                    hovered_tile,
+                    game_over_system,
+                )
+                    .run_if(in_state(IngameState::Running)),
             )
-            .add_system_set(
-                SystemSet::on_update(IngameState::GameOver).with_system(game_over_screen),
+            .add_systems(
+                Update,
+                enemy_collision_add_system
+                    .before(Labels::CollisionAdd)
+                    .run_if(in_state(IngameState::Running)),
             )
-            .add_system_set(
-                SystemSet::on_update(WaveState::Running).with_system(wave_system.before("actions")),
+            .add_systems(
+                Update,
+                enemy_collision_remove_system
+                    .before(Labels::CollisionRemove)
+                    .run_if(in_state(IngameState::Running)),
+            )
+            .add_systems(
+                Update,
+                (
+                    shot::damage_per_time::damage_system,
+                    shot::damage_per_time::visual_system,
+                    shot::damage_per_time::despawn_system,
+                    shot::damage_in_radius_enemy_locked::fly_system,
+                    shot::damage_in_radius_enemy_locked::visual_system,
+                    shot::damage_in_radius_enemy_locked::damage_and_despawn_system,
+                )
+                    .run_if(in_state(IngameState::Running)),
+            )
+            .add_systems(
+                Update,
+                (game_over_screen).run_if(in_state(IngameState::GameOver)),
+            )
+            .add_systems(
+                Update,
+                (wave_system)
+                    .before(Labels::Actions)
+                    .run_if(in_state(WaveState::Running)),
             );
     }
 }

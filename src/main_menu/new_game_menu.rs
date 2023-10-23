@@ -7,7 +7,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, CentralPanel},
-    EguiContext,
+    EguiContexts,
 };
 use std::error::Error;
 
@@ -66,7 +66,7 @@ pub(super) fn new_game_menu_setup(mut commands: Commands) {
 }
 
 pub(super) fn add_new_game_menu(
-    mut egui_ctx: ResMut<EguiContext>,
+    mut egui_ctx: EguiContexts,
     mut new_game_menu: ResMut<NewGameMenu>,
     actions: EventWriter<MenuActionEvent>,
 ) {

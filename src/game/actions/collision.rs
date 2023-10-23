@@ -4,7 +4,10 @@ use crate::utils::{
 };
 use bevy::prelude::*;
 
+#[derive(Event)]
 pub struct EnemyCollisionAddEvent(pub Entity, pub Entity);
+
+#[derive(Event)]
 pub struct EnemyCollisionRemoveEvent(pub Entity, pub Entity);
 
 impl From<Collision> for EnemyCollisionRemoveEvent {

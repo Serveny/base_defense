@@ -47,18 +47,17 @@ pub struct BuildingBase;
 //};
 //}
 
-fn building_base_shape(tile_size: f32, color: Color) -> ShapeBundle {
-    let shape = shapes::RegularPolygon {
-        sides: 6,
-        feature: shapes::RegularPolygonFeature::Radius(tile_size / 2.),
-        ..shapes::RegularPolygon::default()
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(color),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 20.),
+fn building_base_shape(tile_size: f32, color: Color) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
+                sides: 6,
+                feature: shapes::RegularPolygonFeature::Radius(tile_size / 2.),
+                ..shapes::RegularPolygon::default()
+            }),
+            ..default()
         },
-        Transform::default(),
+        Fill::color(color),
+        Stroke::new(Color::DARK_GRAY, tile_size / 20.),
     )
 }

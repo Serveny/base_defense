@@ -12,7 +12,7 @@ use std::time::Duration;
 pub const RESOURCE_ANIMATION_TIME: Duration = Duration::from_secs(2);
 const WIDTH: f32 = TILE_SIZE / 2.;
 
-#[derive(Debug)]
+#[derive(Event, Debug)]
 pub enum ResourcesEvent {
     Energy(Energy, Vec2Board),
     Materials(Materials, Vec2Board),
@@ -145,7 +145,6 @@ fn resource_text(number: f32, color: Color, assets: &AssetServer) -> Text2dBundl
         color,
         assets,
         Transform::from_translation(Vec3::new(-WIDTH / 9., WIDTH / 30., 1.)),
-        HorizontalAlign::Left,
     )
 }
 

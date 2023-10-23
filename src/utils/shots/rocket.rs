@@ -41,19 +41,18 @@ pub fn spawn_shot_rocket<TScreen: Component + Default>(
     .insert(TScreen::default());
 }
 
-fn rocket_body_shape(tile_size: f32) -> ShapeBundle {
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::Center,
-        // origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
-        extents: Vec2::new(tile_size / 10., tile_size / 5.),
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::PURPLE),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 40.),
+fn rocket_body_shape(tile_size: f32) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Rectangle {
+                origin: RectangleOrigin::Center,
+                // origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
+                extents: Vec2::new(tile_size / 10., tile_size / 5.),
+            }),
+            ..default()
         },
-        Transform::default(),
+        Fill::color(Color::PURPLE),
+        Stroke::new(Color::DARK_GRAY, tile_size / 40.),
     )
 }
 
@@ -71,40 +70,38 @@ fn rocket_shot_children(parent: &mut ChildBuilder) {
     );
 }
 
-fn rocket_head_shape(tile_size: f32) -> ShapeBundle {
-    let shape = RegularPolygon {
-        sides: 3,
-        feature: RegularPolygonFeature::Radius(tile_size / 20.),
-        ..RegularPolygon::default()
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::PURPLE),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 40.),
+fn rocket_head_shape(tile_size: f32) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&RegularPolygon {
+                sides: 3,
+                feature: RegularPolygonFeature::Radius(tile_size / 20.),
+                ..RegularPolygon::default()
+            }),
+            transform: Transform::from_translation(Vec3::new(
+                0.,
+                tile_size / 10. + tile_size / 20.,
+                0.1,
+            )),
+            ..default()
         },
-        Transform {
-            translation: Vec3::new(0., tile_size / 10. + tile_size / 20., 0.1),
-            ..Default::default()
-        },
+        Fill::color(Color::PURPLE),
+        Stroke::new(Color::DARK_GRAY, tile_size / 40.),
     )
 }
 
-fn rocket_bottom_shape(tile_size: f32) -> ShapeBundle {
-    let shape = RegularPolygon {
-        sides: 3,
-        feature: RegularPolygonFeature::Radius(tile_size / 10.),
-        ..RegularPolygon::default()
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::PURPLE),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, tile_size / 20.),
+fn rocket_bottom_shape(tile_size: f32) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&RegularPolygon {
+                sides: 3,
+                feature: RegularPolygonFeature::Radius(tile_size / 10.),
+                ..RegularPolygon::default()
+            }),
+            transform: Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),
+            ..default()
         },
-        Transform {
-            translation: Vec3::new(0., -tile_size / 10., -0.1),
-            ..Default::default()
-        },
+        Fill::color(Color::PURPLE),
+        Stroke::new(Color::DARK_GRAY, tile_size / 20.),
     )
 }

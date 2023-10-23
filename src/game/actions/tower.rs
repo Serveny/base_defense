@@ -13,6 +13,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
+#[derive(Event)]
 pub enum TowerActionsEvent {
     ShootLaser(DamagePerTimeShotValues, Entity),
     ShootRocket(DamageInRadiusTargetPosShotValues, Entity),

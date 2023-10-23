@@ -31,33 +31,33 @@ pub fn spawn_shot_laser<TScreen: Component + Default>(
         .insert(TScreen::default());
 }
 
-fn laser_shape(tile_size: f32) -> ShapeBundle {
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
-        extents: Vec2::new(tile_size / 10., tile_size),
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::Rgba {
-                red: 1.,
-                green: 1.,
-                blue: 1.,
-                alpha: 0.6,
+fn laser_shape(tile_size: f32) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Rectangle {
+                origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
+                extents: Vec2::new(tile_size / 10., tile_size),
             }),
-            outline_mode: StrokeMode::new(
-                Color::Rgba {
-                    red: 1.,
-                    green: 0.,
-                    blue: 0.,
-                    alpha: 0.6,
-                },
-                tile_size / 20.,
-            ),
+            transform: Transform {
+                scale: Vec3::new(0., 0., 0.),
+                ..Default::default()
+            },
+            ..default()
         },
-        Transform {
-            scale: Vec3::new(0., 0., 0.),
-            ..Default::default()
-        },
+        Fill::color(Color::Rgba {
+            red: 1.,
+            green: 1.,
+            blue: 1.,
+            alpha: 0.6,
+        }),
+        Stroke::new(
+            Color::Rgba {
+                red: 1.,
+                green: 0.,
+                blue: 0.,
+                alpha: 0.6,
+            },
+            tile_size / 20.,
+        ),
     )
 }

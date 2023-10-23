@@ -4,7 +4,7 @@ use crate::{
     utils::IngameTime,
 };
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::DrawMode;
+use bevy_prototype_lyon::prelude::Stroke;
 
 pub fn resource_animation_system(
     mut cmds: Commands,
@@ -36,15 +36,13 @@ pub fn resource_text_fade_system(
 }
 
 pub fn resource_symbol_fade_system(
-    mut q_symbols: Query<&mut DrawMode, With<ResourceSymbolFade>>,
+    mut q_symbols: Query<&mut Stroke, With<ResourceSymbolFade>>,
     time: Res<IngameTime>,
 ) {
     let delta = time.delta_secs();
-    for mut draw_mode in q_symbols.iter_mut() {
-        if let DrawMode::Stroke(stroke) = &mut *draw_mode {
-            let color = &mut stroke.color;
-            color.set_a(fade(color.a(), delta / 4.));
-        }
+    for mut stroke in q_symbols.iter_mut() {
+        let a = stroke.color.a();
+        stroke.color.set_a(fade(a, delta / 4.));
     }
 }
 

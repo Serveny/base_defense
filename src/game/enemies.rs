@@ -446,26 +446,22 @@ pub(super) fn spawn_normal_enemy(cmds: &mut Commands, enemy: Enemy) {
         .insert(GameScreen);
 }
 
-fn enemy_normal_shape(enemy: &Enemy) -> ShapeBundle {
+fn enemy_normal_shape(enemy: &Enemy) -> impl Bundle {
     let line_width = TILE_SIZE / 24.;
-    let shape = shapes::RegularPolygon {
-        sides: 5,
-        feature: shapes::RegularPolygonFeature::Radius(
-            enemy.size_radius * TILE_SIZE - (line_width / 2.),
-        ),
-        ..shapes::RegularPolygon::default()
-    };
-
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::MAROON),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, line_width),
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
+                sides: 5,
+                feature: shapes::RegularPolygonFeature::Radius(
+                    enemy.size_radius * TILE_SIZE - (line_width / 2.),
+                ),
+                ..default()
+            }),
+            transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
+            ..default()
         },
-        Transform {
-            translation: enemy.pos.to_scaled_vec3(1.),
-            ..Default::default()
-        },
+        Fill::color(Color::MAROON),
+        Stroke::new(Color::DARK_GRAY, line_width),
     )
 }
 
@@ -479,26 +475,23 @@ pub(super) fn spawn_tank_enemy(cmds: &mut Commands, enemy: Enemy) {
         .insert(GameScreen);
 }
 
-fn enemy_tank_shape(enemy: &Enemy) -> ShapeBundle {
+fn enemy_tank_shape(enemy: &Enemy) -> impl Bundle {
     let line_width = TILE_SIZE / 24.;
-    let shape = shapes::RegularPolygon {
-        sides: 6,
-        feature: shapes::RegularPolygonFeature::Radius(
-            enemy.size_radius * TILE_SIZE - (line_width / 2.),
-        ),
-        ..shapes::RegularPolygon::default()
-    };
 
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::OLIVE),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, line_width),
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
+                sides: 6,
+                feature: shapes::RegularPolygonFeature::Radius(
+                    enemy.size_radius * TILE_SIZE - (line_width / 2.),
+                ),
+                ..shapes::RegularPolygon::default()
+            }),
+            transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
+            ..default()
         },
-        Transform {
-            translation: enemy.pos.to_scaled_vec3(1.),
-            ..Default::default()
-        },
+        Fill::color(Color::OLIVE),
+        Stroke::new(Color::DARK_GRAY, line_width),
     )
 }
 pub fn next_step(path: &[BoardStep], last: &BoardStep, offset: f32) -> Option<BoardStep> {

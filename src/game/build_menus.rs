@@ -1,5 +1,5 @@
 use super::{
-    actions::build_menu::{BuildMenuActionsEvent, QueryMenuParents},
+    actions::build_menu::{BuildMenuCloseEvent, QueryBuildingMenuParents, QueryTowerMenuParents},
     BaseLevel,
 };
 use crate::{
@@ -8,9 +8,9 @@ use crate::{
         buildings::{
             factory::{spawn_factory, Factory},
             power_plant::{spawn_power_plant, PowerPlant},
-            Building, BuildingBase,
+            Building,
         },
-        towers::{Tower, TowerParent},
+        towers::Tower,
         Vec2Board,
     },
 };
@@ -66,55 +66,49 @@ impl BuildMenu {
             .collect()
     }
 
-    pub fn get_selected<'a, TBuild: Component, TBase: Component>(
-        &self,
-        q_bases: &'a QueryMenuParents<TBuild, TBase>,
-        selected_i: usize,
-    ) -> Option<&'a TBuild> {
-        for (i, (_, _, build)) in q_bases.iter().enumerate() {
-            if i == selected_i {
-                return Some(build);
+    pub fn get_selected_tower<'a>(&self, q_bases: &'a QueryTowerMenuParents) -> Option<&'a Tower> {
+        for (i, (_, _, tower)) in q_bases.iter().enumerate() {
+            if i == self.selected_tower_index {
+                return Some(tower);
             }
         }
         None
     }
 
-    pub fn get_selected_tower<'a>(
-        &self,
-        q_bases: &'a QueryMenuParents<Tower, TowerParent>,
-    ) -> Option<&'a Tower> {
-        self.get_selected(q_bases, self.selected_tower_index)
-    }
-
     pub fn get_selected_building<'a>(
         &self,
-        q_bases: &'a QueryMenuParents<Building, BuildingBase>,
+        q_bases: &'a QueryBuildingMenuParents,
     ) -> Option<&'a Building> {
-        self.get_selected(q_bases, self.selected_building_index)
+        for (i, (_, _, building)) in q_bases.iter().enumerate() {
+            if i == self.selected_building_index {
+                return Some(building);
+            }
+        }
+        None
     }
 }
 
 #[derive(Component)]
 pub struct BuildMenuCircle;
 
-fn menu_circle_shape(tile_size: f32) -> ShapeBundle {
-    let shape = Circle {
-        center: Vec2::default(),
-        radius: tile_size / 2.5,
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::rgba(0.75, 0.75, 0.75, 0.)),
-            outline_mode: StrokeMode::new(Color::rgba(0.25, 0.25, 0.25, 0.5), tile_size / 32.),
+fn menu_circle_shape(tile_size: f32) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&Circle {
+                center: Vec2::default(),
+                radius: tile_size / 2.5,
+            }),
+            transform: Transform::from_translation(Vec3::new(0., 0., 3.)),
+            ..default()
         },
-        Transform::from_translation(Vec3::new(0., 0., 3.)),
+        Fill::color(Color::rgba(0.75, 0.75, 0.75, 0.)),
+        Stroke::new(Color::rgba(0.25, 0.25, 0.25, 0.5), tile_size / 32.),
     )
 }
 
 pub fn draw_build_menu(
     cmds: &mut Commands,
-    mut actions: EventWriter<BuildMenuActionsEvent>,
+    mut bm_close_ev: EventWriter<BuildMenuCloseEvent>,
     base_lvl: BaseLevel,
 ) {
     cmds.spawn(menu_circle_shape(TILE_SIZE))
@@ -136,5 +130,5 @@ pub fn draw_build_menu(
             }
         }
     }
-    actions.send(BuildMenuActionsEvent::Close);
+    bm_close_ev.send(BuildMenuCloseEvent);
 }

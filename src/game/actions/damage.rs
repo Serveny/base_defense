@@ -1,6 +1,7 @@
 use crate::game::enemies::Enemy;
 use bevy::prelude::*;
 
+#[derive(Event)]
 pub struct DamageEvent {
     entity: Entity,
     damage: f32,

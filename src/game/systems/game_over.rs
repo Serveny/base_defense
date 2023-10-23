@@ -9,9 +9,9 @@ use crate::{
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{CentralPanel, Frame, Label, RichText, ScrollArea, Stroke, TopBottomPanel},
-    EguiContext,
+    EguiContexts,
 };
-use bevy_prototype_lyon::prelude::DrawMode;
+use bevy_prototype_lyon::prelude::Fill;
 
 #[derive(Resource)]
 pub(in crate::game) enum GameOverTimer {
@@ -28,7 +28,7 @@ impl Default for GameOverTimer {
 pub(super) fn game_over_timer_system(
     mut go_timer: ResMut<GameOverTimer>,
     mut q_go_text: Query<(&mut Text, &mut Visibility), With<GameOverCountDownText>>,
-    q_base: Query<&mut DrawMode, With<BoardRoadEndMark>>,
+    q_base: Query<&mut Fill, With<BoardRoadEndMark>>,
     time: Res<IngameTime>,
     game: Res<Game>,
 ) {
@@ -39,38 +39,32 @@ pub(super) fn game_over_timer_system(
             text.0.sections[0].value = format!("{}", *(*game_over_time - *time.now()) as u32);
         } else {
             *go_timer = GameOverTimer::Active(time.now() + GAME_OVER_COUNTDOWN_TIME);
-            text.1.is_visible = true;
+            *text.1 = Visibility::Visible;
         }
     } else if let GameOverTimer::Active(_) = *go_timer {
         *go_timer = GameOverTimer::Inactive;
         set_base_color(q_base, IngameTimestamp(0.5));
         let mut text = q_go_text.single_mut();
         text.0.sections[0].value = format!("{}", GAME_OVER_COUNTDOWN_TIME.as_secs());
-        text.1.is_visible = false;
+        *text.1 = Visibility::Hidden;
     }
 }
 
-fn set_base_color(mut q_base: Query<&mut DrawMode, With<BoardRoadEndMark>>, time: IngameTimestamp) {
-    q_base.for_each_mut(|mut draw_mode| {
+fn set_base_color(mut q_base: Query<&mut Fill, With<BoardRoadEndMark>>, time: IngameTimestamp) {
+    q_base.for_each_mut(|mut fill| {
         let rg_val = *time % 0.5;
-        if let DrawMode::Outlined {
-            fill_mode,
-            outline_mode: _,
-        } = &mut *draw_mode
-        {
-            fill_mode.color = Color::rgb(0.5 + rg_val, 0.5 - rg_val, 0.)
-        }
+        fill.color = Color::rgb(0.5 + rg_val, 0.5 - rg_val, 0.);
     });
 }
 
 pub(super) fn game_over_system(
-    mut ingame_state: ResMut<State<IngameState>>,
+    mut set_ingame_state: ResMut<NextState<IngameState>>,
     go_timer: Res<GameOverTimer>,
     time: Res<IngameTime>,
 ) {
     if let GameOverTimer::Active(time_game_over) = go_timer.as_ref() {
         if *time_game_over <= time.now() {
-            ingame_state.set(IngameState::GameOver).unwrap();
+            set_ingame_state.set(IngameState::GameOver);
         }
     }
 }
@@ -83,8 +77,8 @@ fn format_secs_time(secs: f64) -> String {
 }
 
 pub(super) fn game_over_screen(
-    mut egui_ctx: ResMut<EguiContext>,
-    mut game_state: ResMut<State<GameState>>,
+    mut egui_ctx: EguiContexts,
+    mut set_game_state: ResMut<NextState<GameState>>,
     game: Res<Game>,
     kill_count: Res<EnemyKillCount>,
     laser_count: Res<LaserShotsFired>,
@@ -129,7 +123,7 @@ pub(super) fn game_over_screen(
                         )
                         .clicked()
                     {
-                        game_state.set(GameState::Menu).unwrap();
+                        set_game_state.set(GameState::Menu);
                     }
                 });
             });

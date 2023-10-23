@@ -6,10 +6,11 @@ use crate::utils::{IngameTime, IngameTimestamp};
 use bevy::prelude::*;
 use std::time::Duration;
 
-#[derive(Clone, Eq, PartialEq, Debug, Hash, PartialOrd, Ord)]
+#[derive(States, Clone, Copy, Eq, PartialEq, Debug, Hash, PartialOrd, Ord, Default)]
 pub enum WaveState {
-    Running,
+    #[default]
     None,
+    Running,
 }
 
 #[derive(Resource, Clone)]
@@ -63,7 +64,7 @@ pub(in crate::game) fn wave_system(
     board_cache: Res<BoardCache>,
     wave_state: Res<State<WaveState>>,
 ) {
-    if *wave_state.current() == WaveState::Running {
+    if *wave_state == WaveState::Running {
         let is_wave_end = wave.is_wave_end();
         let now = IngameTimestamp::new(time.elapsed_secs());
 

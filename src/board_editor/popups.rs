@@ -6,7 +6,7 @@ use crate::{
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{self, TextEdit},
-    EguiContext,
+    EguiContexts,
 };
 
 #[derive(Resource)]
@@ -79,7 +79,7 @@ pub(super) struct SaveBoardWindow {
 }
 
 pub(super) fn add_save_board_window(
-    mut egui_ctx: ResMut<EguiContext>,
+    mut egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
     mut actions: EventWriter<EditorActionEvent>,
 ) {
@@ -115,7 +115,7 @@ pub(super) fn add_save_board_window(
 }
 
 pub(super) fn add_load_board_window(
-    mut egui_ctx: ResMut<EguiContext>,
+    mut egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
     actions: EventWriter<EditorActionEvent>,
 ) {
@@ -162,7 +162,7 @@ fn add_load_board_select(
 }
 
 pub(super) fn add_new_board_window(
-    egui_ctx: ResMut<EguiContext>,
+    egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
     mut actions: EventWriter<EditorActionEvent>,
 ) {
@@ -182,7 +182,7 @@ pub(super) fn add_new_board_window(
 }
 
 pub(super) fn add_edit_board_window(
-    egui_ctx: ResMut<EguiContext>,
+    egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
     mut actions: EventWriter<EditorActionEvent>,
 ) {
@@ -202,7 +202,7 @@ pub(super) fn add_edit_board_window(
 }
 
 pub(super) fn add_new_edit_popup(
-    mut egui_ctx: ResMut<EguiContext>,
+    mut egui_ctx: EguiContexts,
     width: &mut u8,
     height: &mut u8,
     title: &str,
@@ -248,7 +248,7 @@ fn add_ok_cancel_row(ui: &mut bevy_egui::egui::Ui) -> (bool, bool) {
 }
 
 fn add_popup_window<R>(
-    egui_ctx: &mut ResMut<bevy_egui::EguiContext>,
+    egui_ctx: &mut EguiContexts,
     title: &str,
     content: impl FnOnce(&mut bevy_egui::egui::Ui) -> R,
 ) {

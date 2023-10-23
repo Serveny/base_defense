@@ -115,51 +115,50 @@ pub fn draw_tower<TScreen: Component + Default>(
     };
 }
 
-fn tower_base_shape(color: Color) -> ShapeBundle {
-    let shape = RegularPolygon {
-        sides: 8,
-        feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
-        ..RegularPolygon::default()
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(color),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
+fn tower_base_shape(color: Color) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&RegularPolygon {
+                sides: 8,
+                feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
+                ..RegularPolygon::default()
+            }),
+
+            ..default()
         },
-        Transform::default(),
+        Fill::color(color),
+        Stroke::new(Color::DARK_GRAY, TILE_SIZE / 16.),
     )
 }
 
-fn tower_circle_shape() -> ShapeBundle {
-    let shape = Circle {
-        center: Vec2::default(),
-        radius: TILE_SIZE / 5.,
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::SILVER),
-            outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
+fn tower_circle_shape() -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&Circle {
+                center: Vec2::default(),
+                radius: TILE_SIZE / 5.,
+            }),
+
+            transform: Transform::from_xyz(0., 0., 0.4),
+            ..default()
         },
-        Transform {
-            translation: Vec3::new(0., 0., 0.4),
-            ..Default::default()
-        },
+        Fill::color(Color::SILVER),
+        Stroke::new(Color::DARK_GRAY, TILE_SIZE / 16.),
     )
 }
 
-fn tower_range_circle_shape(radius: f32, color: Color) -> ShapeBundle {
-    let shape = Circle {
-        center: Vec2::default(),
-        radius: radius * TILE_SIZE,
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::NONE),
-            outline_mode: StrokeMode::new(color, 0.025 * TILE_SIZE),
+fn tower_range_circle_shape(radius: f32, color: Color, visibility: Visibility) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&Circle {
+                center: Vec2::default(),
+                radius,
+            }),
+            visibility,
+            transform: Transform::from_xyz(0., 0., 0.3),
+            ..default()
         },
-        Transform::from_translation(Vec3::new(0., 0., 0.3)),
+        Fill::color(Color::NONE),
+        Stroke::new(color, 0.025 * TILE_SIZE),
     )
 }

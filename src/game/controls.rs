@@ -1,5 +1,12 @@
 use super::{
-    actions::{build_menu::BuildMenuActionsEvent, tile::TileActionsEvent, GameActionEvent},
+    actions::{
+        build_menu::{
+            BuildMenuBuildEvent, BuildMenuCloseEvent, BuildMenuHideEvent, BuildMenuOpenEvent,
+            BuildMenuScrollEvent,
+        },
+        tile::TileActionsEvent,
+        GameActionEvent,
+    },
     build_menus::BuildMenu,
     GameScreen, HoveredTile, IngameState,
 };
@@ -9,7 +16,6 @@ use crate::{
     CamQuery,
 };
 use bevy::{input::mouse::MouseWheel, prelude::*};
-use BuildMenuActionsEvent::*;
 use TileActionsEvent::*;
 
 type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos, With<GameScreen>>;
@@ -17,7 +23,8 @@ type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos, With<GameScreen>>;
 pub(super) fn keyboard_input(
     keys: Res<Input<KeyCode>>,
     mut actions: EventWriter<GameActionEvent>,
-    mut tm_actions: EventWriter<BuildMenuActionsEvent>,
+    mut bm_scroll_ev: EventWriter<BuildMenuScrollEvent>,
+    mut bm_build_ev: EventWriter<BuildMenuBuildEvent>,
     ingame_state: Res<State<IngameState>>,
 ) {
     use GameActionEvent::*;
@@ -26,13 +33,13 @@ pub(super) fn keyboard_input(
     }
 
     // Ingame keys
-    if *ingame_state.current() != IngameState::Running {
+    if *ingame_state != IngameState::Running {
         return;
     }
-    if keys.just_pressed(KeyCode::LShift) {
+    if keys.just_pressed(KeyCode::ShiftLeft) {
         actions.send(ActivateOverview);
     }
-    if keys.just_released(KeyCode::LShift) {
+    if keys.just_released(KeyCode::ShiftLeft) {
         actions.send(DeactivateOverview);
     }
     if keys.just_pressed(KeyCode::Comma) {
@@ -53,28 +60,33 @@ pub(super) fn keyboard_input(
 
     // Build Menu
     if keys.just_released(KeyCode::Up) {
-        tm_actions.send(BuildMenuActionsEvent::EntryBefore);
+        bm_scroll_ev.send(BuildMenuScrollEvent::Before);
     }
     if keys.just_released(KeyCode::Down) {
-        tm_actions.send(BuildMenuActionsEvent::EntryAfter);
+        bm_scroll_ev.send(BuildMenuScrollEvent::After);
     }
     if keys.just_released(KeyCode::Return) {
-        tm_actions.send(BuildMenuActionsEvent::Build);
+        bm_build_ev.send(BuildMenuBuildEvent);
     }
 }
 
 pub(super) fn hovered_tile(
     mut current_tile: ResMut<HoveredTile>,
-    wnds: Res<Windows>,
+    wnds: Query<&Window>,
     board: Res<Board>,
     q_cam: CamQuery,
 ) {
-    current_tile.0 = get_hover_pos_and_tile(wnds, q_cam, board);
+    current_tile.0 = get_hover_pos_and_tile(wnds.single(), q_cam, board);
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn mouse_input(
+    mut bm_open_ev: EventWriter<BuildMenuOpenEvent>,
+    mut bm_close_ev: EventWriter<BuildMenuCloseEvent>,
+    mut bm_scroll_ev: EventWriter<BuildMenuScrollEvent>,
+    mut bm_build_ev: EventWriter<BuildMenuBuildEvent>,
+    mut bm_hide_ev: EventWriter<BuildMenuHideEvent>,
     mut tile_ac: EventWriter<TileActionsEvent>,
-    mut tm_ac: EventWriter<BuildMenuActionsEvent>,
     hovered_tile: Res<HoveredTile>,
     ev_scroll: EventReader<MouseWheel>,
     mbi: Res<Input<MouseButton>>,
@@ -83,8 +95,11 @@ pub(super) fn mouse_input(
 ) {
     match hovered_tile.0.clone() {
         Some((pos, tile)) => tile_hover(
+            &mut bm_open_ev,
+            &mut bm_scroll_ev,
+            &mut bm_build_ev,
+            &mut bm_hide_ev,
             &mut tile_ac,
-            &mut tm_ac,
             ev_scroll,
             &mbi,
             tbm,
@@ -92,18 +107,21 @@ pub(super) fn mouse_input(
             pos,
             tile,
         ),
-        None => tile_unhover(&mut tile_ac, &mut tm_ac),
+        None => tile_unhover(&mut bm_hide_ev, &mut tile_ac),
     };
 
     if mbi.just_pressed(MouseButton::Right) {
-        tm_ac.send(Close);
+        bm_close_ev.send(BuildMenuCloseEvent);
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 fn tile_hover(
+    bm_open_ev: &mut EventWriter<BuildMenuOpenEvent>,
+    bm_scroll_ev: &mut EventWriter<BuildMenuScrollEvent>,
+    bm_build_ev: &mut EventWriter<BuildMenuBuildEvent>,
+    bm_hide_ev: &mut EventWriter<BuildMenuHideEvent>,
     tile_acts: &mut EventWriter<TileActionsEvent>,
-    tm_acts: &mut EventWriter<BuildMenuActionsEvent>,
     ev_scroll: EventReader<MouseWheel>,
     mbi: &Input<MouseButton>,
     tbm: Res<BuildMenu>,
@@ -115,50 +133,48 @@ fn tile_hover(
     let is_left_click = mbi.just_pressed(MouseButton::Left);
     let is_tile_filled = p_pos.iter().any(|t_pos| upos == **t_pos);
     let is_build_tile = tile.is_buildable();
-    if let Some(ev) = match (is_left_click, tbm.is_open, is_tile_filled) {
-        (true, true, false) => Some(BuildMenuActionsEvent::Build),
-        (true, false, false) if is_build_tile => Some(Open(upos)),
-        (false, true, true) => Some(Hide),
-        (false, true, _) if !is_build_tile => Some(Hide),
-        (false, true, false) if tbm.should_open(upos) => Some(Open(upos)),
-        _ => None,
-    } {
-        tm_acts.send(ev);
+    match (is_left_click, tbm.is_open, is_tile_filled) {
+        (true, true, false) => bm_build_ev.send(BuildMenuBuildEvent),
+        (true, false, false) if is_build_tile => bm_open_ev.send(BuildMenuOpenEvent(upos)),
+        (false, true, true) => bm_hide_ev.send(BuildMenuHideEvent),
+        (false, true, _) if !is_build_tile => bm_hide_ev.send(BuildMenuHideEvent),
+        (false, true, false) if tbm.should_open(upos) => bm_open_ev.send(BuildMenuOpenEvent(upos)),
+        _ => (),
     }
-    mouse_wheel_handler(tm_acts, ev_scroll, &tbm, &pos, &tile);
+    mouse_wheel_handler(ev_scroll, bm_open_ev, bm_scroll_ev, &tbm, &pos, &tile);
     tile_acts.send(HoverTile(pos));
 }
 
 fn tile_unhover(
+    bm_hide_ev: &mut EventWriter<BuildMenuHideEvent>,
     tile_ac: &mut EventWriter<TileActionsEvent>,
-    tm_ac: &mut EventWriter<BuildMenuActionsEvent>,
 ) {
     tile_ac.send(UnhoverTile);
-    tm_ac.send(Hide);
+    bm_hide_ev.send(BuildMenuHideEvent);
 }
 
 fn mouse_wheel_handler(
-    tm_actions: &mut EventWriter<BuildMenuActionsEvent>,
     mut ev_scroll: EventReader<MouseWheel>,
+    bm_open_ev: &mut EventWriter<BuildMenuOpenEvent>,
+    bm_scroll_ev: &mut EventWriter<BuildMenuScrollEvent>,
     tbm: &BuildMenu,
     pos: &Vec2Board,
     tile: &Tile,
 ) {
     for ev in ev_scroll.iter() {
         match tile.is_buildable() {
-            true if tbm.is_open => send_tbm_scroll_ev(ev, tm_actions),
-            true => tm_actions.send(Open(pos.as_uvec2())),
+            true if tbm.is_open => bm_scroll_ev.send(match ev.y > 0. {
+                true => BuildMenuScrollEvent::Before,
+                false => BuildMenuScrollEvent::After,
+            }),
+            true => bm_open_ev.send(BuildMenuOpenEvent(pos.as_uvec2())),
             _ => (),
         }
     }
 }
 
-fn send_tbm_scroll_ev(ev: &MouseWheel, tm_actions: &mut EventWriter<BuildMenuActionsEvent>) {
-    tm_actions.send(if ev.y > 0. { EntryBefore } else { EntryAfter });
-}
-
 fn get_hover_pos_and_tile(
-    wnds: Res<Windows>,
+    wnds: &Window,
     q_cam: CamQuery,
     board: Res<Board>,
 ) -> Option<(Vec2Board, Tile)> {

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use self::{
-    actions::{build_menu::BuildMenuActionsEvent, GameActions},
+    actions::{build_menu::BuildMenuCloseEvent, GameActions},
     build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
     statistics::{EnemyKillCount, LaserShotsFired, RocketsFired},
@@ -31,12 +31,13 @@ mod systems;
 type BoardVisu = BoardVisualisation<GameScreen>;
 type BaseLevel = u8;
 
-#[derive(Component, Clone, Copy, PartialEq, Eq, Debug, Hash)]
+#[derive(States, Component, Clone, Copy, PartialEq, Eq, Debug, Hash, Default)]
 enum IngameState {
+    #[default]
+    None,
     Running,
     Pause,
     GameOver,
-    None,
 }
 
 #[derive(Resource, Default, Clone)]
@@ -47,25 +48,24 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state(IngameState::None)
-            .add_plugin(GameSystems)
-            .add_plugin(GameActions)
-            .add_system_set(SystemSet::on_enter(GameState::Game).with_system(game_setup))
-            .add_system_set(
-                SystemSet::on_update(GameState::Game)
-                    .with_system(keyboard_input)
-                    .with_system(on_resize),
+        app.add_state::<IngameState>()
+            .add_plugins((GameSystems, GameActions))
+            .add_systems(OnEnter(GameState::Game), game_setup)
+            .add_systems(
+                Update,
+                (keyboard_input, on_resize).run_if(in_state(GameState::Game)),
             )
-            .add_system_set(
-                SystemSet::on_update(IngameState::Running)
-                    .with_system(tick_ingame_timer)
-                    .with_system(mouse_input),
+            .add_systems(
+                Update,
+                (tick_ingame_timer, mouse_input).run_if(in_state(IngameState::Running)),
             )
-            .add_system_set(
-                SystemSet::on_exit(GameState::Game)
-                    .with_system(clean_up_game)
-                    .with_system(despawn_all_of::<GameScreen>)
-                    .with_system(despawn_all_of::<BuildMenuScreen>),
+            .add_systems(
+                OnExit(GameState::Game),
+                (
+                    clean_up_game,
+                    despawn_all_of::<GameScreen>,
+                    despawn_all_of::<BuildMenuScreen>,
+                ),
             );
     }
 }
@@ -104,31 +104,31 @@ struct GameScreen;
 
 fn on_resize(
     ev: EventReader<WindowResized>,
-    wins: Res<Windows>,
+    wins: Query<&Window>,
     board: Res<Board>,
     cam: CamMutQuery,
 ) {
     if !ev.is_empty() {
-        zoom_cam_to_board(&board, cam, &wins);
+        zoom_cam_to_board(&board, cam, wins.single());
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 fn game_setup(
     mut cmds: Commands,
-    mut ingame_state: ResMut<State<IngameState>>,
-    tm_ev: EventWriter<BuildMenuActionsEvent>,
+    mut set_ingame_state: ResMut<NextState<IngameState>>,
+    bm_close_ev: EventWriter<BuildMenuCloseEvent>,
     cam_query: CamMutQuery,
-    windows: Res<Windows>,
+    wins: Query<&Window>,
     board: Res<Board>,
     board_cache: Res<BoardCache>,
     game: Res<Game>,
     assets: Res<AssetServer>,
 ) {
-    zoom_cam_to_board(&board, cam_query, &windows);
+    zoom_cam_to_board(&board, cam_query, wins.single());
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache, &assets);
-    draw_build_menu(&mut cmds, tm_ev, game.base_lvl);
+    draw_build_menu(&mut cmds, bm_close_ev, game.base_lvl);
 
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();
@@ -140,7 +140,7 @@ fn game_setup(
     cmds.init_resource::<LaserShotsFired>();
     cmds.init_resource::<RocketsFired>();
 
-    ingame_state.set(IngameState::Running).unwrap();
+    set_ingame_state.set(IngameState::Running);
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>, game: Res<Game>) {
@@ -149,11 +149,11 @@ fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>, game: Res<G
 
 fn clean_up_game(
     mut cmds: Commands,
-    mut wave_state: ResMut<State<WaveState>>,
-    mut ingame_state: ResMut<State<IngameState>>,
+    mut set_wave_state: ResMut<NextState<WaveState>>,
+    mut set_ingame_state: ResMut<NextState<IngameState>>,
 ) {
-    wave_state.set(WaveState::None).unwrap_or_default();
-    ingame_state.set(IngameState::None).unwrap();
+    set_wave_state.set(WaveState::None);
+    set_ingame_state.set(IngameState::None);
     cmds.remove_resource::<Game>();
     cmds.remove_resource::<Board>();
     cmds.remove_resource::<BoardCache>();

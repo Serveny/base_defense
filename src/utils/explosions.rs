@@ -40,34 +40,34 @@ pub fn spawn_explosion<TScreen: Component + Default>(cmds: &mut Commands, expl: 
         .insert(TScreen::default());
 }
 
-fn explosion_shape(radius: f32, pos: Vec2Board) -> ShapeBundle {
-    let shape = shapes::Circle {
-        center: Vec2::default(),
-        radius: radius / 2.,
-    };
-    GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::Rgba {
-                red: 1.,
-                green: 0.,
-                blue: 0.,
-                alpha: 0.9,
+fn explosion_shape(radius: f32, pos: Vec2Board) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Circle {
+                center: Vec2::default(),
+                radius: radius / 2.,
             }),
-            outline_mode: StrokeMode::new(
-                Color::Rgba {
-                    red: 1.,
-                    green: 1.,
-                    blue: 0.,
-                    alpha: 0.7,
-                },
-                radius / 2.,
-            ),
+            transform: Transform {
+                translation: pos.to_scaled_vec3(3.),
+                scale: Vec3::new(0., 0., 0.),
+                ..Default::default()
+            },
+            ..default()
         },
-        Transform {
-            translation: pos.to_scaled_vec3(3.),
-            scale: Vec3::new(0., 0., 0.),
-            ..Default::default()
-        },
+        Fill::color(Color::Rgba {
+            red: 1.,
+            green: 0.,
+            blue: 0.,
+            alpha: 0.9,
+        }),
+        Stroke::new(
+            Color::Rgba {
+                red: 1.,
+                green: 1.,
+                blue: 0.,
+                alpha: 0.7,
+            },
+            radius / 2.,
+        ),
     )
 }

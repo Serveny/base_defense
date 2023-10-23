@@ -9,6 +9,7 @@ use crate::{
 };
 use bevy::prelude::*;
 
+#[derive(Event)]
 pub(super) enum EditorActionEvent {
     SetTile(UVec2, Tile),
     Load(Board),
@@ -31,12 +32,12 @@ type EditorActionQueries<'w, 's, 'a> = ParamSet<
 
 struct EditorActionParams<'w, 's, 'a> {
     cmds: Commands<'w, 's>,
-    game_state: &'a mut State<GameState>,
+    set_game_state: &'a mut NextState<GameState>,
     editor: &'a mut BoardEditor,
     visu: &'a mut BoardVisu,
     board: &'a mut Board,
     board_cache: &'a mut BoardCache,
-    windows: &'a Windows,
+    window: &'a Window,
     popups: &'a mut Popups,
     assets: &'a AssetServer,
 }
@@ -56,7 +57,7 @@ struct EditorActionParams<'w, 's, 'a> {
 #[allow(clippy::too_many_arguments)]
 pub(super) fn board_editor_actions(
     cmds: Commands,
-    mut game_state: ResMut<State<GameState>>,
+    mut set_game_state: ResMut<NextState<GameState>>,
     mut editor: ResMut<BoardEditor>,
     mut visu: ResMut<BoardVisu>,
     mut board: ResMut<Board>,
@@ -64,18 +65,18 @@ pub(super) fn board_editor_actions(
     mut queries: EditorActionQueries,
     mut popups: ResMut<Popups>,
     mut editor_actions: EventReader<EditorActionEvent>,
-    windows: Res<Windows>,
+    window: Query<&Window>,
     assets: Res<AssetServer>,
 ) {
     if !editor_actions.is_empty() {
         let mut ea_params = EditorActionParams {
             cmds,
-            game_state: &mut game_state,
+            set_game_state: &mut set_game_state,
             editor: &mut editor,
             visu: &mut visu,
             board: &mut board,
             board_cache: &mut board_cache,
-            windows: &windows,
+            window: &window.single(),
             popups: &mut popups,
             assets: &assets,
         };
@@ -157,7 +158,7 @@ fn load_board(
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
         repaint(ea_params, queries.p2(), ea_params.assets);
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.window);
     }
 }
 
@@ -172,7 +173,7 @@ fn new_board(
         *ea_params.board = new_board;
         *ea_params.popups = Popups::None;
         repaint(ea_params, queries.p2(), ea_params.assets);
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.window);
     }
 }
 
@@ -187,12 +188,12 @@ fn edit_board(
         *ea_params.popups = Popups::None;
         validate_board(ea_params);
         repaint(ea_params, queries.p2(), ea_params.assets);
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.windows);
+        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.window);
     }
 }
 
 fn leave(ea_params: &mut EditorActionParams) {
-    ea_params.game_state.set(GameState::Menu).unwrap();
+    ea_params.set_game_state.set(GameState::Menu);
 }
 
 fn validate_board(ea_params: &mut EditorActionParams) {

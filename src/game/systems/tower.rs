@@ -1,5 +1,4 @@
 use crate::{
-    board::visualisation::TILE_SIZE,
     game::{actions::tower::TowerActionsEvent, build_menus::BuildMenuScreen, enemies::Enemy},
     utils::{
         pos_to_quat,
@@ -17,7 +16,7 @@ type QueryTowersAndChildren<'w, 's, 'a> =
 type QueryCannonTransMut<'w, 's, 'a> =
     Query<'w, 's, &'a mut Transform, (With<TowerCannon>, Without<BuildMenuScreen>)>;
 type QueryCannonDrawMut<'w, 's, 'a> =
-    Query<'w, 's, &'a mut DrawMode, (With<TowerCannon>, Without<BuildMenuScreen>)>;
+    Query<'w, 's, &'a mut Fill, (With<TowerCannon>, Without<BuildMenuScreen>)>;
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy, &'a Children)>;
 type EntityEnemy<'a> = (Entity, &'a Enemy);
 
@@ -129,7 +128,7 @@ fn cannon_trans_mut<'a>(
 fn cannon_draw_mut<'a>(
     cannons: &'a mut QueryCannonDrawMut,
     tower_children: &Children,
-) -> Option<Mut<'a, DrawMode>> {
+) -> Option<Mut<'a, Fill>> {
     for child in tower_children.iter() {
         if cannons.get(*child).is_ok() {
             return cannons.get_mut(*child).ok();
@@ -146,11 +145,8 @@ fn rotate_tower_cannon_to_pos(
     transform.rotation = pos_to_quat(tower_pos, enemy_pos);
 }
 
-fn overheat_cannon(mut draw_mode: Mut<DrawMode>, tower_vals: &TowerValues, now: IngameTimestamp) {
-    *draw_mode = DrawMode::Outlined {
-        fill_mode: FillMode::color(overheat_color(tower_vals, now)),
-        outline_mode: StrokeMode::new(Color::DARK_GRAY, TILE_SIZE / 16.),
-    };
+fn overheat_cannon(mut fill: Mut<Fill>, tower_vals: &TowerValues, now: IngameTimestamp) {
+    *fill = Fill::color(overheat_color(tower_vals, now));
 }
 
 fn overheat_color(tower_vals: &TowerValues, now: IngameTimestamp) -> Color {

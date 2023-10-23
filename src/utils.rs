@@ -32,8 +32,9 @@ pub struct BoardPos(UVec2);
 pub type TilesPerSecond = f32;
 
 // Enum that will be used as a global state for the game
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+#[derive(States, Clone, Copy, Eq, PartialEq, Debug, Hash, Default)]
 pub enum GameState {
+    #[default]
     Splash,
     Menu,
     Game,
@@ -64,6 +65,7 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
 }
 
 use crate::assets::FONT_QUICKSAND;
+use bevy::render::camera::ScalingMode;
 use std::error::Error;
 use std::fs::{read_dir, read_to_string, DirEntry, File};
 use std::io::Write;
@@ -145,18 +147,13 @@ pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
     Quat::from_rotation_z(-pos_to_angle(pos, target).radians)
 }
 
-pub fn zoom_cam_to_board(board: &Board, mut cam_query: CamMutQuery, windows: &Windows) {
-    let win = windows.get_primary().unwrap();
+pub fn zoom_cam_to_board(board: &Board, mut cam_query: CamMutQuery, win: &Window) {
+    println!("Zoom cam to board");
     let margin = cam_margin(board, win);
-    let mut cam = cam_query.single_mut();
-    (cam.left, cam.right) = (
-        -margin.x * TILE_SIZE,
-        (board.width as f32 + margin.x) * TILE_SIZE,
-    );
-    (cam.bottom, cam.top) = (
-        -margin.y * TILE_SIZE,
-        (board.height as f32 + margin.y) * TILE_SIZE,
-    );
+    let mut projection = cam_query.single_mut();
+    let height = (board.height as f32 + margin.y) * TILE_SIZE;
+    let width = (board.width as f32 + margin.x) * TILE_SIZE;
+    projection.scaling_mode = ScalingMode::Fixed { width, height };
 }
 
 fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
@@ -173,9 +170,8 @@ fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
     }
 }
 
-pub fn cursor_pos(wnds: Res<Windows>, q_cam: CamQuery) -> Option<Vec2Board> {
+pub fn cursor_pos(wnd: &Window, q_cam: CamQuery) -> Option<Vec2Board> {
     let (camera, camera_transform) = q_cam.single();
-    let wnd = wnds.get_primary().unwrap();
 
     if let Some(screen_pos) = wnd.cursor_position() {
         let window_size = Vec2::new(wnd.width(), wnd.height());
@@ -193,7 +189,6 @@ pub fn text_bundle(
     color: Color,
     assets: &AssetServer,
     transform: Transform,
-    horizontal_align: HorizontalAlign,
 ) -> Text2dBundle {
     Text2dBundle {
         text: Text::from_section(
@@ -204,28 +199,35 @@ pub fn text_bundle(
                 color,
             },
         )
-        .with_alignment(TextAlignment {
-            horizontal: horizontal_align,
-            vertical: VerticalAlign::Center,
-        }),
+        .with_alignment(TextAlignment::Center),
         transform,
         ..default()
     }
 }
 
-pub fn text_background_shape(width: f32, transform: Transform, is_visible: bool) -> ShapeBundle {
-    let shape = shapes::Rectangle {
-        origin: RectangleOrigin::Center,
-        extents: Vec2::new(width / 2., width / 10.),
-    };
-    let mut bundle = GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Outlined {
-            fill_mode: FillMode::color(Color::rgba(1., 1., 1., 0.05)),
-            outline_mode: StrokeMode::new(Color::rgba(1., 1., 1., 0.05), width / 40.),
+pub fn text_background_shape(
+    width: f32,
+    transform: Transform,
+    visibility: Visibility,
+) -> impl Bundle {
+    (
+        ShapeBundle {
+            path: GeometryBuilder::build_as(&shapes::Rectangle {
+                origin: RectangleOrigin::Center,
+                extents: Vec2::new(width / 2., width / 10.),
+            }),
+            transform,
+            visibility,
+            ..default()
         },
-        transform,
-    );
-    bundle.visibility.is_visible = is_visible;
-    bundle
+        Fill::color(Color::rgba(1., 1., 1., 0.05)),
+        Stroke::new(Color::rgba(1., 1., 1., 0.05), width / 40.),
+    )
+}
+
+pub fn visible(is_visible: bool) -> Visibility {
+    match is_visible {
+        true => Visibility::Inherited,
+        false => Visibility::Hidden,
+    }
 }

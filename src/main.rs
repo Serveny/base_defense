@@ -1,13 +1,15 @@
 use ::bevy_egui::{
     egui::{self, style::Selection, Color32, Stroke},
-    EguiContext, EguiPlugin,
+    EguiPlugin,
 };
-use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy::prelude::*;
 use bevy_prototype_lyon::plugin::ShapePlugin;
 use user::Settings;
 use utils::GameState;
 
 //use bevy_editor_pls::*;
+use bevy::render::camera::ScalingMode;
+use bevy_egui::EguiContexts;
 #[cfg(debug_assertions)]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -34,23 +36,24 @@ fn main() {
 
     app.insert_resource(ClearColor(BACKGROUND_COLOR))
         .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
+            primary_window: Some(Window {
                 title: TITLE.to_string(),
-                width: 1200.0,
-                height: 600.,
+                resolution: (1200.0, 600.).into(),
                 ..default()
-            },
+            }),
             ..default()
         }))
-        .add_plugin(EguiPlugin)
-        .add_plugin(ShapePlugin)
-        .add_plugin(splash::SplashPlugin)
-        .add_plugin(main_menu::MainMenuPlugin)
-        .add_plugin(game::GamePlugin)
-        .add_plugin(board_editor::BoardEditorPlugin);
+        .add_plugins((
+            EguiPlugin,
+            ShapePlugin,
+            splash::SplashPlugin,
+            main_menu::MainMenuPlugin,
+            game::GamePlugin,
+            board_editor::BoardEditorPlugin,
+        ));
 
     #[cfg(debug_assertions)]
-    app.add_plugin(WorldInspectorPlugin);
+    app.add_plugins(WorldInspectorPlugin::default());
     //   app.add_plugin(EditorPlugin)
     //      .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
     //      .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin);
@@ -61,24 +64,25 @@ fn main() {
     //.build(&mut app);
 
     app.insert_resource(Settings::new())
-        .add_state(GameState::Splash)
-        .add_startup_system(setup_cameras)
-        .add_startup_system(setup_egui)
+        .add_state::<GameState>()
+        .add_systems(Startup, (setup_cameras, setup_egui))
         .run();
 }
 
 fn setup_cameras(mut commands: Commands) {
-    // cam.orthographic_projection.scaling_mode = ScalingMode::None;
-    commands
-        .spawn(Camera2dBundle {
-            projection: OrthographicProjection {
-                scale: 1.0,
-                scaling_mode: ScalingMode::None,
-                ..default()
-            },
+    commands.spawn(Camera2dBundle {
+        projection: OrthographicProjection {
+            viewport_origin: Vec2::new(0., 0.),
             ..default()
-        })
-        .insert(UiCameraConfig { show_ui: true });
+        },
+
+        transform: Transform {
+            translation: Vec3::new(0.0, 0.0, 100.0),
+            scale: Vec3::new(1.0, 1.0, 1.0),
+            ..default()
+        },
+        ..default()
+    });
 }
 
 const fn font() -> &'static [u8; 78628] {
@@ -89,7 +93,7 @@ const fn font() -> &'static [u8; 78628] {
     include_bytes!("../assets/fonts/Quicksand-Regular.ttf")
 }
 
-fn setup_egui(mut egui_ctx: ResMut<EguiContext>) {
+fn setup_egui(mut egui_ctx: EguiContexts) {
     let mut fonts = egui::FontDefinitions::default();
     let font = font();
 
