@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 // Place on the board
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum Tile {
     // A place where towers can be built
     #[default]

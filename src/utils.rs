@@ -147,12 +147,12 @@ pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
     Quat::from_rotation_z(-pos_to_angle(pos, target).radians)
 }
 
-pub fn zoom_cam_to_board(board: &Board, mut cam_query: CamMutQuery, win: &Window) {
+pub fn zoom_cam_to_board(board: &Board, q_cam: &mut CamMutQuery, win: &Window) {
     println!("Zoom cam to board");
     let margin = cam_margin(board, win);
     let height = (board.height as f32 + margin.y) * TILE_SIZE;
     let width = (board.width as f32 + margin.x) * TILE_SIZE;
-    let mut projection = cam_query.single_mut();
+    let mut projection = q_cam.single_mut();
     projection.scaling_mode = ScalingMode::Fixed { width, height };
 }
 

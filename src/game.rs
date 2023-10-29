@@ -103,13 +103,13 @@ impl Game {
 struct GameScreen;
 
 fn on_resize(
-    ev: EventReader<WindowResized>,
+    mut evr: EventReader<WindowResized>,
+    mut q_cam: CamMutQuery,
     wins: Query<&Window>,
     board: Res<Board>,
-    cam: CamMutQuery,
 ) {
-    if !ev.is_empty() {
-        zoom_cam_to_board(&board, cam, wins.single());
+    for _ in evr.iter() {
+        zoom_cam_to_board(&board, &mut q_cam, wins.single());
     }
 }
 
@@ -117,15 +117,15 @@ fn on_resize(
 fn game_setup(
     mut cmds: Commands,
     mut set_ingame_state: ResMut<NextState<IngameState>>,
+    mut q_cam: CamMutQuery,
     bm_close_ev: EventWriter<BuildMenuCloseEvent>,
-    cam_query: CamMutQuery,
     wins: Query<&Window>,
     board: Res<Board>,
     board_cache: Res<BoardCache>,
     game: Res<Game>,
     assets: Res<AssetServer>,
 ) {
-    zoom_cam_to_board(&board, cam_query, wins.single());
+    zoom_cam_to_board(&board, &mut q_cam, wins.single());
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache, &assets);
     draw_build_menu(&mut cmds, bm_close_ev, game.base_lvl);

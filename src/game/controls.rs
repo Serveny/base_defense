@@ -93,7 +93,7 @@ pub(super) fn mouse_input(
     q_pos: QueryPos,
     tbm: Res<BuildMenu>,
 ) {
-    match hovered_tile.0.clone() {
+    match hovered_tile.0 {
         Some((pos, tile)) => tile_hover(
             &mut bm_open_ev,
             &mut bm_scroll_ev,
@@ -181,7 +181,7 @@ fn get_hover_pos_and_tile(
     if let Some(pos) = cursor_pos(wnds, q_cam) {
         if pos.x >= 0. && pos.y >= 0. {
             if let Some(tile) = board.get_tile(&pos.as_uvec2()) {
-                return Some((pos, tile.clone()));
+                return Some((pos, *tile));
             }
         }
     }

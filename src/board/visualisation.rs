@@ -2,7 +2,7 @@ use self::road_end_mark::spawn_road_end_mark;
 use super::Tile;
 use crate::{
     board::{cache::BoardCache, Board},
-    utils::{range_circle::RangeCircle, towers::TowerRangeCircle, Vec2Board},
+    utils::{towers::TowerRangeCircle, Vec2Board},
 };
 use bevy::{prelude::*, sprite::Anchor};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
@@ -12,7 +12,12 @@ use std::marker::PhantomData;
 // Tile size factor, because bevy_lyon can't handle to small screen scales
 pub const TILE_SIZE: f32 = 1000.;
 
-pub type BoardScreenQuery<'a> = Query<'a, 'a, Entity, With<BoardScreen>>;
+pub type QueryBoardVisuTile<'w, 's, 'a> = Query<
+    'w,
+    's,
+    (&'a mut Sprite, &'a Transform, &'a BoardVisualTile),
+    (With<BoardVisualTile>, Without<BoardRoadEndMark>),
+>;
 pub type RoadEndMarkQuery<'w, 's, 'a> = Query<
     'w,
     's,
@@ -91,7 +96,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         // Board tiles
         for (y, row) in board.tiles.iter().enumerate() {
             for (x, tile) in row.iter().enumerate() {
-                self.spawn_tile(cmds, Vec2Board::new(x as f32, y as f32), tile);
+                self.spawn_tile(cmds, Vec2Board::new(x as f32, y as f32), *tile);
             }
         }
 
@@ -102,7 +107,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         self.spawn_hover_cross(cmds);
     }
 
-    fn spawn_tile(&self, cmds: &mut Commands, pos: Vec2Board, tile: &Tile) {
+    fn spawn_tile(&self, cmds: &mut Commands, pos: Vec2Board, tile: Tile) {
         cmds.spawn(SpriteBundle {
             sprite: Sprite {
                 custom_size: Some(self.tile_size_vec),
@@ -131,20 +136,16 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         spawn_road_end_mark::<TScreen>(cmds, board_cache, self.inner_tile_size, assets);
     }
 
-    pub fn change_tile(
-        pos: &UVec2,
-        to: &Tile,
-        mut query: Query<(&mut Sprite, &Transform, &BoardVisualTile), With<BoardVisualTile>>,
-    ) {
-        for (mut sprite, _, vis_tile) in query.iter_mut() {
-            if vis_tile.pos == *pos {
+    pub fn change_tile(pos: UVec2, to: Tile, q_board_visu_tile: &mut QueryBoardVisuTile) {
+        for (mut sprite, _, vis_tile) in q_board_visu_tile.iter_mut() {
+            if vis_tile.pos == pos {
                 sprite.color = Self::get_tile_color(to);
                 break;
             }
         }
     }
 
-    fn get_tile_color(tile: &Tile) -> Color {
+    fn get_tile_color(tile: Tile) -> Color {
         match tile {
             Tile::TowerGround => Color::GOLD,
             Tile::BuildingGround => Color::ANTIQUE_WHITE,
@@ -164,14 +165,13 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     }
 
     fn spawn_hover_cross(&self, cmds: &mut Commands) {
-        let mut shape = Self::hover_cross_shape();
-        cmds.spawn(shape)
+        cmds.spawn(Self::hover_cross_shape())
             .insert(BoardHoverCross)
             .insert(BoardScreen)
             .insert(TScreen::default());
     }
 
-    pub fn set_road_end_mark(&self, mut query: RoadEndMarkQuery, board_cache: &BoardCache) {
+    pub fn set_road_end_mark(&self, query: &mut RoadEndMarkQuery, board_cache: &BoardCache) {
         if let Some(end_pos) = board_cache.road_end_pos {
             if let Some(last_step) = board_cache.road_path.last() {
                 query.for_each_mut(|(mut visi, mut transform, comp)| {
@@ -193,13 +193,13 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     pub fn repaint(
         &self,
         cmds: &mut Commands,
-        mut query: Query<Entity, With<BoardScreen>>,
+        query: &Query<Entity, With<BoardScreen>>,
         board: &Board,
         board_cache: &BoardCache,
         assets: &AssetServer,
     ) {
-        for entity in query.iter_mut() {
-            cmds.entity(entity).despawn_recursive();
+        for board_screen_id in query.iter() {
+            cmds.entity(board_screen_id).despawn_recursive();
         }
         self.draw_board(cmds, board, board_cache, assets);
     }

@@ -1,7 +1,7 @@
 use super::{popups::Popups, BoardEditor, BoardVisu};
 use crate::{
     board::{
-        visualisation::{BoardScreen, BoardScreenQuery, BoardVisualTile, RoadEndMarkQuery},
+        visualisation::{BoardScreen, QueryBoardVisuTile, RoadEndMarkQuery},
         Board, BoardCache, Tile,
     },
     utils::{save_board_to_file, zoom_cam_to_board, GameState},
@@ -10,110 +10,32 @@ use crate::{
 use bevy::prelude::*;
 
 #[derive(Event)]
-pub(super) enum EditorActionEvent {
-    SetTile(UVec2, Tile),
-    Load(Board),
-    Save,
-    New((u8, u8)),
-    Edit((u8, u8)),
-    Leave,
+pub struct EditorSetTileEvent {
+    pos: UVec2,
+    tile_to: Tile,
 }
 
-type EditorActionQueries<'w, 's, 'a> = ParamSet<
-    'w,
-    's,
-    (
-        Query<'w, 's, (&'a mut Sprite, &'a Transform, &'a BoardVisualTile), With<BoardVisualTile>>,
-        RoadEndMarkQuery<'w, 's, 'a>,
-        Query<'w, 's, Entity, With<BoardScreen>>,
-        CamMutQuery<'w, 's, 'a>,
-    ),
->;
-
-struct EditorActionParams<'w, 's, 'a> {
-    cmds: Commands<'w, 's>,
-    set_game_state: &'a mut NextState<GameState>,
-    editor: &'a mut BoardEditor,
-    visu: &'a mut BoardVisu,
-    board: &'a mut Board,
-    board_cache: &'a mut BoardCache,
-    window: &'a Window,
-    popups: &'a mut Popups,
-    assets: &'a AssetServer,
-}
-
-//struct EditorActionParams<'w, 's, 'gs, 'es, 'visu, 'b, 'bc, 'win, 'pu, 'ass> {
-//cmds: Commands<'w, 's>,
-//game_state: &'gs mut State<GameState>,
-//editor: &'es mut BoardEditor,
-//visu: &'visu mut BoardVisu,
-//board: &'b mut Board,
-//board_cache: &'bc mut BoardCache,
-//windows: &'win Windows,
-//popups: &'pu mut Popups,
-//assets: &'ass AssetServer,
-//}
-
-#[allow(clippy::too_many_arguments)]
-pub(super) fn board_editor_actions(
-    cmds: Commands,
-    mut set_game_state: ResMut<NextState<GameState>>,
-    mut editor: ResMut<BoardEditor>,
-    mut visu: ResMut<BoardVisu>,
-    mut board: ResMut<Board>,
-    mut board_cache: ResMut<BoardCache>,
-    mut queries: EditorActionQueries,
-    mut popups: ResMut<Popups>,
-    mut editor_actions: EventReader<EditorActionEvent>,
-    window: Query<&Window>,
-    assets: Res<AssetServer>,
-) {
-    if !editor_actions.is_empty() {
-        let mut ea_params = EditorActionParams {
-            cmds,
-            set_game_state: &mut set_game_state,
-            editor: &mut editor,
-            visu: &mut visu,
-            board: &mut board,
-            board_cache: &mut board_cache,
-            window: &window.single(),
-            popups: &mut popups,
-            assets: &assets,
-        };
-        for event in editor_actions.iter() {
-            match event {
-                EditorActionEvent::SetTile(pos, tile_to) => {
-                    set_tile_and_update_mark(&mut ea_params, &mut queries, pos, tile_to)
-                }
-                EditorActionEvent::Save => save_board(&mut ea_params),
-                EditorActionEvent::Load(board) => {
-                    load_board(&mut ea_params, &mut queries, board.clone())
-                }
-                EditorActionEvent::New(size) => new_board(&mut ea_params, &mut queries, *size),
-                EditorActionEvent::Edit(size) => edit_board(&mut ea_params, &mut queries, *size),
-                EditorActionEvent::Leave => leave(&mut ea_params),
-            }
-        }
+impl EditorSetTileEvent {
+    pub fn new(pos: UVec2, tile_to: Tile) -> Self {
+        Self { pos, tile_to }
     }
 }
 
-fn set_tile_and_update_mark(
-    ea_params: &mut EditorActionParams,
-    queries: &mut EditorActionQueries,
-    pos: &UVec2,
-    tile_to: &Tile,
+pub(super) fn on_set_tile(
+    mut evr: EventReader<EditorSetTileEvent>,
+    mut editor: ResMut<BoardEditor>,
+    mut board: ResMut<Board>,
+    mut board_cache: ResMut<BoardCache>,
+    mut q_board_visu_tile: QueryBoardVisuTile,
+    mut q_road_end: RoadEndMarkQuery,
+    visu: ResMut<BoardVisu>,
 ) {
-    set_tile(
-        ea_params.board,
-        ea_params.board_cache,
-        *pos,
-        tile_to.clone(),
-    );
-    validate_board(ea_params);
-    BoardVisu::change_tile(pos, tile_to, queries.p0());
-    ea_params
-        .visu
-        .set_road_end_mark(queries.p1(), ea_params.board_cache);
+    for ev in evr.iter() {
+        set_tile(&mut board, &mut board_cache, ev.pos, ev.tile_to);
+        validate_board(&mut editor, &board_cache);
+        BoardVisu::change_tile(ev.pos, ev.tile_to, &mut q_board_visu_tile);
+        visu.set_road_end_mark(&mut q_road_end, &board_cache)
+    }
 }
 
 fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to: Tile) {
@@ -125,79 +47,153 @@ fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to
     }
 }
 
-fn repaint(ea_params: &mut EditorActionParams, query: BoardScreenQuery, assets: &AssetServer) {
-    *ea_params.visu = BoardVisu::new(0.9);
-    ea_params.visu.repaint(
-        &mut ea_params.cmds,
-        query,
-        ea_params.board,
-        ea_params.board_cache,
-        assets,
-    );
-}
+#[derive(Event)]
+pub struct EditorSaveBoardEvent;
 
-fn save_board(ea_params: &mut EditorActionParams) {
-    if let Popups::Save(save_win) = ea_params.popups {
-        save_win.err_text = None;
-        ea_params.board.name = save_win.map_file_name.clone();
-        match save_board_to_file(&save_win.map_file_name, ea_params.board) {
-            Ok(()) => *ea_params.popups = Popups::None,
-            Err(error) => save_win.err_text = Some(error.to_string()),
+pub(super) fn on_save_board(
+    mut evr: EventReader<EditorSaveBoardEvent>,
+    mut popups: ResMut<Popups>,
+    mut board: ResMut<Board>,
+) {
+    for _ in evr.iter() {
+        if let Popups::Save(save_win) = &mut popups.as_mut() {
+            save_win.err_text = None;
+            board.name = save_win.map_file_name.clone();
+            match save_board_to_file(&save_win.map_file_name, &board) {
+                Ok(()) => *popups = Popups::None,
+                Err(error) => save_win.err_text = Some(error.to_string()),
+            }
         }
     }
 }
 
-fn load_board(
-    ea_params: &mut EditorActionParams,
-    queries: &mut EditorActionQueries,
-    new_board: Board,
+#[derive(Event)]
+pub struct EditorLoadBoardEvent(pub Board);
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn on_load_board(
+    mut evr: EventReader<EditorLoadBoardEvent>,
+    mut cmds: Commands,
+    mut popups: ResMut<Popups>,
+    mut board: ResMut<Board>,
+    mut board_cache: ResMut<BoardCache>,
+    mut editor: ResMut<BoardEditor>,
+    mut visu: ResMut<BoardVisu>,
+    mut q_cam: CamMutQuery,
+    q_screen: Query<Entity, With<BoardScreen>>,
+    q_win: Query<&Window>,
+    assets: Res<AssetServer>,
 ) {
-    if let Popups::Load(_) = ea_params.popups {
-        *ea_params.board_cache = BoardCache::new(&new_board);
-        *ea_params.board = new_board;
-        *ea_params.popups = Popups::None;
-        validate_board(ea_params);
-        repaint(ea_params, queries.p2(), ea_params.assets);
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.window);
+    for ev in evr.iter() {
+        if let Popups::Load(_) = *popups {
+            *board_cache = BoardCache::new(&ev.0);
+            *board = ev.0.clone();
+            *popups = Popups::None;
+            validate_board(&mut editor, &board_cache);
+            *visu = BoardVisu::new(0.9);
+            visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
+            zoom_cam_to_board(&board, &mut q_cam, q_win.single());
+        }
     }
 }
 
-fn new_board(
-    ea_params: &mut EditorActionParams,
-    queries: &mut EditorActionQueries,
-    size: (u8, u8),
-) {
-    if let Popups::New(_) = ea_params.popups {
-        let new_board = Board::empty(size.0, size.1);
-        *ea_params.board_cache = BoardCache::new(&new_board);
-        *ea_params.board = new_board;
-        *ea_params.popups = Popups::None;
-        repaint(ea_params, queries.p2(), ea_params.assets);
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.window);
+#[derive(Event)]
+pub struct EditorNewBoardEvent {
+    width: u8,
+    height: u8,
+}
+
+impl EditorNewBoardEvent {
+    pub fn new(width: u8, lenght: u8) -> Self {
+        Self {
+            width,
+            height: lenght,
+        }
     }
 }
 
-fn edit_board(
-    ea_params: &mut EditorActionParams,
-    queries: &mut EditorActionQueries,
-    size: (u8, u8),
+#[allow(clippy::too_many_arguments)]
+pub(super) fn on_new_board(
+    mut evr: EventReader<EditorNewBoardEvent>,
+    mut cmds: Commands,
+    mut popups: ResMut<Popups>,
+    mut board: ResMut<Board>,
+    mut board_cache: ResMut<BoardCache>,
+    mut visu: ResMut<BoardVisu>,
+    mut q_cam: CamMutQuery,
+    q_screen: Query<Entity, With<BoardScreen>>,
+    q_win: Query<&Window>,
+    assets: Res<AssetServer>,
 ) {
-    if let Popups::Edit(_) = ea_params.popups {
-        ea_params.board.change_size(size.0, size.1);
-        *ea_params.board_cache = BoardCache::new(ea_params.board);
-        *ea_params.popups = Popups::None;
-        validate_board(ea_params);
-        repaint(ea_params, queries.p2(), ea_params.assets);
-        zoom_cam_to_board(ea_params.board, queries.p3(), ea_params.window);
+    for ev in evr.iter() {
+        if let Popups::New(_) = *popups {
+            let new_board = Board::empty(ev.width, ev.height);
+            *board_cache = BoardCache::new(&new_board);
+            *board = new_board;
+            *popups = Popups::None;
+            *visu = BoardVisu::new(0.9);
+            visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
+            zoom_cam_to_board(&board, &mut q_cam, q_win.single());
+        }
     }
 }
 
-fn leave(ea_params: &mut EditorActionParams) {
-    ea_params.set_game_state.set(GameState::Menu);
+#[derive(Event)]
+pub struct EditorEditBoardEvent {
+    width: u8,
+    height: u8,
 }
 
-fn validate_board(ea_params: &mut EditorActionParams) {
-    ea_params.editor.err_text = match ea_params.board_cache.validate() {
+impl EditorEditBoardEvent {
+    pub fn new(width: u8, lenght: u8) -> Self {
+        Self {
+            width,
+            height: lenght,
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(super) fn on_edit_board(
+    mut evr: EventReader<EditorEditBoardEvent>,
+    mut cmds: Commands,
+    mut popups: ResMut<Popups>,
+    mut board: ResMut<Board>,
+    mut board_cache: ResMut<BoardCache>,
+    mut editor: ResMut<BoardEditor>,
+    mut visu: ResMut<BoardVisu>,
+    mut q_cam: CamMutQuery,
+    q_screen: Query<Entity, With<BoardScreen>>,
+    q_win: Query<&Window>,
+    assets: Res<AssetServer>,
+) {
+    for ev in evr.iter() {
+        if let Popups::Edit(_) = *popups {
+            board.change_size(ev.width, ev.height);
+            *board_cache = BoardCache::new(&board);
+            *popups = Popups::None;
+            validate_board(&mut editor, &board_cache);
+            *visu = BoardVisu::new(0.9);
+            visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
+            zoom_cam_to_board(&board, &mut q_cam, q_win.single());
+        }
+    }
+}
+
+#[derive(Event)]
+pub struct EditorLeaveEvent;
+
+pub(super) fn on_leave(
+    mut evr: EventReader<EditorLeaveEvent>,
+    mut set_game_state: ResMut<NextState<GameState>>,
+) {
+    for _ in evr.iter() {
+        set_game_state.set(GameState::Menu);
+    }
+}
+
+fn validate_board(editor: &mut BoardEditor, board_cache: &BoardCache) {
+    editor.err_text = match board_cache.validate() {
         Ok(_) => None,
         Err(err) => Some(String::from(err)),
     };

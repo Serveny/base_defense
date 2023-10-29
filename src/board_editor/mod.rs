@@ -1,5 +1,8 @@
 use self::{
-    actions::{board_editor_actions, EditorActionEvent},
+    actions::{
+        EditorEditBoardEvent, EditorLeaveEvent, EditorLoadBoardEvent, EditorNewBoardEvent,
+        EditorSaveBoardEvent, EditorSetTileEvent,
+    },
     controls::mouse_input,
     popups::{
         add_edit_board_window, add_load_board_window, add_new_board_window, add_save_board_window,
@@ -40,7 +43,12 @@ pub struct BoardEditorPlugin;
 
 impl Plugin for BoardEditorPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<EditorActionEvent>()
+        app.add_event::<EditorSetTileEvent>()
+            .add_event::<EditorSaveBoardEvent>()
+            .add_event::<EditorLoadBoardEvent>()
+            .add_event::<EditorNewBoardEvent>()
+            .add_event::<EditorEditBoardEvent>()
+            .add_event::<EditorLeaveEvent>()
             .add_state::<SettileState>()
             .add_systems(OnEnter(GameState::MapEditor), editor_setup)
             .add_systems(
@@ -54,8 +62,12 @@ impl Plugin for BoardEditorPlugin {
                     add_save_board_window,
                     add_new_board_window,
                     add_edit_board_window,
-                    // TODO
-                    //board_editor_actions,
+                    actions::on_set_tile,
+                    actions::on_save_board,
+                    actions::on_load_board,
+                    actions::on_new_board,
+                    actions::on_edit_board,
+                    actions::on_leave,
                 )
                     .run_if(in_state(GameState::MapEditor)),
             )
@@ -68,14 +80,14 @@ impl Plugin for BoardEditorPlugin {
 
 fn editor_setup(
     mut cmds: Commands,
+    mut q_cam: CamMutQuery,
     wins: Query<&Window>,
-    cam_query: Query<&mut OrthographicProjection, With<Camera2d>>,
     assets: Res<AssetServer>,
 ) {
     let board = Board::default();
     let board_cache = BoardCache::new(&board);
 
-    zoom_cam_to_board(&board, cam_query, wins.single());
+    zoom_cam_to_board(&board, &mut q_cam, wins.single());
     let visu = BoardVisu::new(0.9);
     visu.draw_board(&mut cmds, &board, &board_cache, &assets);
     cmds.insert_resource(visu);
@@ -86,13 +98,13 @@ fn editor_setup(
 }
 
 fn on_resize(
-    ev: EventReader<WindowResized>,
+    mut ev: EventReader<WindowResized>,
+    mut q_cam: CamMutQuery,
     wins: Query<&Window>,
     board: Res<Board>,
-    cam: CamMutQuery,
 ) {
-    if !ev.is_empty() {
-        zoom_cam_to_board(&board, cam, wins.single());
+    for _ in ev.iter() {
+        zoom_cam_to_board(&board, &mut q_cam, wins.single());
     }
 }
 

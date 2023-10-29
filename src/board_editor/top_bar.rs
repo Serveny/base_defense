@@ -1,5 +1,5 @@
 use super::{
-    actions::EditorActionEvent,
+    actions::EditorLeaveEvent,
     popups::{EditBoardWindow, LoadBoardWindow, NewBoardWindow, Popups, SaveBoardWindow},
     BoardEditor, LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX,
 };
@@ -13,7 +13,7 @@ use bevy_egui::{
 pub(super) fn add_top_menu_bar(
     mut egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    mut actions: EventWriter<EditorActionEvent>,
+    mut leave_ev: EventWriter<EditorLeaveEvent>,
     state: Res<BoardEditor>,
     board: Res<Board>,
 ) {
@@ -21,7 +21,7 @@ pub(super) fn add_top_menu_bar(
         ui.set_height(super::TOP_BAR_HEIGHT_PX);
         ui.horizontal(|ui| {
             if add_top_bar_button("Back", ui).clicked() {
-                actions.send(EditorActionEvent::Leave);
+                leave_ev.send(EditorLeaveEvent);
             }
 
             ui.add_space(super::LEFT_BAR_WIDTH_PX - 80.);

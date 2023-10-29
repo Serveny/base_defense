@@ -1,4 +1,6 @@
-use super::actions::EditorActionEvent;
+use super::actions::{
+    EditorEditBoardEvent, EditorLoadBoardEvent, EditorNewBoardEvent, EditorSaveBoardEvent,
+};
 use crate::{
     board::Board,
     utils::{add_error_box, add_row, get_all_boards_in_folder},
@@ -81,7 +83,7 @@ pub(super) struct SaveBoardWindow {
 pub(super) fn add_save_board_window(
     mut egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    mut actions: EventWriter<EditorActionEvent>,
+    mut save_ev: EventWriter<EditorSaveBoardEvent>,
 ) {
     let mut is_close = false;
     if let Popups::Save(popup) = &mut *popup {
@@ -98,7 +100,7 @@ pub(super) fn add_save_board_window(
             let (is_ok, is_cancel) = add_ok_cancel_row(ui);
 
             if is_ok {
-                actions.send(EditorActionEvent::Save);
+                save_ev.send(EditorSaveBoardEvent);
             } else if is_cancel {
                 is_close = true;
             }
@@ -117,12 +119,12 @@ pub(super) fn add_save_board_window(
 pub(super) fn add_load_board_window(
     mut egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    actions: EventWriter<EditorActionEvent>,
+    load_ev: EventWriter<EditorLoadBoardEvent>,
 ) {
     let mut is_close = false;
     if let Popups::Load(popup) = &mut *popup {
         add_popup_window(&mut egui_ctx, "Load map", |ui| {
-            add_load_board_select(ui, popup, actions);
+            add_load_board_select(ui, popup, load_ev);
             ui.add_space(10.);
             if ui
                 .add_sized([400., 60.], bevy_egui::egui::widgets::Button::new("Cancel"))
@@ -143,7 +145,7 @@ pub(super) fn add_load_board_window(
 fn add_load_board_select(
     ui: &mut egui::Ui,
     load_win: &mut LoadBoardWindow,
-    mut actions: EventWriter<EditorActionEvent>,
+    mut load_ev: EventWriter<EditorLoadBoardEvent>,
 ) {
     egui::containers::ScrollArea::vertical().show(ui, |ui| {
         for board in &load_win.boards {
@@ -154,7 +156,7 @@ fn add_load_board_select(
                 )
                 .clicked()
             {
-                actions.send(EditorActionEvent::Load(board.clone()));
+                load_ev.send(EditorLoadBoardEvent(board.clone()));
                 break;
             }
         }
@@ -164,14 +166,14 @@ fn add_load_board_select(
 pub(super) fn add_new_board_window(
     egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    mut actions: EventWriter<EditorActionEvent>,
+    mut new_board_ev: EventWriter<EditorNewBoardEvent>,
 ) {
     let mut is_close = false;
     if let Popups::New(popup) = &mut *popup {
         let (is_ok, is_cancel) =
             add_new_edit_popup(egui_ctx, &mut popup.width, &mut popup.height, "New map");
         if is_ok {
-            actions.send(EditorActionEvent::New((popup.width, popup.height)));
+            new_board_ev.send(EditorNewBoardEvent::new(popup.width, popup.height));
         } else if is_cancel {
             is_close = true;
         }
@@ -184,14 +186,14 @@ pub(super) fn add_new_board_window(
 pub(super) fn add_edit_board_window(
     egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    mut actions: EventWriter<EditorActionEvent>,
+    mut edit_ev: EventWriter<EditorEditBoardEvent>,
 ) {
     let mut is_close = false;
     if let Popups::Edit(popup) = &mut *popup {
         let (is_ok, is_cancel) =
             add_new_edit_popup(egui_ctx, &mut popup.width, &mut popup.height, "Edit size");
         if is_ok {
-            actions.send(EditorActionEvent::Edit((popup.width, popup.height)));
+            edit_ev.send(EditorEditBoardEvent::new(popup.width, popup.height));
         } else if is_cancel {
             is_close = true;
         }
