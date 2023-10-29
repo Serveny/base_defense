@@ -5,7 +5,7 @@ use self::{
     death::death_system,
     enemy::{enemy_collision_add_system, enemy_walk_system},
     explosions::explosion_system,
-    game_over::{game_over_screen, game_over_system, game_over_timer_system},
+    game_over::{end_game, game_over_screen, game_over_system, game_over_timer_system},
     health_bar::health_bar_system,
     resource::{resource_animation_system, resource_symbol_fade_system, resource_text_fade_system},
     resource_bar::resource_bar_system,
@@ -86,6 +86,7 @@ impl Plugin for GameSystems {
                 )
                     .run_if(in_state(IngameState::Running)),
             )
+            .add_systems(OnEnter(IngameState::GameOver), end_game)
             .add_systems(
                 Update,
                 (game_over_screen).run_if(in_state(IngameState::GameOver)),

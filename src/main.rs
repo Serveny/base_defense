@@ -8,7 +8,6 @@ use user::Settings;
 use utils::GameState;
 
 //use bevy_editor_pls::*;
-use bevy::render::camera::ScalingMode;
 use bevy_egui::EguiContexts;
 #[cfg(debug_assertions)]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;

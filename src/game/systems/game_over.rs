@@ -1,3 +1,4 @@
+use super::wave::WaveState;
 use crate::{
     board::visualisation::{BoardRoadEndMark, GameOverCountDownText},
     game::{
@@ -76,9 +77,15 @@ fn format_secs_time(secs: f64) -> String {
     format!("{:02}:{:02}:{:02}", hours, mins, secs)
 }
 
+pub(super) fn end_game(mut set_wave_state: ResMut<NextState<WaveState>>) {
+    set_wave_state.set(WaveState::None);
+}
+
+#[allow(clippy::too_many_arguments)]
 pub(super) fn game_over_screen(
     mut egui_ctx: EguiContexts,
     mut set_game_state: ResMut<NextState<GameState>>,
+    mut set_ingame_state: ResMut<NextState<IngameState>>,
     game: Res<Game>,
     kill_count: Res<EnemyKillCount>,
     laser_count: Res<LaserShotsFired>,
@@ -123,6 +130,7 @@ pub(super) fn game_over_screen(
                         )
                         .clicked()
                     {
+                        set_ingame_state.set(IngameState::None);
                         set_game_state.set(GameState::Menu);
                     }
                 });
