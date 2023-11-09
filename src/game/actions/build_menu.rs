@@ -65,7 +65,7 @@ pub(super) fn on_scroll(
     mut q_building: QueryBuildingMenuParents,
     board: Res<Board>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if tbm.is_open {
             scroll(
                 &mut tbm,
@@ -89,7 +89,7 @@ pub(super) fn on_open(
     mut q_building: QueryBuildingMenuParents,
     board: Res<Board>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         let pos = &ev.0;
         if let Some(tile) = board.get_tile(pos) {
             let translation = Vec2Board::from_uvec2_middle(pos).to_scaled_vec3(3.);
@@ -110,7 +110,7 @@ pub(super) fn on_close(
     mut bm_hide_ev: EventWriter<BuildMenuHideEvent>,
     mut tbm: ResMut<BuildMenu>,
 ) {
-    for _ in evr.iter() {
+    for _ in evr.read() {
         bm_hide_ev.send(BuildMenuHideEvent);
         tbm.is_open = false;
     }
@@ -124,7 +124,7 @@ pub(super) fn on_hide(
     mut tbm: ResMut<BuildMenu>,
     mut q_tm: QueryBuildMenu,
 ) {
-    for _ in evr.iter() {
+    for _ in evr.read() {
         for (_, mut visi) in q_tm.iter_mut() {
             *visi = Visibility::Hidden;
         }
@@ -239,7 +239,7 @@ pub(super) fn on_build(
     q_qmp_tower: QueryTowerMenuParents,
     q_qmp_building: QueryBuildingMenuParents,
 ) {
-    for _ in evr.iter() {
+    for _ in evr.read() {
         if let Some(tile) = board.get_tile_mut(&tbm.tile_pos) {
             if !is_tile_occupied_tower(&q_tower, tbm.tile_pos) {
                 match tile {

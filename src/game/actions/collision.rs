@@ -27,7 +27,7 @@ pub(super) fn on_enemy_collision_add(
     mut events: EventReader<EnemyCollisionAddEvent>,
     mut q_speeds: Query<&mut Speed>,
 ) {
-    for ev in events.iter() {
+    for ev in events.read() {
         if let Ok([mut speed_before, mut speed_behind]) = q_speeds.get_many_mut([ev.0, ev.1]) {
             if speed_before.current < speed_behind.current {
                 std::mem::swap(&mut speed_before.current, &mut speed_behind.current);
@@ -41,7 +41,7 @@ pub(super) fn on_enemy_collision_remove(
     mut collisions: ResMut<Collisions>,
     mut q_speeds: Query<&mut Speed>,
 ) {
-    for ev in events.iter() {
+    for ev in events.read() {
         set_speed_to_normal(&mut q_speeds, ev.0);
         set_speed_to_normal(&mut q_speeds, ev.1);
         remove_collision(&mut collisions, ev);

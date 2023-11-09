@@ -14,7 +14,7 @@ impl DamageEvent {
 }
 
 pub fn on_damage(mut events: EventReader<DamageEvent>, mut enemies: Query<&mut Enemy>) {
-    for ev in events.iter() {
+    for ev in events.read() {
         if let Ok(mut enemy) = enemies.get_mut(ev.entity) {
             enemy.health -= ev.damage;
         }

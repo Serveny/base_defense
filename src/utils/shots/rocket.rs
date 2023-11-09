@@ -78,11 +78,14 @@ fn rocket_head_shape(tile_size: f32) -> impl Bundle {
                 feature: RegularPolygonFeature::Radius(tile_size / 20.),
                 ..RegularPolygon::default()
             }),
-            transform: Transform::from_translation(Vec3::new(
-                0.,
-                tile_size / 10. + tile_size / 20.,
-                0.1,
-            )),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(Vec3::new(
+                    0.,
+                    tile_size / 10. + tile_size / 20.,
+                    0.1,
+                )),
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::PURPLE),
@@ -98,7 +101,10 @@ fn rocket_bottom_shape(tile_size: f32) -> impl Bundle {
                 feature: RegularPolygonFeature::Radius(tile_size / 10.),
                 ..RegularPolygon::default()
             }),
-            transform: Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::PURPLE),

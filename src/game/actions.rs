@@ -129,12 +129,13 @@ fn on_game_actions(
     mut set_ingame_state: ResMut<NextState<IngameState>>,
 ) {
     if !game_actions.is_empty() {
-        for event in game_actions.iter() {
+        for event in game_actions.read() {
             use GameActionEvent::*;
             match event {
                 BackToMainMenu => back_to_main_menu(
                     &mut cmds,
                     &mut set_game_state,
+                    &mut set_ingame_state,
                     &mut set_wave_state,
                     &mut q_game_screen,
                 ),
@@ -169,6 +170,7 @@ fn set_range_circles(query: &mut RangeCircleQuery, is_visible: bool) {
 fn back_to_main_menu(
     cmds: &mut Commands,
     set_game_state: &mut NextState<GameState>,
+    set_ingame_state: &mut NextState<IngameState>,
     set_wave_state: &mut NextState<WaveState>,
     query: &mut GameScreenQuery,
 ) {
@@ -176,5 +178,6 @@ fn back_to_main_menu(
         cmds.entity(entity).despawn_recursive();
     }
     set_wave_state.set(WaveState::None);
+    set_ingame_state.set(IngameState::None);
     set_game_state.set(GameState::Menu);
 }

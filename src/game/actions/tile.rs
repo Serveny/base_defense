@@ -21,7 +21,7 @@ pub(in crate::game) fn on_tile_actions(
     board_visu: Res<BoardVisu>,
     game: Res<Game>,
 ) {
-    for action in evr.iter() {
+    for action in evr.read() {
         match action {
             TileActionsEvent::HoverTile(pos) => {
                 let tile = board.get_tile(&pos.as_uvec2()).unwrap();

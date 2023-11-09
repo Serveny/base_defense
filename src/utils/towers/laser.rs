@@ -87,10 +87,13 @@ fn tower_laser_cannon() -> impl Bundle {
                 origin: RectangleOrigin::CustomCenter(Vec2::new(0., TILE_SIZE / 4.)),
                 extents: Vec2::new(TILE_SIZE / 6., TILE_SIZE / 2.),
             }),
-            transform: Transform {
-                translation: Vec3::new(0., 0., 0.1),
-                rotation: Quat::from_rotation_z(0.),
-                ..Default::default()
+            spatial: SpatialBundle {
+                transform: Transform {
+                    translation: Vec3::new(0., 0., 0.1),
+                    rotation: Quat::from_rotation_z(0.),
+                    ..Default::default()
+                },
+                ..default()
             },
             ..default()
         },

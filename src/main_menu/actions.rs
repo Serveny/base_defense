@@ -35,7 +35,7 @@ pub(super) fn menu_actions(
             set_menu_state: &mut set_menu_state,
             set_game_state: &mut set_game_state,
         };
-        for event in menu_actions.iter() {
+        for event in menu_actions.read() {
             match event {
                 MenuActionEvent::StartNewGame(game, board, board_cache) => {
                     start_new_game(

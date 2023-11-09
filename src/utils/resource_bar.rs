@@ -41,7 +41,10 @@ fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> impl Bun
                 origin: RectangleOrigin::Center,
                 extents: Vec2::new(bar_height / 4., bar_height),
             }),
-            transform: Transform::from_translation(translation),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(translation),
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::SILVER),
@@ -57,11 +60,14 @@ fn resource_bar_percentage_shape(bar_height: f32, translation: Vec3, color: Colo
                 origin: RectangleOrigin::BottomLeft,
                 extents: Vec2::new(bar_height / 4. - (margin * 2.), bar_height - (margin * 2.)),
             }),
-            transform: Transform::from_translation(Vec3::new(
-                translation.x - bar_height / 8. + margin,
-                translation.y - bar_height / 2. + margin,
-                translation.z,
-            )),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(Vec3::new(
+                    translation.x - bar_height / 8. + margin,
+                    translation.y - bar_height / 2. + margin,
+                    translation.z,
+                )),
+                ..default()
+            },
             ..default()
         },
         Fill::color(color),

@@ -38,9 +38,12 @@ fn laser_shape(tile_size: f32) -> impl Bundle {
                 origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
                 extents: Vec2::new(tile_size / 10., tile_size),
             }),
-            transform: Transform {
-                scale: Vec3::new(0., 0., 0.),
-                ..Default::default()
+            spatial: SpatialBundle {
+                transform: Transform {
+                    scale: Vec3::new(0., 0., 0.),
+                    ..Default::default()
+                },
+                ..default()
             },
             ..default()
         },

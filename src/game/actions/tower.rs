@@ -27,7 +27,7 @@ pub fn on_tower_actions(
     time: Res<IngameTime>,
 ) {
     use TowerActionsEvent::*;
-    for action in actions.iter() {
+    for action in actions.read() {
         match action {
             ShootLaser(shot, enemy_entity) => {
                 spawn_shot_laser::<GameScreen>(

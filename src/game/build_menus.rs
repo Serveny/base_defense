@@ -44,7 +44,7 @@ impl BuildMenu {
 
     //pub fn new_available_towers(base_lvl: BaseLevel) -> Vec<Tower> {
     //Self::towers()
-    //.iter()
+    //.read()
     //.filter(|item| item.0 == base_lvl)
     //.map(|item| item.1.clone())
     //.collect()
@@ -98,7 +98,10 @@ fn menu_circle_shape(tile_size: f32) -> impl Bundle {
                 center: Vec2::default(),
                 radius: tile_size / 2.5,
             }),
-            transform: Transform::from_translation(Vec3::new(0., 0., 3.)),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(Vec3::new(0., 0., 3.)),
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::rgba(0.75, 0.75, 0.75, 0.)),

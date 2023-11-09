@@ -457,7 +457,10 @@ fn enemy_normal_shape(enemy: &Enemy) -> impl Bundle {
                 ),
                 ..default()
             }),
-            transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::MAROON),
@@ -487,7 +490,10 @@ fn enemy_tank_shape(enemy: &Enemy) -> impl Bundle {
                 ),
                 ..shapes::RegularPolygon::default()
             }),
-            transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::OLIVE),

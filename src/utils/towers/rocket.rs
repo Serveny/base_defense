@@ -90,10 +90,13 @@ fn tower_rocket_cannon() -> impl Bundle {
                 origin: RectangleOrigin::CustomCenter(Vec2::new(0., TILE_SIZE / 4.)),
                 extents: Vec2::new(TILE_SIZE / 3., TILE_SIZE / 4.),
             }),
-            transform: Transform {
-                translation: Vec3::new(0., 0., 0.3),
-                rotation: Quat::from_rotation_z(0.),
-                ..Default::default()
+            spatial: SpatialBundle {
+                transform: Transform {
+                    translation: Vec3::new(0., 0., 0.3),
+                    rotation: Quat::from_rotation_z(0.),
+                    ..Default::default()
+                },
+                ..default()
             },
             ..default()
         },

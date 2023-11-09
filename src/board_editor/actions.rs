@@ -30,7 +30,7 @@ pub(super) fn on_set_tile(
     mut q_road_end: RoadEndMarkQuery,
     visu: ResMut<BoardVisu>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         set_tile(&mut board, &mut board_cache, ev.pos, ev.tile_to);
         validate_board(&mut editor, &board_cache);
         BoardVisu::change_tile(ev.pos, ev.tile_to, &mut q_board_visu_tile);
@@ -55,7 +55,7 @@ pub(super) fn on_save_board(
     mut popups: ResMut<Popups>,
     mut board: ResMut<Board>,
 ) {
-    for _ in evr.iter() {
+    for _ in evr.read() {
         if let Popups::Save(save_win) = &mut popups.as_mut() {
             save_win.err_text = None;
             board.name = save_win.map_file_name.clone();
@@ -84,7 +84,7 @@ pub(super) fn on_load_board(
     q_win: Query<&Window>,
     assets: Res<AssetServer>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if let Popups::Load(_) = *popups {
             *board_cache = BoardCache::new(&ev.0);
             *board = ev.0.clone();
@@ -125,7 +125,7 @@ pub(super) fn on_new_board(
     q_win: Query<&Window>,
     assets: Res<AssetServer>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if let Popups::New(_) = *popups {
             let new_board = Board::empty(ev.width, ev.height);
             *board_cache = BoardCache::new(&new_board);
@@ -167,7 +167,7 @@ pub(super) fn on_edit_board(
     q_win: Query<&Window>,
     assets: Res<AssetServer>,
 ) {
-    for ev in evr.iter() {
+    for ev in evr.read() {
         if let Popups::Edit(_) = *popups {
             board.change_size(ev.width, ev.height);
             *board_cache = BoardCache::new(&board);
@@ -187,7 +187,7 @@ pub(super) fn on_leave(
     mut evr: EventReader<EditorLeaveEvent>,
     mut set_game_state: ResMut<NextState<GameState>>,
 ) {
-    for _ in evr.iter() {
+    for _ in evr.read() {
         set_game_state.set(GameState::Menu);
     }
 }

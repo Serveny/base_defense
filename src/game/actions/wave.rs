@@ -23,7 +23,7 @@ pub(in crate::game) fn on_wave_actions(
     time: Res<IngameTime>,
 ) {
     if !actions.is_empty() {
-        for action in actions.iter() {
+        for action in actions.read() {
             match action {
                 WaveActionsEvent::StartWave => {
                     start_wave(&mut cmds, &mut game, &mut set_wave_state, time.now());

@@ -103,7 +103,7 @@ fn on_resize(
     wins: Query<&Window>,
     board: Res<Board>,
 ) {
-    for _ in ev.iter() {
+    for _ in ev.read() {
         zoom_cam_to_board(&board, &mut q_cam, wins.single());
     }
 }

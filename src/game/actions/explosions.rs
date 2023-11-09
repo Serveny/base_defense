@@ -37,7 +37,7 @@ impl ExplosionEvent {
 }
 
 pub fn on_explosions(mut events: EventReader<ExplosionEvent>, mut cmds: Commands) {
-    for ev in events.iter() {
+    for ev in events.read() {
         spawn_explosion::<GameScreen>(&mut cmds, ev.to_explosion());
     }
 }

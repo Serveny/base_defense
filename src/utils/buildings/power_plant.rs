@@ -74,7 +74,10 @@ fn power_plant_chimney_shape(tile_size: f32, color: Color, translation: Vec3) ->
                 origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
                 extents: Vec2::new(tile_size / 10., tile_size / 2.),
             }),
-            transform: Transform::from_translation(translation),
+            spatial: SpatialBundle {
+                transform: Transform::from_translation(translation),
+                ..default()
+            },
             ..default()
         },
         Fill::color(color),
@@ -89,7 +92,10 @@ fn power_plant_building_shape(tile_size: f32, color: Color) -> impl Bundle {
                 origin: RectangleOrigin::Center,
                 extents: Vec2::new(tile_size / 1.75, tile_size / 3.),
             }),
-            transform: Transform::from_xyz(0., 0., 0.02),
+            spatial: SpatialBundle {
+                transform: Transform::from_xyz(0., 0., 0.02),
+                ..default()
+            },
             ..default()
         },
         Fill::color(color),

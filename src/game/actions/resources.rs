@@ -42,7 +42,7 @@ pub(super) fn on_change_resources(
     assets: Res<AssetServer>,
     time: Res<IngameTime>,
 ) {
-    for ev in events.iter() {
+    for ev in events.read() {
         match ev {
             ResourcesEvent::Energy(energy, pos) => {
                 game.energy += energy;

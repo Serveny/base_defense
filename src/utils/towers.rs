@@ -138,8 +138,10 @@ fn tower_circle_shape() -> impl Bundle {
                 center: Vec2::default(),
                 radius: TILE_SIZE / 5.,
             }),
-
-            transform: Transform::from_xyz(0., 0., 0.4),
+            spatial: SpatialBundle {
+                transform: Transform::from_xyz(0., 0., 0.4),
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::SILVER),
@@ -154,8 +156,11 @@ fn tower_range_circle_shape(radius: f32, color: Color, visibility: Visibility) -
                 center: Vec2::default(),
                 radius,
             }),
-            visibility,
-            transform: Transform::from_xyz(0., 0., 0.3),
+            spatial: SpatialBundle {
+                visibility,
+                transform: Transform::from_xyz(0., 0., 0.3),
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::NONE),

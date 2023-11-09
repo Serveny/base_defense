@@ -121,6 +121,6 @@ fn setup_egui(mut egui_ctx: EguiContexts) {
                 color: Color32::WHITE,
             },
         },
-        ..Default::default()
+        ..default()
     });
 }

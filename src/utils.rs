@@ -148,7 +148,6 @@ pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
 }
 
 pub fn zoom_cam_to_board(board: &Board, q_cam: &mut CamMutQuery, win: &Window) {
-    println!("Zoom cam to board");
     let margin = cam_margin(board, win);
     let height = (board.height as f32 + margin.y) * TILE_SIZE;
     let width = (board.width as f32 + margin.x) * TILE_SIZE;
@@ -216,8 +215,11 @@ pub fn text_background_shape(
                 origin: RectangleOrigin::Center,
                 extents: Vec2::new(width / 2., width / 10.),
             }),
-            transform,
-            visibility,
+            spatial: SpatialBundle {
+                transform,
+                visibility,
+                ..default()
+            },
             ..default()
         },
         Fill::color(Color::rgba(1., 1., 1., 0.05)),

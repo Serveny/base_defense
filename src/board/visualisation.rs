@@ -208,7 +208,10 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         (
             ShapeBundle {
                 path: Self::hover_cross_path(),
-                visibility: Visibility::Hidden,
+                spatial: SpatialBundle {
+                    visibility: Visibility::Hidden,
+                    ..default()
+                },
                 ..default()
             },
             Fill::color(Color::rgba(1., 1., 1., 0.05)),
@@ -345,10 +348,13 @@ mod road_end_mark {
                 path: GeometryBuilder::build_as(&shapes::RegularPolygon {
                     sides: 8,
                     feature: shapes::RegularPolygonFeature::Radius(size_px / 3.),
-                    ..shapes::RegularPolygon::default()
+                    ..default()
                 }),
-                transform,
-                visibility,
+                spatial: SpatialBundle {
+                    transform,
+                    visibility,
+                    ..default()
+                },
                 ..default()
             },
             Fill::color(Color::OLIVE),
@@ -363,8 +369,11 @@ mod road_end_mark {
                     origin: RectangleOrigin::Center,
                     extents: Vec2::new(size_px / 4., size_px / 2.),
                 }),
-                transform: Transform::from_translation(Vec3::new(size_px / 3., 0., -0.1)),
-                visibility,
+                spatial: SpatialBundle {
+                    transform: Transform::from_translation(Vec3::new(size_px / 3., 0., -0.1)),
+                    visibility,
+                    ..default()
+                },
                 ..default()
             },
             Fill::color(Color::OLIVE),

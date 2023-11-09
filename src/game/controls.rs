@@ -81,6 +81,8 @@ pub(super) fn hovered_tile(
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn mouse_input(
+    mbi: Res<Input<MouseButton>>,
+    ev_scroll: EventReader<MouseWheel>,
     mut bm_open_ev: EventWriter<BuildMenuOpenEvent>,
     mut bm_close_ev: EventWriter<BuildMenuCloseEvent>,
     mut bm_scroll_ev: EventWriter<BuildMenuScrollEvent>,
@@ -88,8 +90,6 @@ pub(super) fn mouse_input(
     mut bm_hide_ev: EventWriter<BuildMenuHideEvent>,
     mut tile_ac: EventWriter<TileActionsEvent>,
     hovered_tile: Res<HoveredTile>,
-    ev_scroll: EventReader<MouseWheel>,
-    mbi: Res<Input<MouseButton>>,
     q_pos: QueryPos,
     tbm: Res<BuildMenu>,
 ) {
@@ -161,7 +161,7 @@ fn mouse_wheel_handler(
     pos: &Vec2Board,
     tile: &Tile,
 ) {
-    for ev in ev_scroll.iter() {
+    for ev in ev_scroll.read() {
         match tile.is_buildable() {
             true if tbm.is_open => bm_scroll_ev.send(match ev.y > 0. {
                 true => BuildMenuScrollEvent::Before,
