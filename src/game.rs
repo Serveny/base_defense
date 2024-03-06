@@ -48,7 +48,7 @@ pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<IngameState>()
+        app.init_state::<IngameState>()
             .add_plugins((GameSystems, GameActions))
             .add_systems(OnEnter(GameState::Game), game_setup)
             .add_systems(

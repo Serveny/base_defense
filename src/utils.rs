@@ -198,7 +198,7 @@ pub fn text_bundle(
                 color,
             },
         )
-        .with_alignment(TextAlignment::Center),
+        .with_justify(JustifyText::Center),
         transform,
         ..default()
     }

@@ -182,7 +182,7 @@ fn show_preview_building(
 }
 
 fn hide_tower_preview_base(q_tower: &mut QueryTowerMenuParents) {
-    q_tower.for_each_mut(|(mut visi, _, _)| {
+    q_tower.iter_mut().for_each(|(mut visi, _, _)| {
         if *visi == Visibility::Visible {
             *visi = Visibility::Hidden;
         }
@@ -190,7 +190,7 @@ fn hide_tower_preview_base(q_tower: &mut QueryTowerMenuParents) {
 }
 
 fn hide_building_preview_base(q_building: &mut QueryBuildingMenuParents) {
-    q_building.for_each_mut(|(mut visi, _, _)| {
+    q_building.iter_mut().for_each(|(mut visi, _, _)| {
         if *visi == Visibility::Visible {
             *visi = Visibility::Hidden;
         }

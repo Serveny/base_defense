@@ -63,7 +63,7 @@ fn main() {
     //.build(&mut app);
 
     app.insert_resource(Settings::new())
-        .add_state::<GameState>()
+        .init_state::<GameState>()
         .add_systems(Startup, (setup_cameras, setup_egui))
         .run();
 }

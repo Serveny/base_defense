@@ -24,18 +24,20 @@ pub(super) fn enemy_walk_system(
     collisions: Res<Collisions>,
 ) {
     let dur = time.delta();
-    q_enemies.for_each_mut(|(entity, mut enemy, mut transform, speed)| {
-        if !collisions
-            .iter()
-            .any(|coll| coll.enemy_behind == entity && coll.is_critical)
-        {
-            match enemy.walk_until_end(dur, speed.current, &board_cache) {
-                true => enemy_reached_base(&mut cmds, &mut res_actions, &enemy, entity),
-                false => transform.translation = enemy.pos.to_scaled_vec3(1.),
+    q_enemies
+        .iter_mut()
+        .for_each(|(entity, mut enemy, mut transform, speed)| {
+            if !collisions
+                .iter()
+                .any(|coll| coll.enemy_behind == entity && coll.is_critical)
+            {
+                match enemy.walk_until_end(dur, speed.current, &board_cache) {
+                    true => enemy_reached_base(&mut cmds, &mut res_actions, &enemy, entity),
+                    false => transform.translation = enemy.pos.to_scaled_vec3(1.),
+                }
+                set_enemy_spawn_line_flag(&mut enemy, &board_cache);
             }
-            set_enemy_spawn_line_flag(&mut enemy, &board_cache);
-        }
-    });
+        });
 }
 
 pub(super) fn enemy_collision_add_system(
@@ -43,8 +45,8 @@ pub(super) fn enemy_collision_add_system(
     mut collisions: ResMut<Collisions>,
     q_enemies: Query<(Entity, &Enemy)>,
 ) {
-    q_enemies.for_each(|(entity, enemy)| {
-        q_enemies.for_each(|(other_entity, other_enemy)| {
+    q_enemies.iter().for_each(|(entity, enemy)| {
+        q_enemies.iter().for_each(|(other_entity, other_enemy)| {
             if entity != other_entity {
                 let distance = enemy.pos.distance(*other_enemy.pos);
                 if distance <= enemy.break_radius + other_enemy.break_radius

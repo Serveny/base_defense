@@ -36,7 +36,7 @@ pub struct GameSystems;
 
 impl Plugin for GameSystems {
     fn build(&self, app: &mut App) {
-        app.add_state::<WaveState>()
+        app.init_state::<WaveState>()
             .add_systems(
                 Update,
                 (

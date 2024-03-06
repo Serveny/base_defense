@@ -164,7 +164,9 @@ fn on_game_actions(
 }
 
 fn set_range_circles(query: &mut RangeCircleQuery, is_visible: bool) {
-    query.for_each_mut(|(mut visi, _)| *visi = visible(is_visible));
+    query
+        .iter_mut()
+        .for_each(|(mut visi, _)| *visi = visible(is_visible));
 }
 
 fn back_to_main_menu(

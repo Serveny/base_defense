@@ -5,7 +5,7 @@ use bevy::prelude::*;
 pub(super) fn mouse_input(
     set_tile_ev: EventWriter<EditorSetTileEvent>,
     set_tile_state: Res<State<SettileState>>,
-    mouse_button_input: Res<Input<MouseButton>>,
+    mouse_button_input: Res<ButtonInput<MouseButton>>,
     popups: Res<Popups>,
     wnds: Query<&Window>,
     q_cam: CamQuery,

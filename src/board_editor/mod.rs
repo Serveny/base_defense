@@ -49,7 +49,7 @@ impl Plugin for BoardEditorPlugin {
             .add_event::<EditorNewBoardEvent>()
             .add_event::<EditorEditBoardEvent>()
             .add_event::<EditorLeaveEvent>()
-            .add_state::<SettileState>()
+            .init_state::<SettileState>()
             .add_systems(OnEnter(GameState::MapEditor), editor_setup)
             .add_systems(
                 Update,

@@ -174,20 +174,24 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     pub fn set_road_end_mark(&self, query: &mut RoadEndMarkQuery, board_cache: &BoardCache) {
         if let Some(end_pos) = board_cache.road_end_pos {
             if let Some(last_step) = board_cache.road_path.last() {
-                query.for_each_mut(|(mut visi, mut transform, comp)| {
-                    if !comp.is_child {
-                        transform.translation =
-                            Vec2Board::from_uvec2_middle(&end_pos).to_scaled_vec3(3.);
-                        transform.rotation = Quat::from_rotation_z(
-                            Angle::degrees(last_step.angle().to_degrees()).radians,
-                        );
-                    }
-                    *visi = Visibility::Visible;
-                });
+                query
+                    .iter_mut()
+                    .for_each(|(mut visi, mut transform, comp)| {
+                        if !comp.is_child {
+                            transform.translation =
+                                Vec2Board::from_uvec2_middle(&end_pos).to_scaled_vec3(3.);
+                            transform.rotation = Quat::from_rotation_z(
+                                Angle::degrees(last_step.angle().to_degrees()).radians,
+                            );
+                        }
+                        *visi = Visibility::Visible;
+                    });
                 return;
             }
         }
-        query.for_each_mut(|(mut visi, _, _)| *visi = Visibility::Hidden);
+        query
+            .iter_mut()
+            .for_each(|(mut visi, _, _)| *visi = Visibility::Hidden);
     }
 
     pub fn repaint(

@@ -21,7 +21,7 @@ use TileActionsEvent::*;
 type QueryPos<'w, 's, 'a> = Query<'w, 's, &'a BoardPos, With<GameScreen>>;
 
 pub(super) fn keyboard_input(
-    keys: Res<Input<KeyCode>>,
+    keys: Res<ButtonInput<KeyCode>>,
     mut actions: EventWriter<GameActionEvent>,
     mut bm_scroll_ev: EventWriter<BuildMenuScrollEvent>,
     mut bm_build_ev: EventWriter<BuildMenuBuildEvent>,
@@ -43,29 +43,29 @@ pub(super) fn keyboard_input(
         actions.send(DeactivateOverview);
     }
     if keys.just_pressed(KeyCode::Comma) {
-        actions.send(SpeedDown)
+        actions.send(SpeedDown);
     }
     if keys.just_pressed(KeyCode::Period) {
-        actions.send(SpeedUp)
+        actions.send(SpeedUp);
     }
-    if keys.just_pressed(KeyCode::F) {
-        actions.send(Speed(4.))
+    if keys.just_pressed(KeyCode::KeyF) {
+        actions.send(Speed(4.));
     }
-    if keys.just_released(KeyCode::F) {
-        actions.send(Speed(1.))
+    if keys.just_released(KeyCode::KeyF) {
+        actions.send(Speed(1.));
     }
-    if keys.just_released(KeyCode::P) {
-        actions.send(Pause)
+    if keys.just_released(KeyCode::KeyP) {
+        actions.send(Pause);
     }
 
     // Build Menu
-    if keys.just_released(KeyCode::Up) {
+    if keys.just_released(KeyCode::ArrowUp) {
         bm_scroll_ev.send(BuildMenuScrollEvent::Before);
     }
-    if keys.just_released(KeyCode::Down) {
+    if keys.just_released(KeyCode::ArrowDown) {
         bm_scroll_ev.send(BuildMenuScrollEvent::After);
     }
-    if keys.just_released(KeyCode::Return) {
+    if keys.just_released(KeyCode::Enter) {
         bm_build_ev.send(BuildMenuBuildEvent);
     }
 }
@@ -81,7 +81,7 @@ pub(super) fn hovered_tile(
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn mouse_input(
-    mbi: Res<Input<MouseButton>>,
+    mbi: Res<ButtonInput<MouseButton>>,
     ev_scroll: EventReader<MouseWheel>,
     mut bm_open_ev: EventWriter<BuildMenuOpenEvent>,
     mut bm_close_ev: EventWriter<BuildMenuCloseEvent>,
@@ -123,7 +123,7 @@ fn tile_hover(
     bm_hide_ev: &mut EventWriter<BuildMenuHideEvent>,
     tile_acts: &mut EventWriter<TileActionsEvent>,
     ev_scroll: EventReader<MouseWheel>,
-    mbi: &Input<MouseButton>,
+    mbi: &ButtonInput<MouseButton>,
     tbm: Res<BuildMenu>,
     p_pos: QueryPos,
     pos: Vec2Board,
@@ -134,13 +134,23 @@ fn tile_hover(
     let is_tile_filled = p_pos.iter().any(|t_pos| upos == **t_pos);
     let is_build_tile = tile.is_buildable();
     match (is_left_click, tbm.is_open, is_tile_filled) {
-        (true, true, false) => bm_build_ev.send(BuildMenuBuildEvent),
-        (true, false, false) if is_build_tile => bm_open_ev.send(BuildMenuOpenEvent(upos)),
-        (false, true, true) => bm_hide_ev.send(BuildMenuHideEvent),
-        (false, true, _) if !is_build_tile => bm_hide_ev.send(BuildMenuHideEvent),
-        (false, true, false) if tbm.should_open(upos) => bm_open_ev.send(BuildMenuOpenEvent(upos)),
+        (true, true, false) => {
+            bm_build_ev.send(BuildMenuBuildEvent);
+        }
+        (true, false, false) if is_build_tile => {
+            bm_open_ev.send(BuildMenuOpenEvent(upos));
+        }
+        (false, true, true) => {
+            bm_hide_ev.send(BuildMenuHideEvent);
+        }
+        (false, true, _) if !is_build_tile => {
+            bm_hide_ev.send(BuildMenuHideEvent);
+        }
+        (false, true, false) if tbm.should_open(upos) => {
+            bm_open_ev.send(BuildMenuOpenEvent(upos));
+        }
         _ => (),
-    }
+    };
     mouse_wheel_handler(ev_scroll, bm_open_ev, bm_scroll_ev, &tbm, &pos, &tile);
     tile_acts.send(HoverTile(pos));
 }
@@ -163,11 +173,15 @@ fn mouse_wheel_handler(
 ) {
     for ev in ev_scroll.read() {
         match tile.is_buildable() {
-            true if tbm.is_open => bm_scroll_ev.send(match ev.y > 0. {
-                true => BuildMenuScrollEvent::Before,
-                false => BuildMenuScrollEvent::After,
-            }),
-            true => bm_open_ev.send(BuildMenuOpenEvent(pos.as_uvec2())),
+            true if tbm.is_open => {
+                bm_scroll_ev.send(match ev.y > 0. {
+                    true => BuildMenuScrollEvent::Before,
+                    false => BuildMenuScrollEvent::After,
+                });
+            }
+            true => {
+                bm_open_ev.send(BuildMenuOpenEvent(pos.as_uvec2()));
+            }
             _ => (),
         }
     }

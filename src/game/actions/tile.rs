@@ -80,5 +80,7 @@ fn toggle_hover_cross(
 }
 
 fn show_range_circle(query: &mut RangeCircleQuery, pos: &UVec2) {
-    query.for_each_mut(|(mut visi, comp)| *visi = visible(**comp == *pos));
+    query
+        .iter_mut()
+        .for_each(|(mut visi, comp)| *visi = visible(**comp == *pos));
 }

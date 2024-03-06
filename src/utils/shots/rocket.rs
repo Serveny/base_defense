@@ -73,10 +73,10 @@ fn rocket_shot_children(parent: &mut ChildBuilder) {
 fn rocket_head_shape(tile_size: f32) -> impl Bundle {
     (
         ShapeBundle {
-            path: GeometryBuilder::build_as(&RegularPolygon {
+            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
                 sides: 3,
                 feature: RegularPolygonFeature::Radius(tile_size / 20.),
-                ..RegularPolygon::default()
+                ..default()
             }),
             spatial: SpatialBundle {
                 transform: Transform::from_translation(Vec3::new(
@@ -96,10 +96,10 @@ fn rocket_head_shape(tile_size: f32) -> impl Bundle {
 fn rocket_bottom_shape(tile_size: f32) -> impl Bundle {
     (
         ShapeBundle {
-            path: GeometryBuilder::build_as(&RegularPolygon {
+            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
                 sides: 3,
                 feature: RegularPolygonFeature::Radius(tile_size / 10.),
-                ..RegularPolygon::default()
+                ..default()
             }),
             spatial: SpatialBundle {
                 transform: Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),

@@ -51,8 +51,8 @@ fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 // Tick the timer, and change state when finished
-fn animation(mut query: Query<(&mut Transform, With<OnLoadingScreen>)>) {
-    let (mut transform, _) = query.single_mut();
+fn animation(mut query: Query<&mut Transform, With<OnLoadingScreen>>) {
+    let mut transform = query.single_mut();
     let x = transform.scale.x;
     let y = transform.scale.x;
     let z = transform.scale.x;

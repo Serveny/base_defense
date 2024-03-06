@@ -118,10 +118,10 @@ pub fn draw_tower<TScreen: Component + Default>(
 fn tower_base_shape(color: Color) -> impl Bundle {
     (
         ShapeBundle {
-            path: GeometryBuilder::build_as(&RegularPolygon {
+            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
                 sides: 8,
                 feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
-                ..RegularPolygon::default()
+                ..default()
             }),
 
             ..default()

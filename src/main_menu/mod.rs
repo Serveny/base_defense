@@ -41,7 +41,7 @@ impl Plugin for MainMenuPlugin {
                 Update,
                 (add_new_game_menu.after(startup_menu)).run_if(in_state(MenuState::NewGame)),
             )
-            .add_state::<MenuState>();
+            .init_state::<MenuState>();
     }
 }
 
