@@ -1,4 +1,4 @@
-:warning: **Doesn't work at the moment, will fix it sometimes**
+:warning: **Doesn't work at the moment, will fix it at some point**
 
 # base_defense
 
