@@ -6,6 +6,7 @@ use crate::{
         IngameTimestamp, Materials, Vec2Board,
     },
 };
+use bevy::color::palettes::css::{GREEN, RED};
 use bevy::prelude::*;
 use std::time::Duration;
 
@@ -58,9 +59,9 @@ pub(super) fn on_change_resources(
 
 fn color_and_pos(number: f32) -> (Color, f32) {
     if number > 0. {
-        (Color::GREEN, 0.1)
+        (GREEN.into(), 0.1)
     } else {
-        (Color::RED, -0.1)
+        (RED.into(), -0.1)
     }
 }
 

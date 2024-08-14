@@ -11,6 +11,7 @@ use crate::{
         visible, BoardPos, Vec2Board,
     },
 };
+use bevy::color::palettes::css::{DARK_GRAY, PURPLE, SILVER};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
@@ -41,14 +42,14 @@ pub(super) fn spawn_rocket_tower<TScreen: Component + Default>(
     vals: TowerValues,
     is_preview: bool,
 ) {
-    let mut color = Color::PURPLE;
+    let mut color = PURPLE;
     if is_preview {
-        color.set_a(0.9);
+        color.alpha = 0.9;
     }
     let transform = Transform::from_translation(vals.pos.to_scaled_vec3(1.));
     cmds.spawn(SpatialBundle::from_transform(transform))
         .with_children(|parent| {
-            rocket_tower_children::<TScreen>(parent, &vals, color, is_preview);
+            rocket_tower_children::<TScreen>(parent, &vals, color.into(), is_preview);
         })
         .insert(TowerParent)
         .insert(BoardPos(vals.pos.as_uvec2()))
@@ -100,7 +101,7 @@ fn tower_rocket_cannon() -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::SILVER),
-        Stroke::new(Color::DARK_GRAY, TILE_SIZE / 16.),
+        Fill::color(SILVER),
+        Stroke::new(DARK_GRAY, TILE_SIZE / 16.),
     )
 }

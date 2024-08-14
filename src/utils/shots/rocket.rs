@@ -6,6 +6,7 @@ use crate::{
         Materials, Vec2Board,
     },
 };
+use bevy::color::palettes::css::{DARK_GRAY, PURPLE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
@@ -51,8 +52,8 @@ fn rocket_body_shape(tile_size: f32) -> impl Bundle {
             }),
             ..default()
         },
-        Fill::color(Color::PURPLE),
-        Stroke::new(Color::DARK_GRAY, tile_size / 40.),
+        Fill::color(PURPLE),
+        Stroke::new(DARK_GRAY, tile_size / 40.),
     )
 }
 
@@ -66,7 +67,7 @@ fn rocket_shot_children(parent: &mut ChildBuilder) {
         parent,
         TILE_SIZE / 5.,
         Vec2Board::default(),
-        MATERIALS_COLOR,
+        MATERIALS_COLOR.into(),
     );
 }
 
@@ -88,8 +89,8 @@ fn rocket_head_shape(tile_size: f32) -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::PURPLE),
-        Stroke::new(Color::DARK_GRAY, tile_size / 40.),
+        Fill::color(PURPLE),
+        Stroke::new(DARK_GRAY, tile_size / 40.),
     )
 }
 
@@ -107,7 +108,7 @@ fn rocket_bottom_shape(tile_size: f32) -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::PURPLE),
-        Stroke::new(Color::DARK_GRAY, tile_size / 20.),
+        Fill::color(PURPLE),
+        Stroke::new(DARK_GRAY, tile_size / 20.),
     )
 }

@@ -47,14 +47,14 @@ fn laser_shape(tile_size: f32) -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::Rgba {
+        Fill::color(Srgba {
             red: 1.,
             green: 1.,
             blue: 1.,
             alpha: 0.6,
         }),
         Stroke::new(
-            Color::Rgba {
+            Srgba {
                 red: 1.,
                 green: 0.,
                 blue: 0.,

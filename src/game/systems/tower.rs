@@ -161,12 +161,13 @@ fn overheat_color(tower_vals: &TowerValues, now: IngameTimestamp) -> Color {
                 - time_to_percent_inverted(now, finish, tower_vals.shoot_duration)
         }
     };
-    Color::Rgba {
+    Srgba {
         red: silver + (heat * 0.25),
         green: silver - (heat * 0.75),
         blue: silver - (heat * 0.75),
         alpha: 1.,
     }
+    .into()
 }
 
 fn time_to_percent_inverted(

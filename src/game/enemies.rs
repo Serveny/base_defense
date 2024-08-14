@@ -10,6 +10,7 @@ use crate::{
         health_bar::health_bar, range_circle::RangeCircle, speed::Speed, TilesPerSecond, Vec2Board,
     },
 };
+use bevy::color::palettes::css::{DARK_GRAY, MAROON, OLIVE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
@@ -463,8 +464,8 @@ fn enemy_normal_shape(enemy: &Enemy) -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::MAROON),
-        Stroke::new(Color::DARK_GRAY, line_width),
+        Fill::color(MAROON),
+        Stroke::new(DARK_GRAY, line_width),
     )
 }
 
@@ -496,8 +497,8 @@ fn enemy_tank_shape(enemy: &Enemy) -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::OLIVE),
-        Stroke::new(Color::DARK_GRAY, line_width),
+        Fill::color(OLIVE),
+        Stroke::new(DARK_GRAY, line_width),
     )
 }
 pub fn next_step(path: &[BoardStep], last: &BoardStep, offset: f32) -> Option<BoardStep> {

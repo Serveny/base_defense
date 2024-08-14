@@ -69,7 +69,6 @@ fn start_new_game(
     board: Board,
     board_cache: BoardCache,
 ) {
-    ma_params.cmds.remove_resource::<NewGameMenu>();
     ma_params.cmds.insert_resource(game);
     ma_params.cmds.insert_resource(board);
     ma_params.cmds.insert_resource(board_cache);

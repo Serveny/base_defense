@@ -4,7 +4,11 @@ use crate::{
     board::{cache::BoardCache, Board},
     utils::{towers::TowerRangeCircle, Vec2Board},
 };
-use bevy::{prelude::*, sprite::Anchor};
+use bevy::{
+    color::palettes::css::{ANTIQUE_WHITE, DARK_GRAY, GOLD, GRAY, SILVER},
+    prelude::*,
+    sprite::Anchor,
+};
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use euclid::Angle;
 use std::marker::PhantomData;
@@ -36,7 +40,6 @@ pub type HoverCrossQuery<'w, 's, 'a> = Query<
 pub struct BoardVisualisation<TScreen> {
     pub inner_tile_size: f32,
     tile_size_vec: Vec2,
-    pub half_tile_vec3: Vec3,
     screen: PhantomData<TScreen>,
 }
 
@@ -81,7 +84,6 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         Self {
             inner_tile_size,
             tile_size_vec: Vec2::new(inner_tile_size, inner_tile_size),
-            half_tile_vec3: Vec3::new(0.5 * TILE_SIZE, 0.5 * TILE_SIZE, 0.),
             screen: PhantomData,
         }
     }
@@ -147,11 +149,12 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
 
     fn get_tile_color(tile: Tile) -> Color {
         match tile {
-            Tile::TowerGround => Color::GOLD,
-            Tile::BuildingGround => Color::ANTIQUE_WHITE,
-            Tile::Road => Color::GRAY,
-            Tile::Empty => Color::DARK_GRAY,
+            Tile::TowerGround => GOLD,
+            Tile::BuildingGround => ANTIQUE_WHITE,
+            Tile::Road => GRAY,
+            Tile::Empty => DARK_GRAY,
         }
+        .into()
     }
 
     pub fn show_hover_cross(&self, query: &mut HoverCrossQuery, pos: &Vec2Board) {
@@ -218,8 +221,8 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
                 },
                 ..default()
             },
-            Fill::color(Color::rgba(1., 1., 1., 0.05)),
-            Stroke::new(Color::SILVER, TILE_SIZE / 8.),
+            Fill::color(Color::srgba(1., 1., 1., 0.05)),
+            Stroke::new(SILVER, TILE_SIZE / 8.),
         )
     }
 
@@ -269,6 +272,7 @@ mod road_end_mark {
             Vec2Board,
         },
     };
+    use bevy::color::palettes::css::{DARK_GRAY, GOLD, OLIVE, ORANGE_RED, SILVER};
 
     pub fn spawn_road_end_mark<TScreen: Component + Default>(
         cmds: &mut Commands,
@@ -335,7 +339,7 @@ mod road_end_mark {
         let mut bundle = text_bundle(
             size,
             "",
-            Color::ORANGE_RED,
+            ORANGE_RED.into(),
             assets,
             Transform::from_translation(translation),
         );
@@ -361,8 +365,8 @@ mod road_end_mark {
                 },
                 ..default()
             },
-            Fill::color(Color::OLIVE),
-            Stroke::new(Color::SILVER, size_px / 10.),
+            Fill::color(OLIVE),
+            Stroke::new(SILVER, size_px / 10.),
         )
     }
 
@@ -380,8 +384,8 @@ mod road_end_mark {
                 },
                 ..default()
             },
-            Fill::color(Color::OLIVE),
-            Stroke::new(Color::DARK_GRAY, size_px / 32.),
+            Fill::color(OLIVE),
+            Stroke::new(DARK_GRAY, size_px / 32.),
         )
     }
 
@@ -407,7 +411,7 @@ mod road_end_mark {
                 .spawn(text_bundle(
                     width / 6.,
                     &format!("{}", 0),
-                    Color::GOLD,
+                    GOLD.into(),
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
                 ))
@@ -418,7 +422,7 @@ mod road_end_mark {
                     scale: Vec3::new(1., 1., 1.),
                     ..Default::default()
                 },
-                Color::GOLD,
+                GOLD.into(),
             ));
         });
     }
@@ -445,7 +449,7 @@ mod road_end_mark {
                 .spawn(text_bundle(
                     width / 6.,
                     &format!("{}", 0),
-                    ENERGY_COLOR,
+                    ENERGY_COLOR.into(),
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
                 ))
@@ -456,7 +460,7 @@ mod road_end_mark {
                     scale: Vec3::new(0.1, 0.1, 1.),
                     ..Default::default()
                 },
-                ENERGY_COLOR,
+                ENERGY_COLOR.into(),
             ));
         });
     }
@@ -483,7 +487,7 @@ mod road_end_mark {
                 .spawn(text_bundle(
                     width / 6.,
                     &format!("{}", 0),
-                    MATERIALS_COLOR,
+                    MATERIALS_COLOR.into(),
                     assets,
                     Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
                 ))
@@ -494,7 +498,7 @@ mod road_end_mark {
                     scale: Vec3::new(0.1, 0.1, 1.),
                     ..Default::default()
                 },
-                MATERIALS_COLOR,
+                MATERIALS_COLOR.into(),
             ));
         });
     }

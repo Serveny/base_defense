@@ -5,6 +5,7 @@ use crate::utils::{
     buffer::Buffer, materials::MATERIALS_COLOR, resource_bar::spawn_resource_bar, Amount, BoardPos,
     Energy, Materials, Vec2Board,
 };
+use bevy::color::palettes::css::{DARK_GRAY, GRAY};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use euclid::Angle;
@@ -53,34 +54,34 @@ pub fn spawn_factory<TScreen: Component + Default>(
 }
 
 fn factory_children(parent: &mut ChildBuilder, tile_size: f32) {
-    let color = MATERIALS_COLOR;
+    let color = MATERIALS_COLOR.into();
     parent.spawn(building_base_shape(tile_size / 1.1, color));
-    parent.spawn(factory_building_shape(tile_size, Color::GRAY));
+    parent.spawn(factory_building_shape(tile_size, GRAY.into()));
     parent.spawn(factory_roof_shape(
         tile_size,
-        Color::GRAY,
+        GRAY.into(),
         Vec3::new(-tile_size / 6., tile_size / 5., 0.01),
     ));
     parent.spawn(factory_roof_shape(
         tile_size,
-        Color::GRAY,
+        GRAY.into(),
         Vec3::new(0., tile_size / 5., 0.01),
     ));
     parent.spawn(factory_roof_shape(
         tile_size,
-        Color::GRAY,
+        GRAY.into(),
         Vec3::new(tile_size / 6., tile_size / 5., 0.01),
     ));
     parent.spawn(factory_chimney_shape(
         tile_size,
-        Color::GRAY,
+        GRAY.into(),
         Vec3::new(tile_size / 6., -tile_size / 4., 0.011),
     ));
     spawn_resource_bar(
         parent,
         tile_size / 4.,
         Vec2Board::new(0.2, 0.),
-        MATERIALS_COLOR,
+        MATERIALS_COLOR.into(),
     );
 }
 
@@ -103,7 +104,7 @@ fn factory_roof_shape(tile_size: f32, color: Color, translation: Vec3) -> impl B
             ..default()
         },
         Fill::color(color),
-        Stroke::new(Color::DARK_GRAY, tile_size / 40.),
+        Stroke::new(DARK_GRAY, tile_size / 40.),
     )
 }
 
@@ -121,7 +122,7 @@ fn factory_chimney_shape(tile_size: f32, color: Color, translation: Vec3) -> imp
             ..default()
         },
         Fill::color(color),
-        Stroke::new(Color::DARK_GRAY, tile_size / 20.),
+        Stroke::new(DARK_GRAY, tile_size / 20.),
     )
 }
 
@@ -139,6 +140,6 @@ fn factory_building_shape(tile_size: f32, color: Color) -> impl Bundle {
             ..default()
         },
         Fill::color(color),
-        Stroke::new(Color::DARK_GRAY, tile_size / 20.),
+        Stroke::new(DARK_GRAY, tile_size / 20.),
     )
 }

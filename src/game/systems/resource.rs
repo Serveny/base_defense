@@ -30,7 +30,7 @@ pub fn resource_text_fade_system(
     for mut text in q_texts.iter_mut() {
         if let Some(text) = text.sections.first_mut() {
             let color = &mut text.style.color;
-            color.set_a(fade(color.a(), delta / 4.));
+            color.set_alpha(fade(color.alpha(), delta / 4.));
         }
     }
 }
@@ -41,8 +41,8 @@ pub fn resource_symbol_fade_system(
 ) {
     let delta = time.delta_secs();
     for mut stroke in q_symbols.iter_mut() {
-        let a = stroke.color.a();
-        stroke.color.set_a(fade(a, delta / 4.));
+        let a = stroke.color.alpha();
+        stroke.color.set_alpha(fade(a, delta / 4.));
     }
 }
 

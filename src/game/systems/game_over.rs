@@ -54,7 +54,7 @@ pub(super) fn game_over_timer_system(
 fn set_base_color(mut q_base: Query<&mut Fill, With<BoardRoadEndMark>>, time: IngameTimestamp) {
     q_base.iter_mut().for_each(|mut fill| {
         let rg_val = *time % 0.5;
-        fill.color = Color::rgb(0.5 + rg_val, 0.5 - rg_val, 0.);
+        fill.color = Color::srgb(0.5 + rg_val, 0.5 - rg_val, 0.);
     });
 }
 

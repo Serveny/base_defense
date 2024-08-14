@@ -1,5 +1,3 @@
-:warning: **Doesn't work at the moment, will fix it sometimes**
-
 # base_defense
 
 <p align="center">

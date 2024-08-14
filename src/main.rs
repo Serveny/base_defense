@@ -25,7 +25,7 @@ type CamQuery<'w, 's, 'a> = Query<'w, 's, (&'a Camera, &'a GlobalTransform), Wit
 type CamMutQuery<'w, 's, 'a> = Query<'w, 's, &'a mut OrthographicProjection, With<Camera2d>>;
 
 const TITLE: &str = "Base Defense";
-const BACKGROUND_COLOR: Color = Color::rgba(35.0 / 255.0, 33.0 / 255.0, 38.0 / 255.0, 15.0);
+const BACKGROUND_COLOR: Color = Color::srgba(35.0 / 255.0, 33.0 / 255.0, 38.0 / 255.0, 15.0);
 //Color::rgb(50. / 255., 50. / 255., 44. / 255.);
 // const TEXT_COLOR: Color = Color::rgb(232.0 / 255.0, 230.0 / 255.0, 227.0 / 255.0);
 // const FONT_PATH: &str = "fonts/Quicksand-Regular.ttf";

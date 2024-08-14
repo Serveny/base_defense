@@ -1,8 +1,9 @@
 use crate::board::visualisation::TILE_SIZE;
+use bevy::color::palettes::css::ORANGE;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::SvgPathShape};
 
-pub const MATERIALS_COLOR: Color = Color::ORANGE;
+pub const MATERIALS_COLOR: Srgba = ORANGE;
 
 #[derive(Component)]
 pub struct MaterialsText;

@@ -1,8 +1,9 @@
 use crate::board::visualisation::TILE_SIZE;
+use bevy::color::palettes::css::YELLOW;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::SvgPathShape};
 
-pub const ENERGY_COLOR: Color = Color::YELLOW;
+pub const ENERGY_COLOR: Srgba = YELLOW;
 
 #[derive(Component)]
 pub struct EnergyText;

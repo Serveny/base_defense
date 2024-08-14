@@ -172,12 +172,11 @@ fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
 pub fn cursor_pos(wnd: &Window, q_cam: CamQuery) -> Option<Vec2Board> {
     let (camera, camera_transform) = q_cam.single();
 
-    if let Some(screen_pos) = wnd.cursor_position() {
-        let window_size = Vec2::new(wnd.width(), wnd.height());
-        let ndc = (screen_pos / window_size) * 2.0 - Vec2::ONE;
-        let ndc_to_world = camera_transform.compute_matrix() * camera.projection_matrix().inverse();
-        let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
-        return Some((world_pos.truncate() / TILE_SIZE).into());
+    if let Some(screen_pos) = wnd
+        .cursor_position()
+        .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor))
+    {
+        return Some((screen_pos / TILE_SIZE).into());
     }
     None
 }
@@ -222,8 +221,8 @@ pub fn text_background_shape(
             },
             ..default()
         },
-        Fill::color(Color::rgba(1., 1., 1., 0.05)),
-        Stroke::new(Color::rgba(1., 1., 1., 0.05), width / 40.),
+        Fill::color(Color::srgba(1., 1., 1., 0.05)),
+        Stroke::new(Color::srgba(1., 1., 1., 0.05), width / 40.),
     )
 }
 

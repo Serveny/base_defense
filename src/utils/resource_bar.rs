@@ -1,6 +1,7 @@
 use crate::board::visualisation::TILE_SIZE;
 
 use super::Vec2Board;
+use bevy::color::palettes::css::SILVER;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 
@@ -47,7 +48,7 @@ fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> impl Bun
             },
             ..default()
         },
-        Fill::color(Color::SILVER),
+        Fill::color(SILVER),
         Stroke::new(Color::BLACK, LINE_WIDTH),
     )
 }

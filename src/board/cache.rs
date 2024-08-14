@@ -201,7 +201,7 @@ impl BoardCache {
 
     pub fn remove_tile_pos(&mut self, pos: &UVec2, tile: &Tile) {
         if let Some(new_posis) = self.get_tile_posis_mut(tile) {
-            new_posis.remove(pos);
+            new_posis.shift_remove(pos);
         }
     }
 

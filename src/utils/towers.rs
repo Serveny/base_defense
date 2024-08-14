@@ -4,6 +4,7 @@ use super::{
     Vec2Board,
 };
 use crate::board::visualisation::TILE_SIZE;
+use bevy::color::palettes::css::{DARK_GRAY, SILVER};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
 use serde::{Deserialize, Serialize};
@@ -98,10 +99,6 @@ pub struct TowerParent;
 #[derive(Component, Deref, DerefMut)]
 pub struct TowerRangeCircle(UVec2);
 
-pub trait BoardTower {
-    fn draw(&self, cmds: &mut Commands);
-}
-
 pub fn draw_tower<TScreen: Component + Default>(
     cmds: &mut Commands,
     pos: Vec2Board,
@@ -127,7 +124,7 @@ fn tower_base_shape(color: Color) -> impl Bundle {
             ..default()
         },
         Fill::color(color),
-        Stroke::new(Color::DARK_GRAY, TILE_SIZE / 16.),
+        Stroke::new(DARK_GRAY, TILE_SIZE / 16.),
     )
 }
 
@@ -144,8 +141,8 @@ fn tower_circle_shape() -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::SILVER),
-        Stroke::new(Color::DARK_GRAY, TILE_SIZE / 16.),
+        Fill::color(SILVER),
+        Stroke::new(DARK_GRAY, TILE_SIZE / 16.),
     )
 }
 

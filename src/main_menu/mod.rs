@@ -100,7 +100,7 @@ fn add_main_menu(
             }
 
             if add_menu_button("Quit", ui).clicked() {
-                app_exit_events.send(AppExit);
+                app_exit_events.send(AppExit::Success);
             }
         });
 }

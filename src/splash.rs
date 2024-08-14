@@ -29,9 +29,6 @@ struct OnLoadingScreen;
 #[derive(Resource, Deref, DerefMut)]
 struct SplashTimer(Timer);
 
-#[derive(Component)]
-struct LogoImage;
-
 fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let image_bundle = ImageBundle {
         style: Style {

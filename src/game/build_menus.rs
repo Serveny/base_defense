@@ -104,8 +104,8 @@ fn menu_circle_shape(tile_size: f32) -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::rgba(0.75, 0.75, 0.75, 0.)),
-        Stroke::new(Color::rgba(0.25, 0.25, 0.25, 0.5), tile_size / 32.),
+        Fill::color(Color::srgba(0.75, 0.75, 0.75, 0.)),
+        Stroke::new(Color::srgba(0.25, 0.25, 0.25, 0.5), tile_size / 32.),
     )
 }
 

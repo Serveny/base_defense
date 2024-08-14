@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy::color::palettes::css::{GREEN, SILVER};
 
 #[derive(Component)]
 struct HealthBar;
@@ -33,7 +34,7 @@ fn health_bar_background_shape(bar_width: f32, translation: Vec3) -> impl Bundle
             },
             ..default()
         },
-        Fill::color(Color::SILVER),
+        Fill::color(SILVER),
         Stroke::new(Color::BLACK, bar_width / 16.),
     )
 }
@@ -56,6 +57,6 @@ fn health_bar_percentage_shape(bar_width: f32) -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::GREEN),
+        Fill::color(GREEN),
     )
 }

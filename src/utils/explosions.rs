@@ -57,14 +57,14 @@ fn explosion_shape(radius: f32, pos: Vec2Board) -> impl Bundle {
             },
             ..default()
         },
-        Fill::color(Color::Rgba {
+        Fill::color(Srgba {
             red: 1.,
             green: 0.,
             blue: 0.,
             alpha: 0.9,
         }),
         Stroke::new(
-            Color::Rgba {
+            Srgba {
                 red: 1.,
                 green: 1.,
                 blue: 0.,

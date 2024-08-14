@@ -1,3 +1,4 @@
+use bevy::color::palettes::css::DARK_GRAY;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
 use serde::{Deserialize, Serialize};
@@ -58,6 +59,6 @@ fn building_base_shape(tile_size: f32, color: Color) -> impl Bundle {
             ..default()
         },
         Fill::color(color),
-        Stroke::new(Color::DARK_GRAY, tile_size / 20.),
+        Stroke::new(DARK_GRAY, tile_size / 20.),
     )
 }
