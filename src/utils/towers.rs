@@ -120,7 +120,6 @@ fn tower_base_shape(color: Color) -> impl Bundle {
                 feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
                 ..default()
             }),
-
             ..default()
         },
         Fill::color(color),
@@ -135,10 +134,7 @@ fn tower_circle_shape() -> impl Bundle {
                 center: Vec2::default(),
                 radius: TILE_SIZE / 5.,
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_xyz(0., 0., 0.4),
-                ..default()
-            },
+            transform: Transform::from_xyz(0., 0., 0.4),
             ..default()
         },
         Fill::color(SILVER),
@@ -153,11 +149,8 @@ fn tower_range_circle_shape(radius: f32, color: Color, visibility: Visibility) -
                 center: Vec2::default(),
                 radius,
             }),
-            spatial: SpatialBundle {
-                visibility,
-                transform: Transform::from_xyz(0., 0., 0.3),
-                ..default()
-            },
+            visibility,
+            transform: Transform::from_xyz(0., 0., 0.3),
             ..default()
         },
         Fill::color(Color::NONE),

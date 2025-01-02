@@ -30,16 +30,18 @@ struct OnLoadingScreen;
 struct SplashTimer(Timer);
 
 fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let image_bundle = ImageBundle {
-        style: Style {
+    let image_bundle = (
+        Node {
             margin: UiRect::all(Val::Auto),
             width: Val::Px(200.),
             height: Val::Px(200.),
             ..default()
         },
-        image: UiImage::new(asset_server.load("textures/bevy-icon.png")),
-        ..default()
-    };
+        ImageNode {
+            image: asset_server.load("textures/bevy-icon.png"),
+            ..default()
+        },
+    );
     // Display the logo
     commands.spawn(image_bundle).insert(OnLoadingScreen);
 
@@ -58,7 +60,7 @@ fn animation(mut query: Query<&mut Transform, With<OnLoadingScreen>>) {
 }
 
 fn timer(mut state: ResMut<NextState<GameState>>, time: Res<Time>) {
-    if time.elapsed_seconds() >= 2. {
+    if time.elapsed_secs() >= 2. {
         state.set(GameState::Menu);
     }
 }

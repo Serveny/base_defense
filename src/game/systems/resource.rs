@@ -23,15 +23,13 @@ pub fn resource_animation_system(
 }
 
 pub fn resource_text_fade_system(
-    mut q_texts: Query<&mut Text, With<ResourceTextFade>>,
+    mut q_text_colors: Query<&mut TextColor, With<ResourceTextFade>>,
     time: Res<IngameTime>,
 ) {
     let delta = time.delta_secs();
-    for mut text in q_texts.iter_mut() {
-        if let Some(text) = text.sections.first_mut() {
-            let color = &mut text.style.color;
-            color.set_alpha(fade(color.alpha(), delta / 4.));
-        }
+    for mut color in q_text_colors.iter_mut() {
+        let alpha = color.alpha();
+        color.set_alpha(fade(alpha, delta / 4.));
     }
 }
 

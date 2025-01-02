@@ -50,6 +50,7 @@ pub struct BuildingBase;
 
 fn building_base_shape(tile_size: f32, color: Color) -> impl Bundle {
     (
+        Node::default(),
         ShapeBundle {
             path: GeometryBuilder::build_as(&shapes::RegularPolygon {
                 sides: 6,

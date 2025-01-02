@@ -33,13 +33,14 @@ pub fn spawn_shot_rocket<TScreen: Component + Default>(
     cmds: &mut Commands,
     shot: DamageInRadiusTargetPosShot,
 ) {
-    cmds.spawn(SpatialBundle::from_transform(Transform::from_translation(
-        Vec3::new(0., 0., 1.),
-    )))
-    .with_children(rocket_shot_children)
-    .insert(shot)
-    .insert(RocketShot)
-    .insert(TScreen::default());
+    cmds.spawn((
+        Transform::from_translation(Vec3::new(0., 0., 1.)),
+        Visibility::Inherited,
+        shot,
+        RocketShot,
+        TScreen::default(),
+    ))
+    .with_children(rocket_shot_children);
 }
 
 fn rocket_body_shape(tile_size: f32) -> impl Bundle {
@@ -49,6 +50,7 @@ fn rocket_body_shape(tile_size: f32) -> impl Bundle {
                 origin: RectangleOrigin::Center,
                 // origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
                 extents: Vec2::new(tile_size / 10., tile_size / 5.),
+                radii: None,
             }),
             ..default()
         },
@@ -79,14 +81,11 @@ fn rocket_head_shape(tile_size: f32) -> impl Bundle {
                 feature: RegularPolygonFeature::Radius(tile_size / 20.),
                 ..default()
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(Vec3::new(
-                    0.,
-                    tile_size / 10. + tile_size / 20.,
-                    0.1,
-                )),
-                ..default()
-            },
+            transform: Transform::from_translation(Vec3::new(
+                0.,
+                tile_size / 10. + tile_size / 20.,
+                0.1,
+            )),
             ..default()
         },
         Fill::color(PURPLE),
@@ -102,10 +101,7 @@ fn rocket_bottom_shape(tile_size: f32) -> impl Bundle {
                 feature: RegularPolygonFeature::Radius(tile_size / 10.),
                 ..default()
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),
-                ..default()
-            },
+            transform: Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),
             ..default()
         },
         Fill::color(PURPLE),

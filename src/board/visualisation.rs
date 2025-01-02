@@ -110,20 +110,18 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     }
 
     fn spawn_tile(&self, cmds: &mut Commands, pos: Vec2Board, tile: Tile) {
-        cmds.spawn(SpriteBundle {
-            sprite: Sprite {
+        cmds.spawn((
+            Sprite {
                 custom_size: Some(self.tile_size_vec),
                 color: Self::get_tile_color(tile),
                 anchor: Anchor::BottomLeft,
                 ..Default::default()
             },
-            transform: Transform {
+            Transform {
                 translation: pos.to_scaled_vec3(0.),
                 ..Default::default()
             },
-
-            ..Default::default()
-        })
+        ))
         .insert(BoardVisualTile::new(pos.as_uvec2()))
         .insert(BoardScreen)
         .insert(TScreen::default());
@@ -215,10 +213,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         (
             ShapeBundle {
                 path: Self::hover_cross_path(),
-                spatial: SpatialBundle {
-                    visibility: Visibility::Hidden,
-                    ..default()
-                },
+                visibility: Visibility::Hidden,
                 ..default()
             },
             Fill::color(Color::srgba(1., 1., 1., 0.05)),
@@ -267,7 +262,7 @@ mod road_end_mark {
         utils::{
             energy::{energy_symbol, EnergyText, ENERGY_COLOR},
             materials::{materials_symbol, MaterialsText, MATERIALS_COLOR},
-            text_background_shape, text_bundle, visible,
+            text_bundle, visible,
             wave::{wave_symbol, WaveText},
             Vec2Board,
         },
@@ -336,16 +331,16 @@ mod road_end_mark {
         size: f32,
         translation: Vec3,
     ) {
-        let mut bundle = text_bundle(
-            size,
+        let bundle = text_bundle(
             "",
             ORANGE_RED.into(),
             assets,
-            Transform::from_translation(translation),
+            Val::Px(translation.x),
+            Val::Px(translation.y),
         );
-        bundle.visibility = Visibility::Hidden;
 
         cmds.spawn(bundle)
+            .insert(Visibility::Hidden)
             .insert(TScreen::default())
             .insert(GameOverCountDownText);
     }
@@ -358,11 +353,8 @@ mod road_end_mark {
                     feature: shapes::RegularPolygonFeature::Radius(size_px / 3.),
                     ..default()
                 }),
-                spatial: SpatialBundle {
-                    transform,
-                    visibility,
-                    ..default()
-                },
+                transform,
+                visibility,
                 ..default()
             },
             Fill::color(OLIVE),
@@ -376,12 +368,10 @@ mod road_end_mark {
                 path: GeometryBuilder::build_as(&shapes::Rectangle {
                     origin: RectangleOrigin::Center,
                     extents: Vec2::new(size_px / 4., size_px / 2.),
+                    radii: None,
                 }),
-                spatial: SpatialBundle {
-                    transform: Transform::from_translation(Vec3::new(size_px / 3., 0., -0.1)),
-                    visibility,
-                    ..default()
-                },
+                transform: Transform::from_translation(Vec3::new(size_px / 3., 0., -0.1)),
+                visibility,
                 ..default()
             },
             Fill::color(OLIVE),
@@ -395,36 +385,24 @@ mod road_end_mark {
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn(text_background_shape(
-            width,
+        cmds.spawn(text_bundle(
+            &format!("{}", 0),
+            GOLD.into(),
+            assets,
+            Val::Px(translation.x),
+            Val::Px(translation.y),
+        ))
+        .insert(WaveText)
+        .insert(BoardScreen)
+        .insert(TScreen::default());
+        cmds.spawn(wave_symbol(
             Transform {
                 translation,
-                scale: Vec3::new(2., 2., 1.),
+                scale: Vec3::new(1., 1., 1.),
                 ..Default::default()
             },
-            Visibility::Visible,
-        ))
-        .insert(BoardScreen)
-        .insert(TScreen::default())
-        .with_children(|parent| {
-            parent
-                .spawn(text_bundle(
-                    width / 6.,
-                    &format!("{}", 0),
-                    GOLD.into(),
-                    assets,
-                    Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
-                ))
-                .insert(WaveText);
-            parent.spawn(wave_symbol(
-                Transform {
-                    translation: Vec3::new(-width / 6., 0., 0.),
-                    scale: Vec3::new(1., 1., 1.),
-                    ..Default::default()
-                },
-                GOLD.into(),
-            ));
-        });
+            GOLD.into(),
+        ));
     }
 
     fn spawn_energy_sign<TScreen: Component + Default>(
@@ -433,36 +411,24 @@ mod road_end_mark {
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn(text_background_shape(
-            width,
+        cmds.spawn(text_bundle(
+            &format!("{}", 0),
+            ENERGY_COLOR.into(),
+            assets,
+            Val::Px(translation.x),
+            Val::Px(translation.y),
+        ))
+        .insert(EnergyText)
+        .insert(BoardScreen)
+        .insert(TScreen::default());
+        cmds.spawn(energy_symbol(
             Transform {
                 translation,
-                scale: Vec3::new(2., 2., 1.),
+                scale: Vec3::new(0.1, 0.1, 1.),
                 ..Default::default()
             },
-            Visibility::Visible,
-        ))
-        .insert(BoardScreen)
-        .insert(TScreen::default())
-        .with_children(|parent| {
-            parent
-                .spawn(text_bundle(
-                    width / 6.,
-                    &format!("{}", 0),
-                    ENERGY_COLOR.into(),
-                    assets,
-                    Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
-                ))
-                .insert(EnergyText);
-            parent.spawn(energy_symbol(
-                Transform {
-                    translation: Vec3::new(-width / 6., 0., 0.),
-                    scale: Vec3::new(0.1, 0.1, 1.),
-                    ..Default::default()
-                },
-                ENERGY_COLOR.into(),
-            ));
-        });
+            ENERGY_COLOR.into(),
+        ));
     }
 
     fn spawn_materials_sign<TScreen: Component + Default>(
@@ -471,35 +437,23 @@ mod road_end_mark {
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn(text_background_shape(
-            width,
-            Transform {
-                translation,
-                scale: Vec3::new(2., 2., 1.),
-                ..Default::default()
-            },
-            Visibility::Visible,
+        cmds.spawn(text_bundle(
+            &format!("{}", 0),
+            MATERIALS_COLOR.into(),
+            assets,
+            Val::Px(translation.x),
+            Val::Px(translation.y),
         ))
         .insert(BoardScreen)
         .insert(TScreen::default())
-        .with_children(|parent| {
-            parent
-                .spawn(text_bundle(
-                    width / 6.,
-                    &format!("{}", 0),
-                    MATERIALS_COLOR.into(),
-                    assets,
-                    Transform::from_translation(Vec3::new(-width / 9., 0., 1.)),
-                ))
-                .insert(MaterialsText);
-            parent.spawn(materials_symbol(
-                Transform {
-                    translation: Vec3::new(-width / 6., 0., 0.),
-                    scale: Vec3::new(0.1, 0.1, 1.),
-                    ..Default::default()
-                },
-                MATERIALS_COLOR.into(),
-            ));
-        });
+        .insert(MaterialsText);
+        cmds.spawn(materials_symbol(
+            Transform {
+                translation,
+                scale: Vec3::new(0.1, 0.1, 1.),
+                ..Default::default()
+            },
+            MATERIALS_COLOR.into(),
+        ));
     }
 }

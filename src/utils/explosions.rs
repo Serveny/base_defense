@@ -47,13 +47,10 @@ fn explosion_shape(radius: f32, pos: Vec2Board) -> impl Bundle {
                 center: Vec2::default(),
                 radius: radius / 2.,
             }),
-            spatial: SpatialBundle {
-                transform: Transform {
-                    translation: pos.to_scaled_vec3(3.),
-                    scale: Vec3::new(0., 0., 0.),
-                    ..Default::default()
-                },
-                ..default()
+            transform: Transform {
+                translation: pos.to_scaled_vec3(3.),
+                scale: Vec3::new(0., 0., 0.),
+                ..Default::default()
             },
             ..default()
         },

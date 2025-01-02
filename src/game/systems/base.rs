@@ -10,6 +10,6 @@ pub(super) fn base_system(
     game: Res<Game>,
     mut queries: ParamSet<(QueryEnergyText, QueryMaterialsText)>,
 ) {
-    queries.p0().single_mut().sections[0].value = format!("{}", game.energy);
-    queries.p1().single_mut().sections[0].value = format!("{}", game.materials);
+    queries.p0().single_mut().0 = format!("{}", game.energy);
+    queries.p1().single_mut().0 = format!("{}", game.materials);
 }

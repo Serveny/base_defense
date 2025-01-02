@@ -33,11 +33,10 @@ pub fn spawn_power_plant<TScreen: Component + Default>(
     power_plant: PowerPlant,
     tile_size: f32,
 ) {
-    cmds.spawn(SpatialBundle {
-        transform: Transform::from_translation(power_plant.pos.to_scaled_vec3(1.)),
-        visibility: Visibility::Visible,
-        ..default()
-    })
+    cmds.spawn((
+        Transform::from_translation(power_plant.pos.to_scaled_vec3(1.)),
+        Visibility::Visible,
+    ))
     .with_children(|parent| power_plant_children(parent, tile_size))
     .insert(BuildingBase)
     .insert(Building::PowerPlant)
@@ -74,11 +73,9 @@ fn power_plant_chimney_shape(tile_size: f32, color: Color, translation: Vec3) ->
             path: GeometryBuilder::build_as(&shapes::Rectangle {
                 origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
                 extents: Vec2::new(tile_size / 10., tile_size / 2.),
+                radii: None,
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(translation),
-                ..default()
-            },
+            transform: Transform::from_translation(translation),
             ..default()
         },
         Fill::color(color),
@@ -92,11 +89,9 @@ fn power_plant_building_shape(tile_size: f32, color: Color) -> impl Bundle {
             path: GeometryBuilder::build_as(&shapes::Rectangle {
                 origin: RectangleOrigin::Center,
                 extents: Vec2::new(tile_size / 1.75, tile_size / 3.),
+                radii: None,
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_xyz(0., 0., 0.02),
-                ..default()
-            },
+            transform: Transform::from_xyz(0., 0., 0.02),
             ..default()
         },
         Fill::color(color),

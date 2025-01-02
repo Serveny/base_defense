@@ -140,7 +140,7 @@ pub fn add_error_box(err_text: &str, ui: &mut bevy_egui::egui::Ui) {
 }
 
 pub fn pos_to_angle(pos: Vec2Board, target: Vec2Board) -> Angle<f32> {
-    Angle::radians((target - pos).angle_between(Vec2::new(0., 1.)))
+    Angle::radians((target - pos).angle_to(Vec2::new(0., 1.)))
 }
 
 pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
@@ -148,9 +148,9 @@ pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
 }
 
 pub fn zoom_cam_to_board(board: &Board, q_cam: &mut CamMutQuery, win: &Window) {
-    let margin = cam_margin(board, win);
-    let height = (board.height as f32 + margin.y) * TILE_SIZE;
-    let width = (board.width as f32 + margin.x) * TILE_SIZE;
+    let aspect_ratio_margin = cam_margin(board, win);
+    let height = (board.height as f32 + aspect_ratio_margin.y) * TILE_SIZE;
+    let width = (board.width as f32 + aspect_ratio_margin.x) * TILE_SIZE;
     let mut projection = q_cam.single_mut();
     projection.scaling_mode = ScalingMode::Fixed { width, height };
 }
@@ -174,7 +174,7 @@ pub fn cursor_pos(wnd: &Window, q_cam: CamQuery) -> Option<Vec2Board> {
 
     if let Some(screen_pos) = wnd
         .cursor_position()
-        .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor))
+        .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor).ok())
     {
         return Some((screen_pos / TILE_SIZE).into());
     }
@@ -182,47 +182,33 @@ pub fn cursor_pos(wnd: &Window, q_cam: CamQuery) -> Option<Vec2Board> {
 }
 
 pub fn text_bundle(
-    width: f32,
     text: &str,
     color: Color,
     assets: &AssetServer,
-    transform: Transform,
-) -> Text2dBundle {
-    Text2dBundle {
-        text: Text::from_section(
-            text,
-            TextStyle {
-                font: assets.load(FONT_QUICKSAND),
-                font_size: width / 1.5,
-                color,
-            },
-        )
-        .with_justify(JustifyText::Center),
-        transform,
-        ..default()
-    }
-}
-
-pub fn text_background_shape(
-    width: f32,
-    transform: Transform,
-    visibility: Visibility,
+    left: Val,
+    bottom: Val,
 ) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Rectangle {
-                origin: RectangleOrigin::Center,
-                extents: Vec2::new(width / 2., width / 10.),
-            }),
-            spatial: SpatialBundle {
-                transform,
-                visibility,
-                ..default()
-            },
+        Node {
+            border: UiRect::all(Val::Px(2.)),
+            position_type: PositionType::Absolute,
+            left: left / TILE_SIZE,
+            bottom: bottom / TILE_SIZE,
             ..default()
         },
-        Fill::color(Color::srgba(1., 1., 1., 0.05)),
-        Stroke::new(Color::srgba(1., 1., 1., 0.05), width / 40.),
+        BorderColor(Color::srgba(1., 1., 1., 0.05)),
+        Text(text.to_string()),
+        TextFont {
+            font: assets.load(FONT_QUICKSAND),
+            font_size: 30.,
+            ..default()
+        },
+        TextColor(color),
+        TextLayout {
+            justify: JustifyText::Center,
+            linebreak: LineBreak::NoWrap,
+        },
+        BackgroundColor(Color::srgba(1., 1., 1., 0.05)),
     )
 }
 

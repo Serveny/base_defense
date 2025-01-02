@@ -8,7 +8,7 @@ use crate::{
 };
 use bevy::{app::AppExit, prelude::*};
 use bevy_egui::{
-    egui::{self, CentralPanel, Color32, Frame, Label, Response, RichText, ScrollArea, SidePanel},
+    egui::{self, CentralPanel, Color32, Frame, Label, Response, RichText, ScrollArea, SidePanel, SliderClamping},
     EguiContexts,
 };
 
@@ -115,7 +115,7 @@ fn add_settings(egui_ctx: &mut EguiContexts, mut settings: ResMut<crate::user::S
         ScrollArea::vertical().show(ui, |ui| {
             let volume_silder = egui::Slider::new(&mut settings.volume.0, 0..=100)
                 .show_value(false)
-                .clamp_to_range(true);
+                .clamping(SliderClamping::Always);
             add_row("Volume", volume_silder, ui);
         });
     });

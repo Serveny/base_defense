@@ -41,11 +41,9 @@ fn resource_bar_background_shape(bar_height: f32, translation: Vec3) -> impl Bun
             path: GeometryBuilder::build_as(&shapes::Rectangle {
                 origin: RectangleOrigin::Center,
                 extents: Vec2::new(bar_height / 4., bar_height),
+                radii: None,
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(translation),
-                ..default()
-            },
+            transform: Transform::from_translation(translation),
             ..default()
         },
         Fill::color(SILVER),
@@ -60,17 +58,16 @@ fn resource_bar_percentage_shape(bar_height: f32, translation: Vec3, color: Colo
             path: GeometryBuilder::build_as(&shapes::Rectangle {
                 origin: RectangleOrigin::BottomLeft,
                 extents: Vec2::new(bar_height / 4. - (margin * 2.), bar_height - (margin * 2.)),
+                radii: None,
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(Vec3::new(
-                    translation.x - bar_height / 8. + margin,
-                    translation.y - bar_height / 2. + margin,
-                    translation.z,
-                )),
-                ..default()
-            },
+transform: Transform::from_translation(Vec3::new(
+            translation.x - bar_height / 8. + margin,
+            translation.y - bar_height / 2. + margin,
+            translation.z,
+        )),
             ..default()
         },
+        
         Fill::color(color),
     )
 }

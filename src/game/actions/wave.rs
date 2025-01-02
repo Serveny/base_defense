@@ -27,7 +27,7 @@ pub(in crate::game) fn on_wave_actions(
             match action {
                 WaveActionsEvent::StartWave => {
                     start_wave(&mut cmds, &mut game, &mut set_wave_state, time.now());
-                    q_wave_text.single_mut().sections[0].value = format!("{}", game.wave_no);
+                    q_wave_text.single_mut().0 = format!("{}", game.wave_no);
                 }
                 WaveActionsEvent::EndWave => {
                     end_wave_and_prepare_next(&mut game, &mut set_wave_state, time.now())

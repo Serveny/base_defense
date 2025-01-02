@@ -458,10 +458,7 @@ fn enemy_normal_shape(enemy: &Enemy) -> impl Bundle {
                 ),
                 ..default()
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
-                ..default()
-            },
+            transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
             ..default()
         },
         Fill::color(MAROON),
@@ -491,10 +488,7 @@ fn enemy_tank_shape(enemy: &Enemy) -> impl Bundle {
                 ),
                 ..shapes::RegularPolygon::default()
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
-                ..default()
-            },
+            transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
             ..default()
         },
         Fill::color(OLIVE),
@@ -542,6 +536,6 @@ fn next_offset(
 fn relative_multiplier(last: &BoardStep, next: &BoardStep) -> f32 {
     let last_vec = last.direction.as_vec2board();
     let next_vec = next.direction.as_vec2board();
-    let angle = Angle::radians(last_vec.angle_between(next_vec.into())).to_degrees();
+    let angle = Angle::radians(last_vec.angle_to(next_vec.into())).to_degrees();
     angle / -90.
 }

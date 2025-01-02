@@ -144,7 +144,7 @@ fn game_setup(
 }
 
 fn tick_ingame_timer(mut timer: ResMut<IngameTime>, time: Res<Time>, game: Res<Game>) {
-    timer.tick(Duration::from_secs_f32(time.delta_seconds() * game.speed));
+    timer.tick(Duration::from_secs_f32(time.delta_secs() * game.speed));
 }
 
 fn clean_up_game(

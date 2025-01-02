@@ -69,19 +69,18 @@ fn main() {
 }
 
 fn setup_cameras(mut commands: Commands) {
-    commands.spawn(Camera2dBundle {
-        projection: OrthographicProjection {
+    commands.spawn((
+        Camera2d,
+        OrthographicProjection {
             viewport_origin: Vec2::new(0., 0.),
-            ..default()
+            ..OrthographicProjection::default_2d()
         },
-
-        transform: Transform {
+        Transform {
             translation: Vec3::new(0.0, 0.0, 100.0),
             scale: Vec3::new(1.0, 1.0, 1.0),
             ..default()
         },
-        ..default()
-    });
+    ));
 }
 
 const fn font() -> &'static [u8; 78628] {

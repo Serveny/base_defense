@@ -75,31 +75,25 @@ fn spawn_energy_animation(
     let (color, pos_y_add) = color_and_pos(energy);
     pos.x -= 0.4;
     pos.y += pos_y_add;
-    cmds.spawn(SpatialBundle {
-        transform: Transform {
+    cmds.spawn(energy_symbol(
+        Transform {
             translation: pos.to_scaled_vec3(6.),
             scale: Vec3::new(0.75, 0.75, 1.),
             ..default()
         },
-        ..default()
-    })
-    .with_children(|parent| {
-        parent
-            .spawn(energy_symbol(
-                Transform {
-                    translation: Vec3::new(-TILE_SIZE / 4., 0., 0.1),
-                    scale: Vec3::new(0.5, 0.5, 1.),
-                    ..default()
-                },
-                color,
-            ))
-            .insert(ResourceSymbolFade);
-        parent
-            .spawn(resource_text(energy, color, assets))
-            .insert(ResourceTextFade);
-    })
+        color,
+    ))
+    .insert(ResourceSymbolFade)
     .insert(ResourceAnimation::new(now + RESOURCE_ANIMATION_TIME))
     .insert(GameScreen);
+    cmds.spawn(resource_text(
+        energy,
+        color,
+        assets,
+        Val::Px(pos.x),
+        Val::Px(pos.y),
+    ))
+    .insert(ResourceTextFade);
 }
 
 fn spawn_materials_animation(
@@ -112,41 +106,35 @@ fn spawn_materials_animation(
     let (color, pos_y_add) = color_and_pos(materials);
     pos.x += 0.4;
     pos.y += pos_y_add;
-    cmds.spawn(SpatialBundle {
-        transform: Transform {
+    cmds.spawn(materials_symbol(
+        Transform {
             translation: pos.to_scaled_vec3(6.),
             scale: Vec3::new(0.75, 0.75, 1.),
             ..default()
         },
-        ..default()
-    })
+        color,
+    ))
     .insert(ResourceAnimation::new(now + RESOURCE_ANIMATION_TIME))
     .insert(GameScreen)
-    .with_children(|parent| {
-        parent
-            .spawn(materials_symbol(
-                Transform {
-                    translation: Vec3::new(-TILE_SIZE / 4., 0., 0.1),
-                    scale: Vec3::new(0.5, 0.5, 1.),
-                    ..default()
-                },
-                color,
-            ))
-            .insert(ResourceSymbolFade);
-        parent
-            .spawn(resource_text(materials, color, assets))
-            .insert(ResourceTextFade);
-    });
-}
-
-fn resource_text(number: f32, color: Color, assets: &AssetServer) -> Text2dBundle {
-    text_bundle(
-        WIDTH,
-        &format!("{number}"),
+    .insert(ResourceSymbolFade);
+    cmds.spawn(resource_text(
+        materials,
         color,
         assets,
-        Transform::from_translation(Vec3::new(-WIDTH / 9., WIDTH / 30., 1.)),
-    )
+        Val::Px(pos.x),
+        Val::Px(pos.y),
+    ))
+    .insert(ResourceTextFade);
+}
+
+fn resource_text(
+    number: f32,
+    color: Color,
+    assets: &AssetServer,
+    left: Val,
+    bottom: Val,
+) -> impl Bundle {
+    text_bundle(&format!("{number}"), color, assets, left, bottom)
 }
 
 pub fn consume(

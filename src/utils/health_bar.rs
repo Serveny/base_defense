@@ -1,6 +1,6 @@
+use bevy::color::palettes::css::{GREEN, SILVER};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
-use bevy::color::palettes::css::{GREEN, SILVER};
 
 #[derive(Component)]
 struct HealthBar;
@@ -27,11 +27,9 @@ fn health_bar_background_shape(bar_width: f32, translation: Vec3) -> impl Bundle
             path: GeometryBuilder::build_as(&shapes::Rectangle {
                 origin: RectangleOrigin::Center,
                 extents: Vec2::new(bar_width, bar_width / 4.),
+                radii: None,
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(translation),
-                ..default()
-            },
+            transform: Transform::from_translation(translation),
             ..default()
         },
         Fill::color(SILVER),
@@ -46,15 +44,13 @@ fn health_bar_percentage_shape(bar_width: f32) -> impl Bundle {
             path: GeometryBuilder::build_as(&shapes::Rectangle {
                 origin: RectangleOrigin::BottomLeft,
                 extents: Vec2::new(bar_width - margin, bar_width / 4. - margin),
+                radii: None,
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(Vec3::new(
-                    -bar_width / 2. + margin,
-                    -bar_width / 8. + margin,
-                    0.2,
-                )),
-                ..default()
-            },
+            transform: Transform::from_translation(Vec3::new(
+                -bar_width / 2. + margin,
+                -bar_width / 8. + margin,
+                0.2,
+            )),
             ..default()
         },
         Fill::color(GREEN),

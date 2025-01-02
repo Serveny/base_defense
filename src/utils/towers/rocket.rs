@@ -47,14 +47,17 @@ pub(super) fn spawn_rocket_tower<TScreen: Component + Default>(
         color.alpha = 0.9;
     }
     let transform = Transform::from_translation(vals.pos.to_scaled_vec3(1.));
-    cmds.spawn(SpatialBundle::from_transform(transform))
-        .with_children(|parent| {
-            rocket_tower_children::<TScreen>(parent, &vals, color.into(), is_preview);
-        })
-        .insert(TowerParent)
-        .insert(BoardPos(vals.pos.as_uvec2()))
-        .insert(Tower::Rocket(vals))
-        .insert(TScreen::default());
+    cmds.spawn((
+        transform,
+        Visibility::Inherited,
+        TowerParent,
+        BoardPos(vals.pos.as_uvec2()),
+        TScreen::default(),
+    ))
+    .with_children(|parent| {
+        rocket_tower_children::<TScreen>(parent, &vals, color.into(), is_preview);
+    })
+    .insert(Tower::Rocket(vals));
 }
 
 fn rocket_tower_children<TScreen: Component + Default>(
@@ -90,14 +93,12 @@ fn tower_rocket_cannon() -> impl Bundle {
             path: GeometryBuilder::build_as(&shapes::Rectangle {
                 origin: RectangleOrigin::CustomCenter(Vec2::new(0., TILE_SIZE / 4.)),
                 extents: Vec2::new(TILE_SIZE / 3., TILE_SIZE / 4.),
+                radii: None,
             }),
-            spatial: SpatialBundle {
-                transform: Transform {
-                    translation: Vec3::new(0., 0., 0.3),
-                    rotation: Quat::from_rotation_z(0.),
-                    ..Default::default()
-                },
-                ..default()
+            transform: Transform {
+                translation: Vec3::new(0., 0., 0.3),
+                rotation: Quat::from_rotation_z(0.),
+                ..Default::default()
             },
             ..default()
         },

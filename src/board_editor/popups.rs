@@ -214,13 +214,13 @@ pub(super) fn add_new_edit_popup(
         // Width
         let width_silder = egui::Slider::new(width, 3..=32)
             .show_value(true)
-            .clamp_to_range(true);
+            .clamping(egui::SliderClamping::Always);
         add_row("Width", width_silder, ui);
 
         // Height
         let height_silder = egui::Slider::new(height, 3..=32)
             .show_value(true)
-            .clamp_to_range(true);
+            .clamping(egui::SliderClamping::Always);
         add_row("Height", height_silder, ui);
 
         // Ok/Cancel Buttons

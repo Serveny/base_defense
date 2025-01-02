@@ -37,7 +37,7 @@ pub(super) fn game_over_timer_system(
         let mut text = q_go_text.single_mut();
         if let GameOverTimer::Active(game_over_time) = go_timer.as_ref() {
             set_base_color(q_base, time.now());
-            text.0.sections[0].value = format!("{}", *(*game_over_time - *time.now()) as u32);
+            text.0 .0 = format!("{}", *(*game_over_time - *time.now()) as u32);
         } else {
             *go_timer = GameOverTimer::Active(time.now() + GAME_OVER_COUNTDOWN_TIME);
             *text.1 = Visibility::Visible;
@@ -46,7 +46,7 @@ pub(super) fn game_over_timer_system(
         *go_timer = GameOverTimer::Inactive;
         set_base_color(q_base, IngameTimestamp(0.5));
         let mut text = q_go_text.single_mut();
-        text.0.sections[0].value = format!("{}", GAME_OVER_COUNTDOWN_TIME.as_secs());
+        text.0 .0 = format!("{}", GAME_OVER_COUNTDOWN_TIME.as_secs());
         *text.1 = Visibility::Hidden;
     }
 }

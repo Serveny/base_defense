@@ -98,10 +98,7 @@ fn menu_circle_shape(tile_size: f32) -> impl Bundle {
                 center: Vec2::default(),
                 radius: tile_size / 2.5,
             }),
-            spatial: SpatialBundle {
-                transform: Transform::from_translation(Vec3::new(0., 0., 3.)),
-                ..default()
-            },
+            transform: Transform::from_translation(Vec3::new(0., 0., 3.)),
             ..default()
         },
         Fill::color(Color::srgba(0.75, 0.75, 0.75, 0.)),
@@ -114,9 +111,11 @@ pub fn draw_build_menu(
     mut bm_close_ev: EventWriter<BuildMenuCloseEvent>,
     base_lvl: BaseLevel,
 ) {
-    cmds.spawn(menu_circle_shape(TILE_SIZE))
-        .insert(BuildMenuCircle)
-        .insert(BuildMenuScreen);
+    cmds.spawn((
+        menu_circle_shape(TILE_SIZE),
+        BuildMenuCircle,
+        BuildMenuScreen,
+    ));
 
     let mut towers = BuildMenu::available_towers(base_lvl);
     while let Some(tower) = towers.pop() {
