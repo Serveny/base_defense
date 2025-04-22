@@ -68,8 +68,8 @@ impl Enemy {
         if ranges.is_empty() {
             None
         } else {
-            let range = ranges[rand::thread_rng().gen_range(0..ranges.len())].clone();
-            Some(rand::thread_rng().gen_range(range) - 0.5 - *board_cache.spawn_line.range.start())
+            let range = ranges[rand::rng().random_range(0..ranges.len())].clone();
+            Some(rand::rng().random_range(range) - 0.5 - *board_cache.spawn_line.range.start())
         }
     }
 

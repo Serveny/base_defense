@@ -8,7 +8,10 @@ use user::Settings;
 use utils::GameState;
 
 //use bevy_editor_pls::*;
-use bevy_egui::EguiContexts;
+use bevy_egui::{
+    egui::epaint::text::{FontInsert, InsertFontFamily},
+    EguiContexts,
+};
 #[cfg(debug_assertions)]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
@@ -83,7 +86,7 @@ fn setup_cameras(mut commands: Commands) {
     ));
 }
 
-const fn font() -> &'static [u8; 78628] {
+const fn font_quicksand_regular() -> &'static [u8; 78628] {
     #[cfg(windows)]
     return include_bytes!("..\\assets\\fonts\\Quicksand-Regular.ttf");
 
@@ -91,28 +94,33 @@ const fn font() -> &'static [u8; 78628] {
     include_bytes!("../assets/fonts/Quicksand-Regular.ttf")
 }
 
-fn setup_egui(mut egui_ctx: EguiContexts) {
-    let mut fonts = egui::FontDefinitions::default();
-    let font = font();
-
-    fonts.font_data.insert(
-        "Quicksand-Regular".to_owned(),
+fn add_font(ctx: &egui::Context, name: &str, font: &'static [u8]) {
+    ctx.add_font(FontInsert::new(
+        name,
         egui::FontData::from_static(font),
-    );
-    fonts
-        .families
-        .entry(egui::FontFamily::Proportional)
-        .or_default()
-        .insert(0, "Quicksand-Regular".to_owned());
+        vec![
+            InsertFontFamily {
+                family: egui::FontFamily::Proportional,
+                priority: egui::epaint::text::FontPriority::Highest,
+            },
+            InsertFontFamily {
+                family: egui::FontFamily::Monospace,
+                priority: egui::epaint::text::FontPriority::Lowest,
+            },
+        ],
+    ));
+}
 
-    for (_text_style, data) in fonts.font_data.iter_mut() {
-        data.tweak.scale = 2.;
-    }
-    egui_ctx.ctx_mut().set_fonts(fonts);
+fn setup_egui(mut egui_ctx: EguiContexts) {
+    add_font(
+        egui_ctx.ctx_mut(),
+        "Quicksand-Regular",
+        font_quicksand_regular(),
+    );
 
     //Visuals
     egui_ctx.ctx_mut().set_visuals(egui::Visuals {
-        window_rounding: 10.0.into(),
+        window_corner_radius: 10.0.into(),
         selection: Selection {
             bg_fill: Color32::from_rgb(54, 241, 205),
             stroke: Stroke {

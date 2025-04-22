@@ -2,8 +2,6 @@ use crate::board::visualisation::TILE_SIZE;
 use crate::board::Board;
 use crate::{CamMutQuery, CamQuery};
 use bevy::prelude::*;
-use bevy_prototype_lyon::entity::ShapeBundle;
-use bevy_prototype_lyon::prelude::*;
 use euclid::Angle;
 pub use ingame_time::IngameTime;
 pub use ingame_time::IngameTimestamp;
@@ -128,7 +126,7 @@ pub fn add_text_row(label: &str, text: &str, ui: &mut bevy_egui::egui::Ui) {
 }
 
 pub fn add_error_box(err_text: &str, ui: &mut bevy_egui::egui::Ui) {
-    bevy_egui::egui::Frame::none()
+    bevy_egui::egui::Frame::new()
         .fill(bevy_egui::egui::Color32::LIGHT_RED)
         .stroke(bevy_egui::egui::Stroke::new(
             2.,

@@ -8,7 +8,10 @@ use crate::{
 };
 use bevy::{app::AppExit, prelude::*};
 use bevy_egui::{
-    egui::{self, CentralPanel, Color32, Frame, Label, Response, RichText, ScrollArea, SidePanel, SliderClamping},
+    egui::{
+        self, CentralPanel, Color32, Frame, Label, Response, RichText, ScrollArea, SidePanel,
+        SliderClamping,
+    },
     EguiContexts,
 };
 
@@ -76,7 +79,7 @@ fn add_main_menu(
     SidePanel::left("left_panel")
         .resizable(false)
         .default_width(SIDE_BAR_WIDTH)
-        .frame(Frame::none().fill(Color32::from_rgba_premultiplied(0, 0, 0, 50)))
+        .frame(Frame::new().fill(Color32::from_rgba_premultiplied(0, 0, 0, 50)))
         .show(egui_ctx.ctx_mut(), |ui| {
             // Title
             ui.add_sized(
