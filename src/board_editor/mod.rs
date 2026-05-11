@@ -13,7 +13,7 @@ use self::{
 };
 use crate::{
     board::{visualisation::BoardVisualisation, Board, BoardCache},
-    utils::{despawn_all_of, zoom_cam_to_board, GameState},
+    utils::{despawn_all_of, zoom_cam_to_board_with_viewport_padding, GameState},
     CamMutQuery,
 };
 use bevy::{prelude::*, window::WindowResized};
@@ -94,7 +94,7 @@ fn editor_setup(
     let board = Board::default();
     let board_cache = BoardCache::new(&board);
 
-    zoom_cam_to_board(&board, &mut q_cam, q_win);
+    zoom_cam_to_editor_board(&board, &mut q_cam, q_win);
     let visu = BoardVisu::new(0.9);
     visu.draw_board(&mut cmds, &board, &board_cache, &assets);
     cmds.insert_resource(visu);
@@ -111,8 +111,21 @@ fn on_resize(
     board: Res<Board>,
 ) {
     for _ in ev.read() {
-        zoom_cam_to_board(&board, &mut q_cam, q_win);
+        zoom_cam_to_editor_board(&board, &mut q_cam, q_win);
     }
+}
+
+pub(super) fn zoom_cam_to_editor_board(
+    board: &Board,
+    q_cam: &mut CamMutQuery,
+    q_win: Query<&Window>,
+) {
+    zoom_cam_to_board_with_viewport_padding(
+        board,
+        q_cam,
+        q_win,
+        Vec2::new(LEFT_BAR_WIDTH_PX, TOP_BAR_HEIGHT_PX),
+    );
 }
 
 fn clean_up_editor(mut commands: Commands) {

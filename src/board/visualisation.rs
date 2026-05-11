@@ -208,7 +208,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         assets: &AssetServer,
     ) {
         for board_screen_id in query.iter() {
-            cmds.entity(board_screen_id).despawn();
+            cmds.entity(board_screen_id).try_despawn();
         }
         self.draw_board(cmds, board, board_cache, assets);
     }
@@ -259,12 +259,13 @@ mod road_end_mark {
         utils::{
             energy::{energy_symbol, EnergyText, ENERGY_COLOR},
             materials::{materials_symbol, MaterialsText, MATERIALS_COLOR},
-            text_bundle, visible,
+            text_bundle, text_bundle_with_anchor, visible,
             wave::{wave_symbol, WaveText},
             Vec2Board,
         },
     };
-    use bevy::color::palettes::css::{DARK_GRAY, GOLD, OLIVE, ORANGE_RED, SILVER};
+    use bevy::color::palettes::css::{DARK_GRAY, GOLD, OLIVE, ORANGE_RED};
+    use bevy::sprite::Anchor;
 
     pub fn spawn_road_end_mark<TScreen: Component + Default>(
         cmds: &mut Commands,
@@ -328,16 +329,11 @@ mod road_end_mark {
         size: f32,
         translation: Vec3,
     ) {
-        let bundle = text_bundle(
-            "",
-            ORANGE_RED.into(),
-            assets,
-            Val::Px(translation.x),
-            Val::Px(translation.y),
-        );
+        let bundle = text_bundle("", ORANGE_RED.into(), assets, translation, size / 2.);
 
         cmds.spawn(bundle)
             .insert(Visibility::Hidden)
+            .insert(BoardScreen)
             .insert(TScreen::default())
             .insert(GameOverCountDownText);
     }
@@ -350,7 +346,7 @@ mod road_end_mark {
                 ..default()
             })
             .fill(OLIVE)
-            .stroke(Stroke::new(SILVER, size_px / 10.))
+            .stroke(Stroke::new(DARK_GRAY, size_px / 10.))
             .build(),
             transform,
             visibility,
@@ -378,24 +374,28 @@ mod road_end_mark {
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn(text_bundle(
+        let (symbol_translation, text_translation) = sign_translations(translation, width);
+        cmds.spawn(text_bundle_with_anchor(
             &format!("{}", 0),
             GOLD.into(),
             assets,
-            Val::Px(translation.x),
-            Val::Px(translation.y),
+            text_translation,
+            width / 4.5,
+            Anchor::CENTER_LEFT,
         ))
         .insert(WaveText)
         .insert(BoardScreen)
         .insert(TScreen::default());
         cmds.spawn(wave_symbol(
             Transform {
-                translation,
+                translation: symbol_translation,
                 scale: Vec3::new(1., 1., 1.),
                 ..Default::default()
             },
             GOLD.into(),
-        ));
+        ))
+        .insert(BoardScreen)
+        .insert(TScreen::default());
     }
 
     fn spawn_energy_sign<TScreen: Component + Default>(
@@ -404,24 +404,28 @@ mod road_end_mark {
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn(text_bundle(
+        let (symbol_translation, text_translation) = sign_translations(translation, width);
+        cmds.spawn(text_bundle_with_anchor(
             &format!("{}", 0),
             ENERGY_COLOR.into(),
             assets,
-            Val::Px(translation.x),
-            Val::Px(translation.y),
+            text_translation,
+            width / 4.5,
+            Anchor::CENTER_LEFT,
         ))
         .insert(EnergyText)
         .insert(BoardScreen)
         .insert(TScreen::default());
         cmds.spawn(energy_symbol(
             Transform {
-                translation,
+                translation: symbol_translation,
                 scale: Vec3::new(0.1, 0.1, 1.),
                 ..Default::default()
             },
             ENERGY_COLOR.into(),
-        ));
+        ))
+        .insert(BoardScreen)
+        .insert(TScreen::default());
     }
 
     fn spawn_materials_sign<TScreen: Component + Default>(
@@ -430,23 +434,34 @@ mod road_end_mark {
         width: f32,
         translation: Vec3,
     ) {
-        cmds.spawn(text_bundle(
+        let (symbol_translation, text_translation) = sign_translations(translation, width);
+        cmds.spawn(text_bundle_with_anchor(
             &format!("{}", 0),
             MATERIALS_COLOR.into(),
             assets,
-            Val::Px(translation.x),
-            Val::Px(translation.y),
+            text_translation,
+            width / 4.5,
+            Anchor::CENTER_LEFT,
         ))
         .insert(BoardScreen)
         .insert(TScreen::default())
         .insert(MaterialsText);
         cmds.spawn(materials_symbol(
             Transform {
-                translation,
+                translation: symbol_translation,
                 scale: Vec3::new(0.1, 0.1, 1.),
                 ..Default::default()
             },
             MATERIALS_COLOR.into(),
-        ));
+        ))
+        .insert(BoardScreen)
+        .insert(TScreen::default());
+    }
+
+    fn sign_translations(mut center: Vec3, width: f32) -> (Vec3, Vec3) {
+        let mut symbol = center;
+        symbol.x -= width / 7.;
+        center.x += width / 12.;
+        (symbol, center)
     }
 }

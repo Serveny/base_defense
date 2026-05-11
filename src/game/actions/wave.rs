@@ -19,7 +19,7 @@ pub(in crate::game) fn on_wave_actions(
     mut actions: MessageReader<WaveActionsMessage>,
     mut game: ResMut<Game>,
     mut set_wave_state: ResMut<NextState<WaveState>>,
-    mut q_wave_text: Query<&mut Text, With<WaveText>>,
+    mut q_wave_text: Query<&mut Text2d, With<WaveText>>,
     time: Res<IngameTime>,
 ) {
     if !actions.is_empty() {

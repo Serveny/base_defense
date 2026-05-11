@@ -39,10 +39,7 @@ impl Plugin for MainMenuPlugin {
                 EguiPrimaryContextPass,
                 startup_menu.run_if(in_state(GameState::Menu)),
             )
-            .add_systems(
-                Update,
-                menu_actions.run_if(in_state(GameState::Menu)),
-            )
+            .add_systems(Update, menu_actions.run_if(in_state(GameState::Menu)))
             .add_systems(OnEnter(MenuState::NewGame), new_game_menu_setup)
             .add_systems(
                 EguiPrimaryContextPass,

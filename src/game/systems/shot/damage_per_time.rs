@@ -29,7 +29,7 @@ pub fn despawn_system(
     let now = time.now();
     for (entity, shot) in q_shots.iter() {
         if now >= shot.die_time || find_enemy_in_range(&q_enemies, shot).is_none() {
-            cmds.entity(entity).despawn();
+            cmds.entity(entity).try_despawn();
         }
     }
 }

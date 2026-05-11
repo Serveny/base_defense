@@ -13,7 +13,6 @@ use crate::{
 use bevy::color::palettes::css::{DARK_GRAY, MAROON, OLIVE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use euclid::Angle;
 use rand::random_range;
 use serde::{Deserialize, Serialize};
 use std::{cmp::Ordering, ops::RangeInclusive, time::Duration};
@@ -79,7 +78,9 @@ impl Enemy {
     ) -> Option<Self> {
         let size_radius = 0.125;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
-            current_step.distance += 0.5 - path_offset;
+            current_step.distance += 0.5;
+            let pos = first_pos(&current_step, path_offset);
+            current_step.start_pos = pos;
             let speed = 1.;
             return Some(Self {
                 size_radius,
@@ -87,7 +88,7 @@ impl Enemy {
                 speed,
                 health_max: 100.,
                 health: 100.,
-                pos: first_pos(&current_step, path_offset),
+                pos,
                 enemy_type: EnemyType::Normal,
                 current_step,
                 reserved_damage: 0.,
@@ -105,7 +106,9 @@ impl Enemy {
     ) -> Option<Self> {
         let size_radius = 0.075;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
-            current_step.distance += 0.5 - path_offset;
+            current_step.distance += 0.5;
+            let pos = first_pos(&current_step, path_offset);
+            current_step.start_pos = pos;
             let speed = 2.;
             return Some(Self {
                 size_radius,
@@ -113,7 +116,7 @@ impl Enemy {
                 speed,
                 health_max: 10.,
                 health: 10.,
-                pos: first_pos(&current_step, path_offset),
+                pos,
                 enemy_type: EnemyType::Speeder,
                 current_step,
                 reserved_damage: 0.,
@@ -131,7 +134,9 @@ impl Enemy {
     ) -> Option<Self> {
         let size_radius = 0.25;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
-            current_step.distance += 0.5 - path_offset;
+            current_step.distance += 0.5;
+            let pos = first_pos(&current_step, path_offset);
+            current_step.start_pos = pos;
             let speed = 0.5;
             return Some(Self {
                 size_radius,
@@ -139,7 +144,7 @@ impl Enemy {
                 speed,
                 health_max: 1000.,
                 health: 1000.,
-                pos: first_pos(&current_step, path_offset),
+                pos,
                 enemy_type: EnemyType::Tank,
                 current_step,
                 reserved_damage: 0.,
@@ -187,6 +192,7 @@ impl Enemy {
     fn step_end_reached(&mut self, board_cache: &BoardCache) -> IsRoadEnd {
         let step = &mut self.current_step;
         if let Some(next) = next_step(&board_cache.road_path, step, self.path_offset) {
+            self.pos = next.start_pos;
             *step = next;
             return false;
         }
@@ -283,6 +289,9 @@ fn find_gaps(
     mut ranges: Vec<RangeInclusive<f32>>,
 ) -> Vec<RangeInclusive<f32>> {
     ranges = merge_ranges(ranges);
+    if ranges.is_empty() {
+        return vec![main_range];
+    }
     let mut gaps = vec![*main_range.start()..=*ranges.first().unwrap().start()];
     ranges.windows(2).for_each(|two_ranges| {
         gaps.push(*two_ranges[0].end()..=*two_ranges[1].start());
@@ -334,6 +343,13 @@ mod gaps_tests {
     }
 
     #[test]
+    fn test_find_gaps_no_ranges() {
+        let main_range = 0.0..=10.0;
+        let ranges = vec![];
+        assert_eq!(find_gaps(main_range.clone(), ranges), vec![main_range])
+    }
+
+    #[test]
     fn test_find_gaps_unsorted() {
         let main_range = 0.0..=10.0;
         let ranges = vec![4.0..=6.0, 1.0..=2.0];
@@ -366,9 +382,12 @@ mod gaps_tests {
 
 #[cfg(test)]
 mod enemy_tests {
-    use crate::utils::Vec2Board;
+    use crate::{
+        board::step::{BoardDirection, BoardStep},
+        utils::Vec2Board,
+    };
 
-    use super::Enemy;
+    use super::{first_pos, next_step, Enemy};
 
     #[test]
     fn test_set_range_to_padding_range_inside() {
@@ -435,6 +454,75 @@ mod enemy_tests {
         enemy_2.current_step.distance_walked = 4.;
         assert!(enemy_1.is_behind_of(&enemy_2));
     }
+
+    #[test]
+    fn test_offset_path_stays_inside_fat_cat_road_segments() {
+        let path = vec![
+            step(0, BoardDirection::North, 6., Vec2Board::new(0.5, 0.5)),
+            step(1, BoardDirection::East, 2., Vec2Board::new(0.5, 6.5)),
+            step(2, BoardDirection::South, 5., Vec2Board::new(2.5, 6.5)),
+            step(3, BoardDirection::East, 7., Vec2Board::new(2.5, 1.5)),
+            step(4, BoardDirection::North, 6., Vec2Board::new(9.5, 1.5)),
+            step(5, BoardDirection::West, 2., Vec2Board::new(9.5, 7.5)),
+        ];
+        let bounds = [
+            (0.0..=1.0, 0.0..=7.0),
+            (0.0..=3.0, 6.0..=7.0),
+            (2.0..=3.0, 1.0..=7.0),
+            (2.0..=10.0, 1.0..=2.0),
+            (9.0..=10.0, 1.0..=8.0),
+            (7.0..=10.0, 7.0..=8.0),
+        ];
+
+        for offset in [-0.25, 0., 0.25] {
+            let mut current = path[0].clone();
+            current.distance += 0.5;
+            current.start_pos = first_pos(&current, offset);
+            assert_step_inside(&current, &bounds[0]);
+
+            for bound in bounds.iter().skip(1) {
+                current = next_step(&path, &current, offset).unwrap();
+                assert_step_inside(&current, bound);
+            }
+        }
+    }
+
+    fn step(
+        road_path_index: usize,
+        direction: BoardDirection,
+        distance: f32,
+        start_pos: Vec2Board,
+    ) -> BoardStep {
+        BoardStep {
+            road_path_index,
+            direction,
+            distance,
+            distance_walked: 0.,
+            start_pos,
+        }
+    }
+
+    fn assert_step_inside(
+        step: &BoardStep,
+        bounds: &(std::ops::RangeInclusive<f32>, std::ops::RangeInclusive<f32>),
+    ) {
+        assert_pos_inside(step.start_pos, bounds);
+        let dir = step.direction.as_vec2board();
+        assert_pos_inside(
+            step.start_pos + Vec2Board::new(dir.x * step.distance, dir.y * step.distance),
+            bounds,
+        );
+    }
+
+    fn assert_pos_inside(
+        pos: Vec2Board,
+        bounds: &(std::ops::RangeInclusive<f32>, std::ops::RangeInclusive<f32>),
+    ) {
+        assert!(
+            bounds.0.contains(&pos.x) && bounds.1.contains(&pos.y),
+            "{pos} is outside {bounds:?}"
+        );
+    }
 }
 pub(super) fn spawn_normal_enemy(cmds: &mut Commands, enemy: Enemy) {
     cmds.spawn(enemy_normal_shape(&enemy))
@@ -493,44 +581,28 @@ fn enemy_tank_shape(enemy: &Enemy) -> impl Bundle {
 pub fn next_step(path: &[BoardStep], last: &BoardStep, offset: f32) -> Option<BoardStep> {
     if let Some(next) = path.get(last.road_path_index + 1) {
         let mut new_step = next.clone();
-        new_step.start_pos = last.end_pos();
-        new_step.distance += next_offset(last, next, path.get(next.road_path_index + 1), offset);
+        new_step.start_pos = step_start_pos(next, offset);
         return Some(new_step);
     }
     None
 }
 
 fn first_pos(first_step: &BoardStep, offset: f32) -> Vec2Board {
-    let pos = first_step.start_pos;
+    let pos = step_start_pos(first_step, offset);
     use crate::board::step::BoardDirection::*;
     match first_step.direction {
-        East => Vec2Board::new(pos.x - 0.5, pos.y + offset),
-        North => Vec2Board::new(pos.x + offset, pos.y - 0.5),
-        West => Vec2Board::new(pos.x + 0.5, pos.y + offset),
-        South => Vec2Board::new(pos.x + offset, pos.y + 0.5),
+        East => Vec2Board::new(pos.x - 0.5, pos.y),
+        North => Vec2Board::new(pos.x, pos.y - 0.5),
+        West => Vec2Board::new(pos.x + 0.5, pos.y),
+        South => Vec2Board::new(pos.x, pos.y + 0.5),
     }
 }
 
-fn next_offset(
-    last: &BoardStep,
-    next: &BoardStep,
-    overnext: Option<&BoardStep>,
-    offset: f32,
-) -> f32 {
-    relative_multiplier(last, next)
-        * if let Some(overnext) = overnext {
-            match last.direction == overnext.direction {
-                true => 0.,
-                false => offset * 2.,
-            }
-        } else {
-            offset
-        }
-}
-
-fn relative_multiplier(last: &BoardStep, next: &BoardStep) -> f32 {
-    let last_vec = last.direction.as_vec2board();
-    let next_vec = next.direction.as_vec2board();
-    let angle = Angle::radians(last_vec.angle_to(next_vec.into())).to_degrees();
-    angle / -90.
+fn step_start_pos(step: &BoardStep, offset: f32) -> Vec2Board {
+    let pos = step.start_pos;
+    use crate::board::step::BoardDirection::*;
+    match step.direction {
+        East | West => Vec2Board::new(pos.x, pos.y + offset),
+        North | South => Vec2Board::new(pos.x + offset, pos.y),
+    }
 }

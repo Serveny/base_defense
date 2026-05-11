@@ -19,7 +19,7 @@ pub fn damage_and_despawn_system(
                 shot.damage_radius,
                 shot.damage,
             ));
-            cmds.entity(entity).despawn();
+            cmds.entity(entity).try_despawn();
         }
     }
 }

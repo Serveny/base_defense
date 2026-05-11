@@ -2,6 +2,7 @@ use crate::board::visualisation::TILE_SIZE;
 use crate::board::Board;
 use crate::{CamMutQuery, CamQuery};
 use bevy::prelude::*;
+use bevy::sprite::Anchor;
 use euclid::Angle;
 pub use ingame_time::IngameTime;
 pub use ingame_time::IngameTimestamp;
@@ -58,7 +59,7 @@ pub enum Amount<T: Default> {
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in to_despawn.iter() {
-        commands.entity(entity).despawn();
+        commands.entity(entity).try_despawn();
     }
 }
 
@@ -110,21 +111,6 @@ pub fn add_row(label: &str, widget: impl bevy_egui::egui::Widget, ui: &mut bevy_
         ui.add_sized([width_right_col, 60.0], widget);
     });
 }
-pub fn add_text_row(label: &str, text: &str, ui: &mut bevy_egui::egui::Ui) {
-    let width_right_col = ui.available_width() - 200.0;
-    ui.horizontal(|ui| {
-        ui.set_style(bevy_egui::egui::Style {
-            spacing: bevy_egui::egui::style::Spacing {
-                slider_width: width_right_col - 60.0,
-                ..Default::default()
-            },
-            ..Default::default()
-        });
-        ui.add_sized([200., 60.], bevy_egui::egui::Label::new(label));
-        ui.add_sized([200., 60.], bevy_egui::egui::Label::new(text));
-    });
-}
-
 pub fn add_error_box(err_text: &str, ui: &mut bevy_egui::egui::Ui) {
     bevy_egui::egui::Frame::new()
         .fill(bevy_egui::egui::Color32::LIGHT_RED)
@@ -146,29 +132,48 @@ pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
 }
 
 pub fn zoom_cam_to_board(board: &Board, q_cam: &mut CamMutQuery, q_win: Query<&Window>) {
+    zoom_cam_to_board_with_viewport_padding(board, q_cam, q_win, Vec2::ZERO);
+}
+
+pub fn zoom_cam_to_board_with_viewport_padding(
+    board: &Board,
+    q_cam: &mut CamMutQuery,
+    q_win: Query<&Window>,
+    padding: Vec2,
+) {
     let Ok(win) = q_win.single() else { return };
-    let Ok(mut proj) = q_cam.single_mut() else {
+    let Ok((mut proj, mut camera, mut transform)) = q_cam.single_mut() else {
         return;
     };
-    let aspect_ratio_margin = cam_margin(board, &win);
-    let height = (board.height as f32 + aspect_ratio_margin.y) * TILE_SIZE;
-    let width = (board.width as f32 + aspect_ratio_margin.x) * TILE_SIZE;
+    let content_size = Vec2::new(
+        (win.width() - padding.x).max(1.),
+        (win.height() - padding.y).max(1.),
+    );
+    camera.viewport = None;
+
+    let aspect_ratio_margin = cam_margin(board, content_size);
+    let content_height = (board.height as f32 + aspect_ratio_margin.y) * TILE_SIZE;
+    let content_width = (board.width as f32 + aspect_ratio_margin.x) * TILE_SIZE;
+    let width = content_width * win.width() / content_size.x;
+    let height = content_height * win.height() / content_size.y;
     if let Projection::Orthographic(projection) = &mut *proj {
         projection.scaling_mode = ScalingMode::Fixed { width, height };
     }
+    transform.translation.x = -(padding.x * width / win.width());
+    transform.translation.y = 0.;
 }
 
-fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
+fn cam_margin(board: &Board, viewport_size: Vec2) -> Vec2Board {
     let b_w = board.width as f32;
     let b_h = board.height as f32;
 
-    let tile_width_px = win.width() / b_w;
-    let tile_height_px = win.height() / b_h;
+    let tile_width_px = viewport_size.x / b_w;
+    let tile_height_px = viewport_size.y / b_h;
 
     if tile_height_px > tile_width_px {
-        Vec2Board::new(0., ((win.height() / tile_width_px) - b_h) / 2.)
+        Vec2Board::new(0., ((viewport_size.y / tile_width_px) - b_h) / 2.)
     } else {
-        Vec2Board::new(((win.width() / tile_height_px) - b_w) / 2., 0.)
+        Vec2Board::new(((viewport_size.x / tile_height_px) - b_w) / 2., 0.)
     }
 }
 
@@ -190,22 +195,25 @@ pub fn text_bundle(
     text: &str,
     color: Color,
     assets: &AssetServer,
-    left: Val,
-    bottom: Val,
+    translation: Vec3,
+    font_size: f32,
+) -> impl Bundle {
+    text_bundle_with_anchor(text, color, assets, translation, font_size, Anchor::CENTER)
+}
+
+pub fn text_bundle_with_anchor(
+    text: &str,
+    color: Color,
+    assets: &AssetServer,
+    translation: Vec3,
+    font_size: f32,
+    anchor: Anchor,
 ) -> impl Bundle {
     (
-        Node {
-            border: UiRect::all(Val::Px(2.)),
-            position_type: PositionType::Absolute,
-            left: left / TILE_SIZE,
-            bottom: bottom / TILE_SIZE,
-            ..default()
-        },
-        BorderColor::all(Color::srgba(1., 1., 1., 0.05)),
-        Text(text.to_string()),
+        Text2d::new(text),
         TextFont {
             font: assets.load(FONT_QUICKSAND),
-            font_size: 30.,
+            font_size,
             ..default()
         },
         TextColor(color),
@@ -213,7 +221,8 @@ pub fn text_bundle(
             justify: Justify::Center,
             linebreak: LineBreak::NoWrap,
         },
-        BackgroundColor(Color::srgba(1., 1., 1., 0.05)),
+        anchor,
+        Transform::from_translation(translation),
     )
 }
 

@@ -5,11 +5,11 @@ use crate::{
         statistics::{EnemyKillCount, LaserShotsFired, RocketsFired},
         Game, IngameState, GAME_OVER_COUNTDOWN_TIME,
     },
-    utils::{add_text_row, GameState, IngameTime, IngameTimestamp},
+    utils::{GameState, IngameTime, IngameTimestamp},
 };
 use bevy::prelude::*;
 use bevy_egui::{
-    egui::{CentralPanel, Frame, Label, RichText, ScrollArea, Stroke, TopBottomPanel},
+    egui::{Align, CentralPanel, Frame, Grid, Label, Layout, RichText, Stroke, TopBottomPanel},
     EguiContexts,
 };
 use bevy_prototype_lyon::entity::Shape;
@@ -28,7 +28,7 @@ impl Default for GameOverTimer {
 
 pub(super) fn game_over_timer_system(
     mut go_timer: ResMut<GameOverTimer>,
-    mut q_go_text: Query<(&mut Text, &mut Visibility), With<GameOverCountDownText>>,
+    mut q_go_text: Query<(&mut Text2d, &mut Visibility), With<GameOverCountDownText>>,
     q_base: Query<&mut Shape, With<BoardRoadEndMark>>,
     time: Res<IngameTime>,
     game: Res<Game>,
@@ -104,16 +104,28 @@ pub(super) fn game_over_screen(
         ui.vertical_centered(|ui| {
             ui.add(Label::new(RichText::new("GAME OVER").heading()));
 
+            ui.add_space(24.);
+
             // Game Over Infos
-            ScrollArea::vertical().max_width(400.).show(ui, |ui| {
-                let time = time.elapsed_secs_f64();
-                add_text_row("Ingame Time", &format_secs_time(time), ui);
-                add_text_row("Wave", &format!("{}", game.wave_no), ui);
-                add_text_row("Energy", &format!("{}", game.energy), ui);
-                add_text_row("Materials", &format!("{}", game.materials), ui);
-                add_text_row("Enemies Killed", &format!("{}", kill_count.0), ui);
-                add_text_row("Laser Shots Fired", &format!("{}", laser_count.0), ui);
-                add_text_row("Rockets Fired", &format!("{}", rocket_count.0), ui);
+            ui.horizontal(|ui| {
+                ui.add_space(((ui.available_width() - STATS_GRID_WIDTH) / 2.).max(0.));
+                ui.vertical(|ui| {
+                    ui.set_width(STATS_GRID_WIDTH);
+                    Grid::new("game_over_stats")
+                        .num_columns(2)
+                        .min_col_width(STATS_COL_WIDTH)
+                        .spacing([STATS_COL_GAP, 18.])
+                        .show(ui, |ui| {
+                            let time = time.elapsed_secs_f64();
+                            add_stat_row("Ingame Time", &format_secs_time(time), ui);
+                            add_stat_row("Wave", &format!("{}", game.wave_no), ui);
+                            add_stat_row("Energy", &format!("{}", game.energy), ui);
+                            add_stat_row("Materials", &format!("{}", game.materials), ui);
+                            add_stat_row("Enemies Killed", &format!("{}", kill_count.0), ui);
+                            add_stat_row("Laser Shots Fired", &format!("{}", laser_count.0), ui);
+                            add_stat_row("Rockets Fired", &format!("{}", rocket_count.0), ui);
+                        });
+                });
             });
         });
 
@@ -143,6 +155,20 @@ pub(super) fn game_over_screen(
                 });
             });
     });
+}
+
+const STATS_COL_WIDTH: f32 = 200.;
+const STATS_COL_GAP: f32 = 24.;
+const STATS_GRID_WIDTH: f32 = (STATS_COL_WIDTH * 2.) + STATS_COL_GAP;
+
+fn add_stat_row(label: &str, text: &str, ui: &mut bevy_egui::egui::Ui) {
+    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+        ui.add(Label::new(label));
+    });
+    ui.with_layout(Layout::left_to_right(Align::Center), |ui| {
+        ui.add(Label::new(text));
+    });
+    ui.end_row();
 }
 
 #[cfg(test)]

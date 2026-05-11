@@ -177,7 +177,7 @@ fn back_to_main_menu(
     query: &mut GameScreenQuery,
 ) {
     for entity in query.iter() {
-        cmds.entity(entity).despawn();
+        cmds.entity(entity).try_despawn();
     }
     set_wave_state.set(WaveState::None);
     set_ingame_state.set(IngameState::None);

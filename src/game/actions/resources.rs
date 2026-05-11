@@ -73,6 +73,8 @@ fn spawn_energy_animation(
     let (color, pos_y_add) = color_and_pos(energy);
     pos.x -= 0.4;
     pos.y += pos_y_add;
+    let mut text_pos = pos;
+    text_pos.x += 0.42;
     cmds.spawn(energy_symbol(
         Transform {
             translation: pos.to_scaled_vec3(6.),
@@ -88,9 +90,10 @@ fn spawn_energy_animation(
         energy,
         color,
         assets,
-        Val::Px(pos.x),
-        Val::Px(pos.y),
+        text_pos.to_scaled_vec3(6.1),
     ))
+    .insert(ResourceAnimation::new(now + RESOURCE_ANIMATION_TIME))
+    .insert(GameScreen)
     .insert(ResourceTextFade);
 }
 
@@ -104,6 +107,8 @@ fn spawn_materials_animation(
     let (color, pos_y_add) = color_and_pos(materials);
     pos.x += 0.4;
     pos.y += pos_y_add;
+    let mut text_pos = pos;
+    text_pos.x += 0.42;
     cmds.spawn(materials_symbol(
         Transform {
             translation: pos.to_scaled_vec3(6.),
@@ -119,9 +124,10 @@ fn spawn_materials_animation(
         materials,
         color,
         assets,
-        Val::Px(pos.x),
-        Val::Px(pos.y),
+        text_pos.to_scaled_vec3(6.1),
     ))
+    .insert(ResourceAnimation::new(now + RESOURCE_ANIMATION_TIME))
+    .insert(GameScreen)
     .insert(ResourceTextFade);
 }
 
@@ -129,10 +135,15 @@ fn resource_text(
     number: f32,
     color: Color,
     assets: &AssetServer,
-    left: Val,
-    bottom: Val,
+    translation: Vec3,
 ) -> impl Bundle {
-    text_bundle(&format!("{number}"), color, assets, left, bottom)
+    text_bundle(
+        &format!("{number}"),
+        color,
+        assets,
+        translation,
+        crate::board::visualisation::TILE_SIZE / 3.5,
+    )
 }
 
 pub fn consume(

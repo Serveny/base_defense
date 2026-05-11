@@ -113,16 +113,14 @@ pub fn draw_tower<TScreen: Component + Default>(
 }
 
 fn tower_base_shape(color: Color) -> impl Bundle {
-    (
-        ShapeBuilder::with(&shapes::RegularPolygon {
-            sides: 8,
-            feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
-            ..default()
-        })
-        .fill(color)
-        .stroke(Stroke::new(DARK_GRAY, TILE_SIZE / 16.))
-        .build(),
-    )
+    (ShapeBuilder::with(&shapes::RegularPolygon {
+        sides: 8,
+        feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
+        ..default()
+    })
+    .fill(color)
+    .stroke(Stroke::new(DARK_GRAY, TILE_SIZE / 16.))
+    .build(),)
 }
 
 fn tower_circle_shape() -> impl Bundle {

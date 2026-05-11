@@ -19,7 +19,7 @@ pub fn death_system(
                 enemy.health_max / 10.,
                 enemy.pos,
             ));
-            cmds.entity(entity).despawn();
+            cmds.entity(entity).try_despawn();
             kill_count.0 += 1;
         }
     }

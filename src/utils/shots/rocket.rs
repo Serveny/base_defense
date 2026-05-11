@@ -44,17 +44,15 @@ pub fn spawn_shot_rocket<TScreen: Component + Default>(
 }
 
 fn rocket_body_shape(tile_size: f32) -> impl Bundle {
-    (
-        ShapeBuilder::with(&shapes::Rectangle {
-            origin: RectangleOrigin::Center,
-            // origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
-            extents: Vec2::new(tile_size / 10., tile_size / 5.),
-            radii: None,
-        })
-        .fill(PURPLE)
-        .stroke(Stroke::new(DARK_GRAY, tile_size / 40.))
-        .build(),
-    )
+    (ShapeBuilder::with(&shapes::Rectangle {
+        origin: RectangleOrigin::Center,
+        // origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
+        extents: Vec2::new(tile_size / 10., tile_size / 5.),
+        radii: None,
+    })
+    .fill(PURPLE)
+    .stroke(Stroke::new(DARK_GRAY, tile_size / 40.))
+    .build(),)
 }
 
 fn rocket_shot_children(parent: &mut ChildSpawnerCommands) {

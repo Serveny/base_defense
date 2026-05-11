@@ -15,7 +15,7 @@ pub fn resource_animation_system(
     let now = time.now();
     for (entity, mut transform, anim) in q_anims.iter_mut() {
         if now >= anim.die_time {
-            cmds.entity(entity).despawn();
+            cmds.entity(entity).try_despawn();
         } else {
             transform.translation.y += delta * TILE_SIZE / 2.;
         }

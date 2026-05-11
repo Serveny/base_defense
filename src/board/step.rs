@@ -57,10 +57,6 @@ impl BoardStep {
             start_pos,
         }
     }
-
-    pub fn end_pos(&self) -> Vec2Board {
-        (*self.start_pos + (*self.direction.as_vec2board() * self.distance)).into()
-    }
 }
 
 impl BoardStep {

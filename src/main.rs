@@ -1,8 +1,10 @@
 use ::bevy_egui::{
-    egui::{self, style::Selection, Color32, Stroke},
+    egui::{self, style::Selection, Color32, FontId, Stroke, TextStyle},
     EguiPlugin,
 };
 use bevy::{prelude::*, window::WindowResolution};
+#[cfg(debug_assertions)]
+use bevy_inspector_egui::{bevy_inspector, DefaultInspectorConfigPlugin};
 use bevy_prototype_lyon::plugin::ShapePlugin;
 use user::Settings;
 use utils::GameState;
@@ -13,7 +15,7 @@ use bevy_egui::{
     EguiContexts, EguiStartupSet,
 };
 #[cfg(debug_assertions)]
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_egui::{EguiContext, EguiPrimaryContextPass, PrimaryEguiContext};
 
 mod assets;
 mod board;
@@ -25,7 +27,8 @@ mod user;
 mod utils;
 
 type CamQuery<'w, 's, 'a> = Query<'w, 's, (&'a Camera, &'a GlobalTransform), With<Camera2d>>;
-type CamMutQuery<'w, 's, 'a> = Query<'w, 's, &'a mut Projection, With<Camera2d>>;
+type CamMutQuery<'w, 's, 'a> =
+    Query<'w, 's, (&'a mut Projection, &'a mut Camera, &'a mut Transform), With<Camera2d>>;
 
 const TITLE: &str = "Base Defense";
 const BACKGROUND_COLOR: Color = Color::srgba(35.0 / 255.0, 33.0 / 255.0, 38.0 / 255.0, 15.0);
@@ -55,7 +58,8 @@ fn main() {
         ));
 
     #[cfg(debug_assertions)]
-    app.add_plugins(WorldInspectorPlugin::default());
+    app.add_plugins(DefaultInspectorConfigPlugin)
+        .add_systems(EguiPrimaryContextPass, world_inspector_ui);
     //   app.add_plugin(EditorPlugin)
     //      .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
     //      .add_plugin(bevy::diagnostic::EntityCountDiagnosticsPlugin);
@@ -122,6 +126,31 @@ fn setup_egui(mut egui_ctx: EguiContexts) {
     };
     add_font(ctx, "Quicksand-Regular", font_quicksand_regular());
 
+    let mut style = (*ctx.style()).clone();
+    style.text_styles.insert(
+        TextStyle::Heading,
+        FontId::new(34., egui::FontFamily::Proportional),
+    );
+    style.text_styles.insert(
+        TextStyle::Body,
+        FontId::new(20., egui::FontFamily::Proportional),
+    );
+    style.text_styles.insert(
+        TextStyle::Button,
+        FontId::new(20., egui::FontFamily::Proportional),
+    );
+    style.text_styles.insert(
+        TextStyle::Small,
+        FontId::new(16., egui::FontFamily::Proportional),
+    );
+    style.text_styles.insert(
+        TextStyle::Monospace,
+        FontId::new(19., egui::FontFamily::Monospace),
+    );
+    style.spacing.button_padding = egui::vec2(16., 10.);
+    style.spacing.item_spacing = egui::vec2(10., 10.);
+    ctx.set_style(style);
+
     //Visuals
     ctx.set_visuals(egui::Visuals {
         window_corner_radius: 10.0.into(),
@@ -134,4 +163,48 @@ fn setup_egui(mut egui_ctx: EguiContexts) {
         },
         ..default()
     });
+}
+
+#[cfg(debug_assertions)]
+fn world_inspector_ui(world: &mut World) {
+    let Ok(egui_context) = world
+        .query_filtered::<&mut EguiContext, With<PrimaryEguiContext>>()
+        .single(world)
+    else {
+        return;
+    };
+    let mut egui_context = egui_context.clone();
+    let ctx = egui_context.get_mut();
+    let original_style = (*ctx.style()).clone();
+    let mut inspector_style = original_style.clone();
+
+    inspector_style.text_styles.insert(
+        TextStyle::Heading,
+        FontId::new(18., egui::FontFamily::Proportional),
+    );
+    inspector_style.text_styles.insert(
+        TextStyle::Body,
+        FontId::new(12., egui::FontFamily::Proportional),
+    );
+    inspector_style.text_styles.insert(
+        TextStyle::Button,
+        FontId::new(12., egui::FontFamily::Proportional),
+    );
+    inspector_style.text_styles.insert(
+        TextStyle::Small,
+        FontId::new(10., egui::FontFamily::Proportional),
+    );
+    inspector_style.spacing.item_spacing = egui::vec2(4., 4.);
+    inspector_style.spacing.button_padding = egui::vec2(6., 3.);
+
+    ctx.set_style(inspector_style);
+    egui::Window::new("World Inspector")
+        .default_size(egui::vec2(320., 180.))
+        .show(ctx, |ui| {
+            egui::ScrollArea::both().show(ui, |ui| {
+                bevy_inspector::ui_for_world(world, ui);
+                ui.allocate_space(ui.available_size());
+            });
+        });
+    ctx.set_style(original_style);
 }

@@ -81,7 +81,7 @@ fn enemy_reached_base(
     let damage = (-enemy.health * 20.).round();
     res_actions.write(ResourcesMessage::Energy(damage, enemy.pos));
     res_actions.write(ResourcesMessage::Materials(damage, enemy.pos));
-    cmds.entity(entity).despawn();
+    cmds.entity(entity).try_despawn();
 }
 
 fn set_enemy_spawn_line_flag(enemy: &mut Enemy, board_cache: &BoardCache) {

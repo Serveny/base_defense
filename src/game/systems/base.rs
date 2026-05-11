@@ -3,8 +3,8 @@ use crate::{
     utils::{energy::EnergyText, materials::MaterialsText},
 };
 use bevy::prelude::*;
-type QueryEnergyText<'w, 's, 'a> = Query<'w, 's, &'a mut Text, With<EnergyText>>;
-type QueryMaterialsText<'w, 's, 'a> = Query<'w, 's, &'a mut Text, With<MaterialsText>>;
+type QueryEnergyText<'w, 's, 'a> = Query<'w, 's, &'a mut Text2d, With<EnergyText>>;
+type QueryMaterialsText<'w, 's, 'a> = Query<'w, 's, &'a mut Text2d, With<MaterialsText>>;
 
 pub(super) fn base_system(
     game: Res<Game>,

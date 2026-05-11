@@ -13,7 +13,7 @@ pub fn explosion_system(
     for (entity, mut transform, mut expl) in q_explosions.iter_mut() {
         if expl.is_end() {
             damage_enemies_in_range(&mut q_enemies, &expl);
-            cmds.entity(entity).despawn();
+            cmds.entity(entity).try_despawn();
         } else {
             expl.grow(time.delta());
             let scale_val = expl.current_radius / expl.target_radius;

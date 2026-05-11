@@ -1,10 +1,10 @@
-use super::{popups::Popups, BoardEditor, BoardVisu};
+use super::{popups::Popups, zoom_cam_to_editor_board, BoardEditor, BoardVisu};
 use crate::{
     board::{
         visualisation::{BoardScreen, QueryBoardVisuTile, RoadEndMarkQuery},
         Board, BoardCache, Tile,
     },
-    utils::{save_board_to_file, zoom_cam_to_board, GameState},
+    utils::{save_board_to_file, GameState},
     CamMutQuery,
 };
 use bevy::prelude::*;
@@ -92,7 +92,7 @@ pub(super) fn on_load_board(
             validate_board(&mut editor, &board_cache);
             *visu = BoardVisu::new(0.9);
             visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
-            zoom_cam_to_board(&board, &mut q_cam, q_win);
+            zoom_cam_to_editor_board(&board, &mut q_cam, q_win);
         }
     }
 }
@@ -133,7 +133,7 @@ pub(super) fn on_new_board(
             *popups = Popups::None;
             *visu = BoardVisu::new(0.9);
             visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
-            zoom_cam_to_board(&board, &mut q_cam, q_win);
+            zoom_cam_to_editor_board(&board, &mut q_cam, q_win);
         }
     }
 }
@@ -175,7 +175,7 @@ pub(super) fn on_edit_board(
             validate_board(&mut editor, &board_cache);
             *visu = BoardVisu::new(0.9);
             visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
-            zoom_cam_to_board(&board, &mut q_cam, q_win);
+            zoom_cam_to_editor_board(&board, &mut q_cam, q_win);
         }
     }
 }

@@ -4,8 +4,6 @@
   <img src="assets/demo-animation.gif"/>
 </p>
 
-<p>⚠ UI currently broken, I will fix it at some point</p>
-
 A litte tower defense game with Rust and Bevy engine. It's my first litte game project, only to learn Rust/Bevy.
 
 Base defense concept:
