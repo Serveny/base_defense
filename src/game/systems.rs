@@ -14,6 +14,7 @@ use self::{
     wave::{wave_spawn_system, wave_system, WaveState},
 };
 use bevy::prelude::*;
+use bevy_egui::EguiPrimaryContextPass;
 
 use super::{actions::Labels, controls::hovered_tile, IngameState};
 
@@ -88,7 +89,7 @@ impl Plugin for GameSystems {
             )
             .add_systems(OnEnter(IngameState::GameOver), end_game)
             .add_systems(
-                Update,
+                EguiPrimaryContextPass,
                 (game_over_screen).run_if(in_state(IngameState::GameOver)),
             )
             .add_systems(

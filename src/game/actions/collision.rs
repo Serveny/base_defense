@@ -4,19 +4,19 @@ use crate::utils::{
 };
 use bevy::prelude::*;
 
-#[derive(Event)]
-pub struct EnemyCollisionAddEvent(pub Entity, pub Entity);
+#[derive(Message)]
+pub struct EnemyCollisionAddMessage(pub Entity, pub Entity);
 
-#[derive(Event)]
-pub struct EnemyCollisionRemoveEvent(pub Entity, pub Entity);
+#[derive(Message)]
+pub struct EnemyCollisionRemoveMessage(pub Entity, pub Entity);
 
-impl From<Collision> for EnemyCollisionRemoveEvent {
+impl From<Collision> for EnemyCollisionRemoveMessage {
     fn from(coll: Collision) -> Self {
-        EnemyCollisionRemoveEvent(coll.enemy_before, coll.enemy_behind)
+        EnemyCollisionRemoveMessage(coll.enemy_before, coll.enemy_behind)
     }
 }
 
-impl PartialEq<Collision> for EnemyCollisionRemoveEvent {
+impl PartialEq<Collision> for EnemyCollisionRemoveMessage {
     fn eq(&self, other: &Collision) -> bool {
         self.0 == other.enemy_before && self.1 == other.enemy_behind
             || self.0 == other.enemy_behind && self.1 == other.enemy_before
@@ -24,7 +24,7 @@ impl PartialEq<Collision> for EnemyCollisionRemoveEvent {
 }
 
 pub(super) fn on_enemy_collision_add(
-    mut events: EventReader<EnemyCollisionAddEvent>,
+    mut events: MessageReader<EnemyCollisionAddMessage>,
     mut q_speeds: Query<&mut Speed>,
 ) {
     for ev in events.read() {
@@ -37,7 +37,7 @@ pub(super) fn on_enemy_collision_add(
 }
 
 pub(super) fn on_enemy_collision_remove(
-    mut events: EventReader<EnemyCollisionRemoveEvent>,
+    mut events: MessageReader<EnemyCollisionRemoveMessage>,
     mut collisions: ResMut<Collisions>,
     mut q_speeds: Query<&mut Speed>,
 ) {
@@ -48,7 +48,7 @@ pub(super) fn on_enemy_collision_remove(
     }
 }
 
-fn remove_collision(collisions: &mut Collisions, ev: &EnemyCollisionRemoveEvent) {
+fn remove_collision(collisions: &mut Collisions, ev: &EnemyCollisionRemoveMessage) {
     if let Some(index) = collisions.iter().position(|coll| *ev == *coll) {
         collisions.remove(index);
     }

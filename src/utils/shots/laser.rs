@@ -1,7 +1,7 @@
 use super::{DamagePerTimeShot, DamagePerTimeShotValues, Shot};
 use crate::{board::visualisation::TILE_SIZE, utils::Vec2Board};
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy_prototype_lyon::prelude::*;
 use std::time::Duration;
 
 pub const INIT_RANGE_RADIUS: f32 = 1.5;
@@ -33,25 +33,18 @@ pub fn spawn_shot_laser<TScreen: Component + Default>(
 
 fn laser_shape(tile_size: f32) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Rectangle {
-                origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
-                extents: Vec2::new(tile_size / 10., tile_size),
-                radii: None,
-            }),
-            transform: Transform {
-                scale: Vec3::new(0., 0., 0.),
-                ..Default::default()
-            },
-            ..default()
-        },
-        Fill::color(Srgba {
+        ShapeBuilder::with(&shapes::Rectangle {
+            origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
+            extents: Vec2::new(tile_size / 10., tile_size),
+            radii: None,
+        })
+        .fill(Srgba {
             red: 1.,
             green: 1.,
             blue: 1.,
             alpha: 0.6,
-        }),
-        Stroke::new(
+        })
+        .stroke(Stroke::new(
             Srgba {
                 red: 1.,
                 green: 0.,
@@ -59,6 +52,11 @@ fn laser_shape(tile_size: f32) -> impl Bundle {
                 alpha: 0.6,
             },
             tile_size / 20.,
-        ),
+        ))
+        .build(),
+        Transform {
+            scale: Vec3::new(0., 0., 0.),
+            ..Default::default()
+        },
     )
 }

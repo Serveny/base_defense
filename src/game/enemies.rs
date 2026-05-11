@@ -12,10 +12,9 @@ use crate::{
 };
 use bevy::color::palettes::css::{DARK_GRAY, MAROON, OLIVE};
 use bevy::prelude::*;
-use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use euclid::Angle;
-use rand::Rng;
+use rand::random_range;
 use serde::{Deserialize, Serialize};
 use std::{cmp::Ordering, ops::RangeInclusive, time::Duration};
 
@@ -68,8 +67,8 @@ impl Enemy {
         if ranges.is_empty() {
             None
         } else {
-            let range = ranges[rand::rng().random_range(0..ranges.len())].clone();
-            Some(rand::rng().random_range(range) - 0.5 - *board_cache.spawn_line.range.start())
+            let range = ranges[random_range(0..ranges.len())].clone();
+            Some(random_range(range) - 0.5 - *board_cache.spawn_line.range.start())
         }
     }
 
@@ -450,19 +449,17 @@ pub(super) fn spawn_normal_enemy(cmds: &mut Commands, enemy: Enemy) {
 fn enemy_normal_shape(enemy: &Enemy) -> impl Bundle {
     let line_width = TILE_SIZE / 24.;
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
-                sides: 5,
-                feature: shapes::RegularPolygonFeature::Radius(
-                    enemy.size_radius * TILE_SIZE - (line_width / 2.),
-                ),
-                ..default()
-            }),
-            transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
+        ShapeBuilder::with(&shapes::RegularPolygon {
+            sides: 5,
+            feature: shapes::RegularPolygonFeature::Radius(
+                enemy.size_radius * TILE_SIZE - (line_width / 2.),
+            ),
             ..default()
-        },
-        Fill::color(MAROON),
-        Stroke::new(DARK_GRAY, line_width),
+        })
+        .fill(MAROON)
+        .stroke(Stroke::new(DARK_GRAY, line_width))
+        .build(),
+        Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
     )
 }
 
@@ -480,19 +477,17 @@ fn enemy_tank_shape(enemy: &Enemy) -> impl Bundle {
     let line_width = TILE_SIZE / 24.;
 
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
-                sides: 6,
-                feature: shapes::RegularPolygonFeature::Radius(
-                    enemy.size_radius * TILE_SIZE - (line_width / 2.),
-                ),
-                ..shapes::RegularPolygon::default()
-            }),
-            transform: Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
-            ..default()
-        },
-        Fill::color(OLIVE),
-        Stroke::new(DARK_GRAY, line_width),
+        ShapeBuilder::with(&shapes::RegularPolygon {
+            sides: 6,
+            feature: shapes::RegularPolygonFeature::Radius(
+                enemy.size_radius * TILE_SIZE - (line_width / 2.),
+            ),
+            ..shapes::RegularPolygon::default()
+        })
+        .fill(OLIVE)
+        .stroke(Stroke::new(DARK_GRAY, line_width))
+        .build(),
+        Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
     )
 }
 pub fn next_step(path: &[BoardStep], last: &BoardStep, offset: f32) -> Option<BoardStep> {

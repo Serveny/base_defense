@@ -1,6 +1,6 @@
 use bevy::color::palettes::css::DARK_GRAY;
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy_prototype_lyon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 pub mod factory;
@@ -51,15 +51,13 @@ pub struct BuildingBase;
 fn building_base_shape(tile_size: f32, color: Color) -> impl Bundle {
     (
         Node::default(),
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
-                sides: 6,
-                feature: shapes::RegularPolygonFeature::Radius(tile_size / 2.),
-                ..shapes::RegularPolygon::default()
-            }),
-            ..default()
-        },
-        Fill::color(color),
-        Stroke::new(DARK_GRAY, tile_size / 20.),
+        ShapeBuilder::with(&shapes::RegularPolygon {
+            sides: 6,
+            feature: shapes::RegularPolygonFeature::Radius(tile_size / 2.),
+            ..shapes::RegularPolygon::default()
+        })
+        .fill(color)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .build(),
     )
 }

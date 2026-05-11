@@ -2,7 +2,7 @@ use ::bevy_egui::{
     egui::{self, style::Selection, Color32, Stroke},
     EguiPlugin,
 };
-use bevy::prelude::*;
+use bevy::{prelude::*, window::WindowResolution};
 use bevy_prototype_lyon::plugin::ShapePlugin;
 use user::Settings;
 use utils::GameState;
@@ -10,7 +10,7 @@ use utils::GameState;
 //use bevy_editor_pls::*;
 use bevy_egui::{
     egui::epaint::text::{FontInsert, InsertFontFamily},
-    EguiContexts,
+    EguiContexts, EguiStartupSet,
 };
 #[cfg(debug_assertions)]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -25,7 +25,7 @@ mod user;
 mod utils;
 
 type CamQuery<'w, 's, 'a> = Query<'w, 's, (&'a Camera, &'a GlobalTransform), With<Camera2d>>;
-type CamMutQuery<'w, 's, 'a> = Query<'w, 's, &'a mut OrthographicProjection, With<Camera2d>>;
+type CamMutQuery<'w, 's, 'a> = Query<'w, 's, &'a mut Projection, With<Camera2d>>;
 
 const TITLE: &str = "Base Defense";
 const BACKGROUND_COLOR: Color = Color::srgba(35.0 / 255.0, 33.0 / 255.0, 38.0 / 255.0, 15.0);
@@ -40,13 +40,13 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: TITLE.to_string(),
-                resolution: (1200.0, 600.).into(),
+                resolution: WindowResolution::new(1200, 600),
                 ..default()
             }),
             ..default()
         }))
         .add_plugins((
-            EguiPlugin,
+            EguiPlugin::default(),
             ShapePlugin,
             splash::SplashPlugin,
             main_menu::MainMenuPlugin,
@@ -67,17 +67,21 @@ fn main() {
 
     app.insert_resource(Settings::new())
         .init_state::<GameState>()
-        .add_systems(Startup, (setup_cameras, setup_egui))
+        .add_systems(
+            PreStartup,
+            setup_cameras.before(EguiStartupSet::InitContexts),
+        )
+        .add_systems(Startup, setup_egui)
         .run();
 }
 
 fn setup_cameras(mut commands: Commands) {
     commands.spawn((
         Camera2d,
-        OrthographicProjection {
+        Projection::Orthographic(OrthographicProjection {
             viewport_origin: Vec2::new(0., 0.),
             ..OrthographicProjection::default_2d()
-        },
+        }),
         Transform {
             translation: Vec3::new(0.0, 0.0, 100.0),
             scale: Vec3::new(1.0, 1.0, 1.0),
@@ -112,14 +116,14 @@ fn add_font(ctx: &egui::Context, name: &str, font: &'static [u8]) {
 }
 
 fn setup_egui(mut egui_ctx: EguiContexts) {
-    add_font(
-        egui_ctx.ctx_mut(),
-        "Quicksand-Regular",
-        font_quicksand_regular(),
-    );
+    let Ok(ctx) = egui_ctx.ctx_mut() else {
+        error!("Failed to get egui context");
+        return;
+    };
+    add_font(ctx, "Quicksand-Regular", font_quicksand_regular());
 
     //Visuals
-    egui_ctx.ctx_mut().set_visuals(egui::Visuals {
+    ctx.set_visuals(egui::Visuals {
         window_corner_radius: 10.0.into(),
         selection: Selection {
             bg_fill: Color32::from_rgb(54, 241, 205),

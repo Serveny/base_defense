@@ -9,7 +9,7 @@ use bevy::{
     prelude::*,
     sprite::Anchor,
 };
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy_prototype_lyon::prelude::*;
 use euclid::Angle;
 use std::marker::PhantomData;
 
@@ -114,9 +114,9 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
             Sprite {
                 custom_size: Some(self.tile_size_vec),
                 color: Self::get_tile_color(tile),
-                anchor: Anchor::BottomLeft,
                 ..Default::default()
             },
+            Anchor::BOTTOM_LEFT,
             Transform {
                 translation: pos.to_scaled_vec3(0.),
                 ..Default::default()
@@ -156,13 +156,17 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
     }
 
     pub fn show_hover_cross(&self, query: &mut HoverCrossQuery, pos: &Vec2Board) {
-        let (mut visi, mut transform) = query.single_mut();
+        let Ok((mut visi, mut transform)) = query.single_mut() else {
+            return;
+        };
         transform.translation = Vec3::new(pos.x.floor() * TILE_SIZE, pos.y.ceil() * TILE_SIZE, 0.1);
         *visi = Visibility::Visible;
     }
 
     pub fn hide_hover_cross(query: &mut HoverCrossQuery) {
-        *query.single_mut().0 = Visibility::Hidden;
+        if let Ok(mut cross) = query.single_mut() {
+            *cross.0 = Visibility::Hidden;
+        }
     }
 
     fn spawn_hover_cross(&self, cmds: &mut Commands) {
@@ -204,56 +208,49 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         assets: &AssetServer,
     ) {
         for board_screen_id in query.iter() {
-            cmds.entity(board_screen_id).despawn_recursive();
+            cmds.entity(board_screen_id).despawn();
         }
         self.draw_board(cmds, board, board_cache, assets);
     }
 
     fn hover_cross_shape() -> impl Bundle {
         (
-            ShapeBundle {
-                path: Self::hover_cross_path(),
-                visibility: Visibility::Hidden,
-                ..default()
-            },
-            Fill::color(Color::srgba(1., 1., 1., 0.05)),
-            Stroke::new(SILVER, TILE_SIZE / 8.),
+            ShapeBuilder::with(&Self::hover_cross_path())
+                .fill(Color::srgba(1., 1., 1., 0.05))
+                .stroke(Stroke::new(SILVER, TILE_SIZE / 8.))
+                .build(),
+            Visibility::Hidden,
         )
     }
 
-    fn hover_cross_path() -> Path {
+    fn hover_cross_path() -> ShapePath {
         let ts = TILE_SIZE;
         let eighth = ts / 8.;
         let one_third = ts / 3.;
-        let mut pb = PathBuilder::new();
 
-        // top left
-        pb.move_to(Vec2::new(eighth, -one_third));
-        pb.line_to(Vec2::new(eighth, -eighth));
-        pb.line_to(Vec2::new(one_third, -eighth));
-
-        // top right
-        pb.move_to(Vec2::new(ts - eighth, -one_third));
-        pb.line_to(Vec2::new(ts - eighth, -eighth));
-        pb.line_to(Vec2::new(ts - one_third, -eighth));
-
-        // bottom right
-        pb.move_to(Vec2::new(ts - eighth, -ts + one_third));
-        pb.line_to(Vec2::new(ts - eighth, -ts + eighth));
-        pb.line_to(Vec2::new(ts - one_third, -ts + eighth));
-
-        // bottom left
-        pb.move_to(Vec2::new(eighth, -ts + one_third));
-        pb.line_to(Vec2::new(eighth, -ts + eighth));
-        pb.line_to(Vec2::new(one_third, -ts + eighth));
-
-        pb.build()
+        ShapePath::new()
+            // top left
+            .move_to(Vec2::new(eighth, -one_third))
+            .line_to(Vec2::new(eighth, -eighth))
+            .line_to(Vec2::new(one_third, -eighth))
+            // top right
+            .move_to(Vec2::new(ts - eighth, -one_third))
+            .line_to(Vec2::new(ts - eighth, -eighth))
+            .line_to(Vec2::new(ts - one_third, -eighth))
+            // bottom right
+            .move_to(Vec2::new(ts - eighth, -ts + one_third))
+            .line_to(Vec2::new(ts - eighth, -ts + eighth))
+            .line_to(Vec2::new(ts - one_third, -ts + eighth))
+            // bottom left
+            .move_to(Vec2::new(eighth, -ts + one_third))
+            .line_to(Vec2::new(eighth, -ts + eighth))
+            .line_to(Vec2::new(one_third, -ts + eighth))
     }
 }
 
 mod road_end_mark {
     use bevy::prelude::*;
-    use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+    use bevy_prototype_lyon::prelude::*;
     use euclid::Angle;
 
     use super::{BoardRoadEndMark, BoardScreen, GameOverCountDownText, TILE_SIZE};
@@ -347,35 +344,31 @@ mod road_end_mark {
 
     fn road_end_shape(size_px: f32, transform: Transform, visibility: Visibility) -> impl Bundle {
         (
-            ShapeBundle {
-                path: GeometryBuilder::build_as(&shapes::RegularPolygon {
-                    sides: 8,
-                    feature: shapes::RegularPolygonFeature::Radius(size_px / 3.),
-                    ..default()
-                }),
-                transform,
-                visibility,
+            ShapeBuilder::with(&shapes::RegularPolygon {
+                sides: 8,
+                feature: shapes::RegularPolygonFeature::Radius(size_px / 3.),
                 ..default()
-            },
-            Fill::color(OLIVE),
-            Stroke::new(SILVER, size_px / 10.),
+            })
+            .fill(OLIVE)
+            .stroke(Stroke::new(SILVER, size_px / 10.))
+            .build(),
+            transform,
+            visibility,
         )
     }
 
     fn road_end_entry_shape(size_px: f32, visibility: Visibility) -> impl Bundle {
         (
-            ShapeBundle {
-                path: GeometryBuilder::build_as(&shapes::Rectangle {
-                    origin: RectangleOrigin::Center,
-                    extents: Vec2::new(size_px / 4., size_px / 2.),
-                    radii: None,
-                }),
-                transform: Transform::from_translation(Vec3::new(size_px / 3., 0., -0.1)),
-                visibility,
-                ..default()
-            },
-            Fill::color(OLIVE),
-            Stroke::new(DARK_GRAY, size_px / 32.),
+            ShapeBuilder::with(&shapes::Rectangle {
+                origin: RectangleOrigin::Center,
+                extents: Vec2::new(size_px / 4., size_px / 2.),
+                radii: None,
+            })
+            .fill(OLIVE)
+            .stroke(Stroke::new(DARK_GRAY, size_px / 32.))
+            .build(),
+            Transform::from_translation(Vec3::new(size_px / 3., 0., -0.1)),
+            visibility,
         )
     }
 

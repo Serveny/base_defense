@@ -12,7 +12,7 @@ use bevy_egui::{
     egui::{CentralPanel, Frame, Label, RichText, ScrollArea, Stroke, TopBottomPanel},
     EguiContexts,
 };
-use bevy_prototype_lyon::prelude::Fill;
+use bevy_prototype_lyon::entity::Shape;
 
 #[derive(Resource)]
 pub(in crate::game) enum GameOverTimer {
@@ -29,12 +29,14 @@ impl Default for GameOverTimer {
 pub(super) fn game_over_timer_system(
     mut go_timer: ResMut<GameOverTimer>,
     mut q_go_text: Query<(&mut Text, &mut Visibility), With<GameOverCountDownText>>,
-    q_base: Query<&mut Fill, With<BoardRoadEndMark>>,
+    q_base: Query<&mut Shape, With<BoardRoadEndMark>>,
     time: Res<IngameTime>,
     game: Res<Game>,
 ) {
     if game.energy < 0. || game.materials < 0. {
-        let mut text = q_go_text.single_mut();
+        let Ok(mut text) = q_go_text.single_mut() else {
+            return;
+        };
         if let GameOverTimer::Active(game_over_time) = go_timer.as_ref() {
             set_base_color(q_base, time.now());
             text.0 .0 = format!("{}", *(*game_over_time - *time.now()) as u32);
@@ -45,16 +47,20 @@ pub(super) fn game_over_timer_system(
     } else if let GameOverTimer::Active(_) = *go_timer {
         *go_timer = GameOverTimer::Inactive;
         set_base_color(q_base, IngameTimestamp(0.5));
-        let mut text = q_go_text.single_mut();
+        let Ok(mut text) = q_go_text.single_mut() else {
+            return;
+        };
         text.0 .0 = format!("{}", GAME_OVER_COUNTDOWN_TIME.as_secs());
         *text.1 = Visibility::Hidden;
     }
 }
 
-fn set_base_color(mut q_base: Query<&mut Fill, With<BoardRoadEndMark>>, time: IngameTimestamp) {
-    q_base.iter_mut().for_each(|mut fill| {
+fn set_base_color(mut q_base: Query<&mut Shape, With<BoardRoadEndMark>>, time: IngameTimestamp) {
+    q_base.iter_mut().for_each(|mut shape| {
         let rg_val = *time % 0.5;
-        fill.color = Color::srgb(0.5 + rg_val, 0.5 - rg_val, 0.);
+        if let Some(fill) = shape.fill.as_mut() {
+            fill.color = Color::srgb(0.5 + rg_val, 0.5 - rg_val, 0.);
+        }
     });
 }
 
@@ -92,7 +98,8 @@ pub(super) fn game_over_screen(
     rocket_count: Res<RocketsFired>,
     time: Res<IngameTime>,
 ) {
-    CentralPanel::default().show(egui_ctx.ctx_mut(), |ui| {
+    let Ok(ctx) = egui_ctx.ctx_mut() else { return };
+    CentralPanel::default().show(ctx, |ui| {
         ui.set_height(ui.available_height());
         ui.vertical_centered(|ui| {
             ui.add(Label::new(RichText::new("GAME OVER").heading()));

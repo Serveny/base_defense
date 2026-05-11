@@ -8,7 +8,7 @@ use crate::{
 };
 use bevy::color::palettes::css::{DARK_GRAY, PURPLE};
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy_prototype_lyon::prelude::*;
 
 pub const INIT_RANGE_RADIUS: f32 = 3.5;
 
@@ -45,21 +45,19 @@ pub fn spawn_shot_rocket<TScreen: Component + Default>(
 
 fn rocket_body_shape(tile_size: f32) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Rectangle {
-                origin: RectangleOrigin::Center,
-                // origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
-                extents: Vec2::new(tile_size / 10., tile_size / 5.),
-                radii: None,
-            }),
-            ..default()
-        },
-        Fill::color(PURPLE),
-        Stroke::new(DARK_GRAY, tile_size / 40.),
+        ShapeBuilder::with(&shapes::Rectangle {
+            origin: RectangleOrigin::Center,
+            // origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
+            extents: Vec2::new(tile_size / 10., tile_size / 5.),
+            radii: None,
+        })
+        .fill(PURPLE)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 40.))
+        .build(),
     )
 }
 
-fn rocket_shot_children(parent: &mut ChildBuilder) {
+fn rocket_shot_children(parent: &mut ChildSpawnerCommands) {
     parent.spawn(rocket_head_shape(TILE_SIZE));
     parent.spawn(rocket_body_shape(TILE_SIZE));
     parent.spawn(rocket_bottom_shape(TILE_SIZE));
@@ -75,36 +73,28 @@ fn rocket_shot_children(parent: &mut ChildBuilder) {
 
 fn rocket_head_shape(tile_size: f32) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
-                sides: 3,
-                feature: RegularPolygonFeature::Radius(tile_size / 20.),
-                ..default()
-            }),
-            transform: Transform::from_translation(Vec3::new(
-                0.,
-                tile_size / 10. + tile_size / 20.,
-                0.1,
-            )),
+        ShapeBuilder::with(&shapes::RegularPolygon {
+            sides: 3,
+            feature: RegularPolygonFeature::Radius(tile_size / 20.),
             ..default()
-        },
-        Fill::color(PURPLE),
-        Stroke::new(DARK_GRAY, tile_size / 40.),
+        })
+        .fill(PURPLE)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 40.))
+        .build(),
+        Transform::from_translation(Vec3::new(0., tile_size / 10. + tile_size / 20., 0.1)),
     )
 }
 
 fn rocket_bottom_shape(tile_size: f32) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
-                sides: 3,
-                feature: RegularPolygonFeature::Radius(tile_size / 10.),
-                ..default()
-            }),
-            transform: Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),
+        ShapeBuilder::with(&shapes::RegularPolygon {
+            sides: 3,
+            feature: RegularPolygonFeature::Radius(tile_size / 10.),
             ..default()
-        },
-        Fill::color(PURPLE),
-        Stroke::new(DARK_GRAY, tile_size / 20.),
+        })
+        .fill(PURPLE)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .build(),
+        Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),
     )
 }

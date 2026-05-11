@@ -1,4 +1,4 @@
-use super::actions::MenuActionEvent;
+use super::actions::MenuActionMessage;
 use crate::{
     board::{Board, BoardCache},
     game::Game,
@@ -68,9 +68,10 @@ pub(super) fn new_game_menu_setup(mut commands: Commands) {
 pub(super) fn add_new_game_menu(
     mut egui_ctx: EguiContexts,
     mut new_game_menu: ResMut<NewGameMenu>,
-    actions: EventWriter<MenuActionEvent>,
+    actions: MessageWriter<MenuActionMessage>,
 ) {
-    CentralPanel::default().show(egui_ctx.ctx_mut(), |ui| {
+    let Ok(ctx) = egui_ctx.ctx_mut() else { return };
+    CentralPanel::default().show(ctx, |ui| {
         ui.set_height(ui.available_height());
         ui.vertical_centered(|ui| {
             ui.heading("New Game");
@@ -121,7 +122,7 @@ fn difficulty_select(ui: &mut egui::Ui, new_game_menu: &mut NewGameMenu) {
 fn bottom_panel(
     ui: &mut egui::Ui,
     new_game_menu: &mut NewGameMenu,
-    actions: EventWriter<MenuActionEvent>,
+    actions: MessageWriter<MenuActionMessage>,
 ) {
     egui::TopBottomPanel::bottom("bottom_panel")
         .resizable(false)
@@ -141,7 +142,7 @@ fn bottom_panel(
 fn play_button(
     ui: &mut egui::Ui,
     new_game_menu: &mut NewGameMenu,
-    mut actions: EventWriter<MenuActionEvent>,
+    mut actions: MessageWriter<MenuActionMessage>,
 ) {
     if ui
         .add_sized([400., 60.], bevy_egui::egui::widgets::Button::new("Play"))
@@ -152,7 +153,7 @@ fn play_button(
             .get(new_game_menu.selected_board_index)
             .unwrap()
             .clone();
-        actions.send(MenuActionEvent::StartNewGame(
+        actions.write(MenuActionMessage::StartNewGame(
             Game::new(new_game_menu.difficulty),
             board,
             board_cache,
@@ -176,7 +177,7 @@ fn enum_as_radio_select<T: std::fmt::Display + strum::IntoEnumIterator + Partial
 fn add_selectable_label(ui: &mut bevy_egui::egui::Ui, is_selected: bool, text: &str) -> bool {
     ui.add_sized(
         [200., 60.],
-        bevy_egui::egui::widgets::SelectableLabel::new(is_selected, text),
+        bevy_egui::egui::widgets::Button::selectable(is_selected, text),
     )
     .clicked()
 }

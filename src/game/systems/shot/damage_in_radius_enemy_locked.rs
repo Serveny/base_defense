@@ -1,6 +1,6 @@
 use crate::{
     board::BoardCache,
-    game::{actions::explosions::ExplosionEvent, enemies::Enemy},
+    game::{actions::explosions::ExplosionMessage, enemies::Enemy},
     utils::{pos_to_quat, shots::DamageInRadiusTargetPosShot, IngameTime, Vec2Board},
 };
 use bevy::prelude::*;
@@ -9,17 +9,17 @@ type QueryEnemies<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy)>;
 
 pub fn damage_and_despawn_system(
     mut cmds: Commands,
-    mut expl_ev: EventWriter<ExplosionEvent>,
+    mut expl_ev: MessageWriter<ExplosionMessage>,
     q_shots: Query<(Entity, &DamageInRadiusTargetPosShot)>,
 ) {
     for (entity, shot) in q_shots.iter() {
         if is_explode(shot) {
-            expl_ev.send(ExplosionEvent::new(
+            expl_ev.write(ExplosionMessage::new(
                 shot.pos,
                 shot.damage_radius,
                 shot.damage,
             ));
-            cmds.entity(entity).despawn_recursive();
+            cmds.entity(entity).despawn();
         }
     }
 }

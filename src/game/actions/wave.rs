@@ -8,15 +8,15 @@ use crate::{
 use bevy::prelude::*;
 use std::time::Duration;
 
-#[derive(Event)]
-pub enum WaveActionsEvent {
+#[derive(Message)]
+pub enum WaveActionsMessage {
     StartWave,
     EndWave,
 }
 
 pub(in crate::game) fn on_wave_actions(
     mut cmds: Commands,
-    mut actions: EventReader<WaveActionsEvent>,
+    mut actions: MessageReader<WaveActionsMessage>,
     mut game: ResMut<Game>,
     mut set_wave_state: ResMut<NextState<WaveState>>,
     mut q_wave_text: Query<&mut Text, With<WaveText>>,
@@ -25,11 +25,13 @@ pub(in crate::game) fn on_wave_actions(
     if !actions.is_empty() {
         for action in actions.read() {
             match action {
-                WaveActionsEvent::StartWave => {
+                WaveActionsMessage::StartWave => {
                     start_wave(&mut cmds, &mut game, &mut set_wave_state, time.now());
-                    q_wave_text.single_mut().0 = format!("{}", game.wave_no);
+                    if let Ok(mut text) = q_wave_text.single_mut() {
+                        text.0 = format!("{}", game.wave_no);
+                    }
                 }
-                WaveActionsEvent::EndWave => {
+                WaveActionsMessage::EndWave => {
                     end_wave_and_prepare_next(&mut game, &mut set_wave_state, time.now())
                 }
             }

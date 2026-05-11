@@ -58,12 +58,12 @@ pub enum Amount<T: Default> {
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in to_despawn.iter() {
-        commands.entity(entity).despawn_recursive();
+        commands.entity(entity).despawn();
     }
 }
 
 use crate::assets::FONT_QUICKSAND;
-use bevy::render::camera::ScalingMode;
+use bevy::camera::ScalingMode;
 use std::error::Error;
 use std::fs::{read_dir, read_to_string, DirEntry, File};
 use std::io::Write;
@@ -145,12 +145,17 @@ pub fn pos_to_quat(pos: Vec2Board, target: Vec2Board) -> Quat {
     Quat::from_rotation_z(-pos_to_angle(pos, target).radians)
 }
 
-pub fn zoom_cam_to_board(board: &Board, q_cam: &mut CamMutQuery, win: &Window) {
-    let aspect_ratio_margin = cam_margin(board, win);
+pub fn zoom_cam_to_board(board: &Board, q_cam: &mut CamMutQuery, q_win: Query<&Window>) {
+    let Ok(win) = q_win.single() else { return };
+    let Ok(mut proj) = q_cam.single_mut() else {
+        return;
+    };
+    let aspect_ratio_margin = cam_margin(board, &win);
     let height = (board.height as f32 + aspect_ratio_margin.y) * TILE_SIZE;
     let width = (board.width as f32 + aspect_ratio_margin.x) * TILE_SIZE;
-    let mut projection = q_cam.single_mut();
-    projection.scaling_mode = ScalingMode::Fixed { width, height };
+    if let Projection::Orthographic(projection) = &mut *proj {
+        projection.scaling_mode = ScalingMode::Fixed { width, height };
+    }
 }
 
 fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
@@ -167,16 +172,18 @@ fn cam_margin(board: &Board, win: &Window) -> Vec2Board {
     }
 }
 
-pub fn cursor_pos(wnd: &Window, q_cam: CamQuery) -> Option<Vec2Board> {
-    let (camera, camera_transform) = q_cam.single();
-
-    if let Some(screen_pos) = wnd
+pub fn cursor_pos(q_win: Query<&Window>, q_cam: CamQuery) -> Option<Vec2Board> {
+    let Ok((camera, camera_transform)) = q_cam.single() else {
+        return None;
+    };
+    let Ok(win) = q_win.single() else { return None };
+    let Some(screen_pos) = win
         .cursor_position()
         .and_then(|cursor| camera.viewport_to_world_2d(camera_transform, cursor).ok())
-    {
-        return Some((screen_pos / TILE_SIZE).into());
-    }
-    None
+    else {
+        return None;
+    };
+    return Some((screen_pos / TILE_SIZE).into());
 }
 
 pub fn text_bundle(
@@ -194,7 +201,7 @@ pub fn text_bundle(
             bottom: bottom / TILE_SIZE,
             ..default()
         },
-        BorderColor(Color::srgba(1., 1., 1., 0.05)),
+        BorderColor::all(Color::srgba(1., 1., 1., 0.05)),
         Text(text.to_string()),
         TextFont {
             font: assets.load(FONT_QUICKSAND),
@@ -203,7 +210,7 @@ pub fn text_bundle(
         },
         TextColor(color),
         TextLayout {
-            justify: JustifyText::Center,
+            justify: Justify::Center,
             linebreak: LineBreak::NoWrap,
         },
         BackgroundColor(Color::srgba(1., 1., 1., 0.05)),

@@ -5,7 +5,7 @@ use crate::utils::{
 };
 use bevy::color::palettes::css::{DARK_GRAY, GRAY};
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy_prototype_lyon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -45,7 +45,7 @@ pub fn spawn_power_plant<TScreen: Component + Default>(
     .insert(TScreen::default());
 }
 
-fn power_plant_children(parent: &mut ChildBuilder, tile_size: f32) {
+fn power_plant_children(parent: &mut ChildSpawnerCommands, tile_size: f32) {
     let color = ENERGY_COLOR.into();
     parent.spawn(building_base_shape(tile_size / 1.1, color));
     parent.spawn(power_plant_building_shape(tile_size, GRAY.into()));
@@ -69,32 +69,28 @@ fn power_plant_children(parent: &mut ChildBuilder, tile_size: f32) {
 
 fn power_plant_chimney_shape(tile_size: f32, color: Color, translation: Vec3) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Rectangle {
-                origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
-                extents: Vec2::new(tile_size / 10., tile_size / 2.),
-                radii: None,
-            }),
-            transform: Transform::from_translation(translation),
-            ..default()
-        },
-        Fill::color(color),
-        Stroke::new(DARK_GRAY, tile_size / 20.),
+        ShapeBuilder::with(&shapes::Rectangle {
+            origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
+            extents: Vec2::new(tile_size / 10., tile_size / 2.),
+            radii: None,
+        })
+        .fill(color)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .build(),
+        Transform::from_translation(translation),
     )
 }
 
 fn power_plant_building_shape(tile_size: f32, color: Color) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Rectangle {
-                origin: RectangleOrigin::Center,
-                extents: Vec2::new(tile_size / 1.75, tile_size / 3.),
-                radii: None,
-            }),
-            transform: Transform::from_xyz(0., 0., 0.02),
-            ..default()
-        },
-        Fill::color(color),
-        Stroke::new(DARK_GRAY, tile_size / 20.),
+        ShapeBuilder::with(&shapes::Rectangle {
+            origin: RectangleOrigin::Center,
+            extents: Vec2::new(tile_size / 1.75, tile_size / 3.),
+            radii: None,
+        })
+        .fill(color)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .build(),
+        Transform::from_xyz(0., 0., 0.02),
     )
 }

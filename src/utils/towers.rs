@@ -6,7 +6,7 @@ use super::{
 use crate::board::visualisation::TILE_SIZE;
 use bevy::color::palettes::css::{DARK_GRAY, SILVER};
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
+use bevy_prototype_lyon::{prelude::*, shapes::Circle};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use strum::EnumDiscriminants;
@@ -94,7 +94,7 @@ impl TowerValues {
 pub struct TowerCannon;
 
 #[derive(Component)]
-pub struct TowerParent;
+pub struct ChildOfTower;
 
 #[derive(Component, Deref, DerefMut)]
 pub struct TowerRangeCircle(UVec2);
@@ -114,46 +114,40 @@ pub fn draw_tower<TScreen: Component + Default>(
 
 fn tower_base_shape(color: Color) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
-                sides: 8,
-                feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
-                ..default()
-            }),
+        ShapeBuilder::with(&shapes::RegularPolygon {
+            sides: 8,
+            feature: RegularPolygonFeature::Radius(TILE_SIZE / 2.4),
             ..default()
-        },
-        Fill::color(color),
-        Stroke::new(DARK_GRAY, TILE_SIZE / 16.),
+        })
+        .fill(color)
+        .stroke(Stroke::new(DARK_GRAY, TILE_SIZE / 16.))
+        .build(),
     )
 }
 
 fn tower_circle_shape() -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&Circle {
-                center: Vec2::default(),
-                radius: TILE_SIZE / 5.,
-            }),
-            transform: Transform::from_xyz(0., 0., 0.4),
-            ..default()
-        },
-        Fill::color(SILVER),
-        Stroke::new(DARK_GRAY, TILE_SIZE / 16.),
+        ShapeBuilder::with(&Circle {
+            center: Vec2::default(),
+            radius: TILE_SIZE / 5.,
+        })
+        .fill(SILVER)
+        .stroke(Stroke::new(DARK_GRAY, TILE_SIZE / 16.))
+        .build(),
+        Transform::from_xyz(0., 0., 0.4),
     )
 }
 
 fn tower_range_circle_shape(radius: f32, color: Color, visibility: Visibility) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&Circle {
-                center: Vec2::default(),
-                radius,
-            }),
-            visibility,
-            transform: Transform::from_xyz(0., 0., 0.3),
-            ..default()
-        },
-        Fill::color(Color::NONE),
-        Stroke::new(color, 0.025 * TILE_SIZE),
+        ShapeBuilder::with(&Circle {
+            center: Vec2::default(),
+            radius,
+        })
+        .fill(Color::NONE)
+        .stroke(Stroke::new(color, 0.025 * TILE_SIZE))
+        .build(),
+        visibility,
+        Transform::from_xyz(0., 0., 0.3),
     )
 }

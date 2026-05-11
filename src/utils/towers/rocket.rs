@@ -1,8 +1,8 @@
 use std::time::Duration;
 
 use super::{
-    tower_base_shape, tower_circle_shape, tower_range_circle_shape, Tower, TowerCannon,
-    TowerParent, TowerRangeCircle, TowerValues,
+    tower_base_shape, tower_circle_shape, tower_range_circle_shape, ChildOfTower, Tower,
+    TowerCannon, TowerRangeCircle, TowerValues,
 };
 use crate::{
     board::visualisation::TILE_SIZE,
@@ -13,7 +13,7 @@ use crate::{
 };
 use bevy::color::palettes::css::{DARK_GRAY, PURPLE, SILVER};
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy_prototype_lyon::prelude::*;
 
 impl Tower {
     pub fn rocket(pos: Vec2Board) -> Self {
@@ -50,7 +50,7 @@ pub(super) fn spawn_rocket_tower<TScreen: Component + Default>(
     cmds.spawn((
         transform,
         Visibility::Inherited,
-        TowerParent,
+        ChildOfTower,
         BoardPos(vals.pos.as_uvec2()),
         TScreen::default(),
     ))
@@ -61,7 +61,7 @@ pub(super) fn spawn_rocket_tower<TScreen: Component + Default>(
 }
 
 fn rocket_tower_children<TScreen: Component + Default>(
-    parent: &mut ChildBuilder,
+    parent: &mut ChildSpawnerCommands,
     vals: &TowerValues,
     color: Color,
     is_preview: bool,
@@ -89,20 +89,18 @@ fn rocket_tower_children<TScreen: Component + Default>(
 
 fn tower_rocket_cannon() -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Rectangle {
-                origin: RectangleOrigin::CustomCenter(Vec2::new(0., TILE_SIZE / 4.)),
-                extents: Vec2::new(TILE_SIZE / 3., TILE_SIZE / 4.),
-                radii: None,
-            }),
-            transform: Transform {
-                translation: Vec3::new(0., 0., 0.3),
-                rotation: Quat::from_rotation_z(0.),
-                ..Default::default()
-            },
-            ..default()
+        ShapeBuilder::with(&shapes::Rectangle {
+            origin: RectangleOrigin::CustomCenter(Vec2::new(0., TILE_SIZE / 4.)),
+            extents: Vec2::new(TILE_SIZE / 3., TILE_SIZE / 4.),
+            radii: None,
+        })
+        .fill(SILVER)
+        .stroke(Stroke::new(DARK_GRAY, TILE_SIZE / 16.))
+        .build(),
+        Transform {
+            translation: Vec3::new(0., 0., 0.3),
+            rotation: Quat::from_rotation_z(0.),
+            ..Default::default()
         },
-        Fill::color(SILVER),
-        Stroke::new(DARK_GRAY, TILE_SIZE / 16.),
     )
 }

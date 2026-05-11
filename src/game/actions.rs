@@ -6,19 +6,19 @@ use bevy::prelude::*;
 
 use self::{
     build_menu::{
-        BuildMenuBuildEvent, BuildMenuCloseEvent, BuildMenuHideEvent, BuildMenuOpenEvent,
-        BuildMenuScrollEvent,
+        BuildMenuBuildMessage, BuildMenuCloseMessage, BuildMenuHideMessage, BuildMenuOpenMessage,
+        BuildMenuScrollMessage,
     },
     collision::{
-        on_enemy_collision_add, on_enemy_collision_remove, EnemyCollisionAddEvent,
-        EnemyCollisionRemoveEvent,
+        on_enemy_collision_add, on_enemy_collision_remove, EnemyCollisionAddMessage,
+        EnemyCollisionRemoveMessage,
     },
-    damage::{on_damage, DamageEvent},
-    explosions::{on_explosions, ExplosionEvent},
-    resources::{on_change_resources, ResourcesEvent},
-    tile::{on_tile_actions, TileActionsEvent},
-    tower::{on_tower_actions, TowerActionsEvent},
-    wave::{on_wave_actions, WaveActionsEvent},
+    damage::{on_damage, DamageMessage},
+    explosions::{on_explosions, ExplosionMessage},
+    resources::{on_change_resources, ResourcesMessage},
+    tile::{on_tile_actions, TileActionsMessage},
+    tower::{on_tower_actions, TowerActionsMessage},
+    wave::{on_wave_actions, WaveActionsMessage},
 };
 
 use super::{
@@ -43,8 +43,8 @@ type RangeCircleQuery<'w, 's, 'a> = Query<
 
 type GameScreenQuery<'w, 's> = Query<'w, 's, Entity, With<GameScreen>>;
 
-#[derive(Event)]
-pub enum GameActionEvent {
+#[derive(Message)]
+pub enum GameActionMessage {
     BackToMainMenu,
     ActivateOverview,
     DeactivateOverview,
@@ -65,20 +65,20 @@ pub struct GameActions;
 
 impl Plugin for GameActions {
     fn build(&self, app: &mut App) {
-        app.add_event::<GameActionEvent>()
-            .add_event::<WaveActionsEvent>()
-            .add_event::<ResourcesEvent>()
-            .add_event::<TileActionsEvent>()
-            .add_event::<TowerActionsEvent>()
-            .add_event::<DamageEvent>()
-            .add_event::<ExplosionEvent>()
-            .add_event::<EnemyCollisionAddEvent>()
-            .add_event::<EnemyCollisionRemoveEvent>()
-            .add_event::<BuildMenuScrollEvent>()
-            .add_event::<BuildMenuOpenEvent>()
-            .add_event::<BuildMenuCloseEvent>()
-            .add_event::<BuildMenuHideEvent>()
-            .add_event::<BuildMenuBuildEvent>()
+        app.add_message::<GameActionMessage>()
+            .add_message::<WaveActionsMessage>()
+            .add_message::<ResourcesMessage>()
+            .add_message::<TileActionsMessage>()
+            .add_message::<TowerActionsMessage>()
+            .add_message::<DamageMessage>()
+            .add_message::<ExplosionMessage>()
+            .add_message::<EnemyCollisionAddMessage>()
+            .add_message::<EnemyCollisionRemoveMessage>()
+            .add_message::<BuildMenuScrollMessage>()
+            .add_message::<BuildMenuOpenMessage>()
+            .add_message::<BuildMenuCloseMessage>()
+            .add_message::<BuildMenuHideMessage>()
+            .add_message::<BuildMenuBuildMessage>()
             .add_systems(
                 Update,
                 (
@@ -123,14 +123,14 @@ fn on_game_actions(
     mut game: ResMut<Game>,
     mut set_game_state: ResMut<NextState<GameState>>,
     mut set_wave_state: ResMut<NextState<WaveState>>,
-    mut game_actions: EventReader<GameActionEvent>,
+    mut game_actions: MessageReader<GameActionMessage>,
     mut q_game_screen: GameScreenQuery,
     mut q_range_circle: RangeCircleQuery,
     mut set_ingame_state: ResMut<NextState<IngameState>>,
 ) {
     if !game_actions.is_empty() {
         for event in game_actions.read() {
-            use GameActionEvent::*;
+            use GameActionMessage::*;
             match event {
                 BackToMainMenu => back_to_main_menu(
                     &mut cmds,
@@ -177,7 +177,7 @@ fn back_to_main_menu(
     query: &mut GameScreenQuery,
 ) {
     for entity in query.iter() {
-        cmds.entity(entity).despawn_recursive();
+        cmds.entity(entity).despawn();
     }
     set_wave_state.set(WaveState::None);
     set_ingame_state.set(IngameState::None);

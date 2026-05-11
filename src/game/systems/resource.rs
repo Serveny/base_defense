@@ -4,7 +4,7 @@ use crate::{
     utils::IngameTime,
 };
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::Stroke;
+use bevy_prototype_lyon::entity::Shape;
 
 pub fn resource_animation_system(
     mut cmds: Commands,
@@ -15,7 +15,7 @@ pub fn resource_animation_system(
     let now = time.now();
     for (entity, mut transform, anim) in q_anims.iter_mut() {
         if now >= anim.die_time {
-            cmds.entity(entity).despawn_recursive();
+            cmds.entity(entity).despawn();
         } else {
             transform.translation.y += delta * TILE_SIZE / 2.;
         }
@@ -34,13 +34,15 @@ pub fn resource_text_fade_system(
 }
 
 pub fn resource_symbol_fade_system(
-    mut q_symbols: Query<&mut Stroke, With<ResourceSymbolFade>>,
+    mut q_symbols: Query<&mut Shape, With<ResourceSymbolFade>>,
     time: Res<IngameTime>,
 ) {
     let delta = time.delta_secs();
-    for mut stroke in q_symbols.iter_mut() {
-        let a = stroke.color.alpha();
-        stroke.color.set_alpha(fade(a, delta / 4.));
+    for mut shape in q_symbols.iter_mut() {
+        if let Some(stroke) = shape.stroke.as_mut() {
+            let a = stroke.color.alpha();
+            stroke.color.set_alpha(fade(a, delta / 4.));
+        }
     }
 }
 

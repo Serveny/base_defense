@@ -6,15 +6,15 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Event)]
-pub enum TileActionsEvent {
+#[derive(Message)]
+pub enum TileActionsMessage {
     HoverTile(Vec2Board),
     UnhoverTile,
 }
 
 #[allow(clippy::too_many_arguments)]
 pub(in crate::game) fn on_tile_actions(
-    mut evr: EventReader<TileActionsEvent>,
+    mut evr: MessageReader<TileActionsMessage>,
     mut q_hover_cross: HoverCrossQuery,
     mut q_range_circle: RangeCircleQuery,
     board: ResMut<Board>,
@@ -23,7 +23,7 @@ pub(in crate::game) fn on_tile_actions(
 ) {
     for action in evr.read() {
         match action {
-            TileActionsEvent::HoverTile(pos) => {
+            TileActionsMessage::HoverTile(pos) => {
                 let tile = board.get_tile(&pos.as_uvec2()).unwrap();
                 on_hover_tile(
                     &mut q_hover_cross,
@@ -34,7 +34,7 @@ pub(in crate::game) fn on_tile_actions(
                     tile,
                 )
             }
-            TileActionsEvent::UnhoverTile => {
+            TileActionsMessage::UnhoverTile => {
                 on_unhover_tile(&mut q_hover_cross, &mut q_range_circle, &game)
             }
         }

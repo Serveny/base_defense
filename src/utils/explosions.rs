@@ -3,7 +3,7 @@ use std::time::Duration;
 use super::{TilesPerSecond, Vec2Board};
 use crate::board::visualisation::TILE_SIZE;
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy_prototype_lyon::prelude::*;
 
 pub const EXPLOSION_SPEED: TilesPerSecond = 8.;
 
@@ -42,25 +42,17 @@ pub fn spawn_explosion<TScreen: Component + Default>(cmds: &mut Commands, expl: 
 
 fn explosion_shape(radius: f32, pos: Vec2Board) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Circle {
-                center: Vec2::default(),
-                radius: radius / 2.,
-            }),
-            transform: Transform {
-                translation: pos.to_scaled_vec3(3.),
-                scale: Vec3::new(0., 0., 0.),
-                ..Default::default()
-            },
-            ..default()
-        },
-        Fill::color(Srgba {
+        ShapeBuilder::with(&shapes::Circle {
+            center: Vec2::default(),
+            radius: radius / 2.,
+        })
+        .fill(Srgba {
             red: 1.,
             green: 0.,
             blue: 0.,
             alpha: 0.9,
-        }),
-        Stroke::new(
+        })
+        .stroke(Stroke::new(
             Srgba {
                 red: 1.,
                 green: 1.,
@@ -68,6 +60,12 @@ fn explosion_shape(radius: f32, pos: Vec2Board) -> impl Bundle {
                 alpha: 0.7,
             },
             radius / 2.,
-        ),
+        ))
+        .build(),
+        Transform {
+            translation: pos.to_scaled_vec3(3.),
+            scale: Vec3::new(0., 0., 0.),
+            ..Default::default()
+        },
     )
 }

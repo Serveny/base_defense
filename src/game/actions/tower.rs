@@ -13,20 +13,20 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Event)]
-pub enum TowerActionsEvent {
+#[derive(Message)]
+pub enum TowerActionsMessage {
     ShootLaser(DamagePerTimeShotValues, Entity),
     ShootRocket(DamageInRadiusTargetPosShotValues, Entity),
 }
 
 pub fn on_tower_actions(
     mut cmds: Commands,
-    mut actions: EventReader<TowerActionsEvent>,
+    mut actions: MessageReader<TowerActionsMessage>,
     mut laser_count: ResMut<LaserShotsFired>,
     mut rocket_count: ResMut<RocketsFired>,
     time: Res<IngameTime>,
 ) {
-    use TowerActionsEvent::*;
+    use TowerActionsMessage::*;
     for action in actions.read() {
         match action {
             ShootLaser(shot, enemy_entity) => {

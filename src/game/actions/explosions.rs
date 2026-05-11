@@ -7,14 +7,14 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Event)]
-pub struct ExplosionEvent {
+#[derive(Message)]
+pub struct ExplosionMessage {
     pos: Vec2Board,
     radius: f32,
     damage: f32,
 }
 
-impl ExplosionEvent {
+impl ExplosionMessage {
     pub fn new(pos: Vec2Board, radius: f32, damage: f32) -> Self {
         Self {
             pos,
@@ -36,7 +36,7 @@ impl ExplosionEvent {
     }
 }
 
-pub fn on_explosions(mut events: EventReader<ExplosionEvent>, mut cmds: Commands) {
+pub fn on_explosions(mut events: MessageReader<ExplosionMessage>, mut cmds: Commands) {
     for ev in events.read() {
         spawn_explosion::<GameScreen>(&mut cmds, ev.to_explosion());
     }

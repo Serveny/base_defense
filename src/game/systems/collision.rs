@@ -1,11 +1,11 @@
 use crate::{
-    game::{actions::collision::EnemyCollisionRemoveEvent, enemies::Enemy},
+    game::{actions::collision::EnemyCollisionRemoveMessage, enemies::Enemy},
     utils::collision::{Collision, Collisions},
 };
 use bevy::prelude::*;
 
 pub(super) fn enemy_collision_remove_system(
-    mut rm_ev: EventWriter<EnemyCollisionRemoveEvent>,
+    mut rm_ev: MessageWriter<EnemyCollisionRemoveMessage>,
     mut collisions: ResMut<Collisions>,
     q_enemies: Query<&Enemy>,
 ) {
@@ -14,7 +14,7 @@ pub(super) fn enemy_collision_remove_system(
             coll.is_critical =
                 enemy_1.pos.distance(*enemy_2.pos) < enemy_1.size_radius + enemy_2.size_radius;
         } else {
-            rm_ev.send(EnemyCollisionRemoveEvent(
+            rm_ev.write(EnemyCollisionRemoveMessage(
                 coll.enemy_before,
                 coll.enemy_behind,
             ));

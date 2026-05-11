@@ -9,20 +9,20 @@ use crate::{
 };
 use bevy::prelude::*;
 
-#[derive(Event)]
-pub struct EditorSetTileEvent {
+#[derive(Message)]
+pub struct EditorSetTileMessage {
     pos: UVec2,
     tile_to: Tile,
 }
 
-impl EditorSetTileEvent {
+impl EditorSetTileMessage {
     pub fn new(pos: UVec2, tile_to: Tile) -> Self {
         Self { pos, tile_to }
     }
 }
 
 pub(super) fn on_set_tile(
-    mut evr: EventReader<EditorSetTileEvent>,
+    mut evr: MessageReader<EditorSetTileMessage>,
     mut editor: ResMut<BoardEditor>,
     mut board: ResMut<Board>,
     mut board_cache: ResMut<BoardCache>,
@@ -47,11 +47,11 @@ fn set_tile(board: &mut Board, board_cache: &mut BoardCache, pos: UVec2, tile_to
     }
 }
 
-#[derive(Event)]
-pub struct EditorSaveBoardEvent;
+#[derive(Message)]
+pub struct EditorSaveBoardMessage;
 
 pub(super) fn on_save_board(
-    mut evr: EventReader<EditorSaveBoardEvent>,
+    mut evr: MessageReader<EditorSaveBoardMessage>,
     mut popups: ResMut<Popups>,
     mut board: ResMut<Board>,
 ) {
@@ -67,12 +67,12 @@ pub(super) fn on_save_board(
     }
 }
 
-#[derive(Event)]
-pub struct EditorLoadBoardEvent(pub Board);
+#[derive(Message)]
+pub struct EditorLoadBoardMessage(pub Board);
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn on_load_board(
-    mut evr: EventReader<EditorLoadBoardEvent>,
+    mut evr: MessageReader<EditorLoadBoardMessage>,
     mut cmds: Commands,
     mut popups: ResMut<Popups>,
     mut board: ResMut<Board>,
@@ -92,18 +92,18 @@ pub(super) fn on_load_board(
             validate_board(&mut editor, &board_cache);
             *visu = BoardVisu::new(0.9);
             visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
-            zoom_cam_to_board(&board, &mut q_cam, q_win.single());
+            zoom_cam_to_board(&board, &mut q_cam, q_win);
         }
     }
 }
 
-#[derive(Event)]
-pub struct EditorNewBoardEvent {
+#[derive(Message)]
+pub struct EditorNewBoardMessage {
     width: u8,
     height: u8,
 }
 
-impl EditorNewBoardEvent {
+impl EditorNewBoardMessage {
     pub fn new(width: u8, lenght: u8) -> Self {
         Self {
             width,
@@ -114,7 +114,7 @@ impl EditorNewBoardEvent {
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn on_new_board(
-    mut evr: EventReader<EditorNewBoardEvent>,
+    mut evr: MessageReader<EditorNewBoardMessage>,
     mut cmds: Commands,
     mut popups: ResMut<Popups>,
     mut board: ResMut<Board>,
@@ -133,18 +133,18 @@ pub(super) fn on_new_board(
             *popups = Popups::None;
             *visu = BoardVisu::new(0.9);
             visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
-            zoom_cam_to_board(&board, &mut q_cam, q_win.single());
+            zoom_cam_to_board(&board, &mut q_cam, q_win);
         }
     }
 }
 
-#[derive(Event)]
-pub struct EditorEditBoardEvent {
+#[derive(Message)]
+pub struct EditorEditBoardMessage {
     width: u8,
     height: u8,
 }
 
-impl EditorEditBoardEvent {
+impl EditorEditBoardMessage {
     pub fn new(width: u8, lenght: u8) -> Self {
         Self {
             width,
@@ -155,7 +155,7 @@ impl EditorEditBoardEvent {
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn on_edit_board(
-    mut evr: EventReader<EditorEditBoardEvent>,
+    mut evr: MessageReader<EditorEditBoardMessage>,
     mut cmds: Commands,
     mut popups: ResMut<Popups>,
     mut board: ResMut<Board>,
@@ -175,16 +175,16 @@ pub(super) fn on_edit_board(
             validate_board(&mut editor, &board_cache);
             *visu = BoardVisu::new(0.9);
             visu.repaint(&mut cmds, &q_screen, &board, &board_cache, &assets);
-            zoom_cam_to_board(&board, &mut q_cam, q_win.single());
+            zoom_cam_to_board(&board, &mut q_cam, q_win);
         }
     }
 }
 
-#[derive(Event)]
-pub struct EditorLeaveEvent;
+#[derive(Message)]
+pub struct EditorLeaveMessage;
 
 pub(super) fn on_leave(
-    mut evr: EventReader<EditorLeaveEvent>,
+    mut evr: MessageReader<EditorLeaveMessage>,
     mut set_game_state: ResMut<NextState<GameState>>,
 ) {
     for _ in evr.read() {

@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use self::{
-    actions::{build_menu::BuildMenuCloseEvent, GameActions},
+    actions::{build_menu::BuildMenuCloseMessage, GameActions},
     build_menus::{draw_build_menu, BuildMenu, BuildMenuScreen},
     controls::{keyboard_input, mouse_input},
     statistics::{EnemyKillCount, LaserShotsFired, RocketsFired},
@@ -103,13 +103,13 @@ impl Game {
 struct GameScreen;
 
 fn on_resize(
-    mut evr: EventReader<WindowResized>,
+    mut evr: MessageReader<WindowResized>,
     mut q_cam: CamMutQuery,
-    wins: Query<&Window>,
+    q_win: Query<&Window>,
     board: Res<Board>,
 ) {
     for _ in evr.read() {
-        zoom_cam_to_board(&board, &mut q_cam, wins.single());
+        zoom_cam_to_board(&board, &mut q_cam, q_win);
     }
 }
 
@@ -118,14 +118,14 @@ fn game_setup(
     mut cmds: Commands,
     mut set_ingame_state: ResMut<NextState<IngameState>>,
     mut q_cam: CamMutQuery,
-    bm_close_ev: EventWriter<BuildMenuCloseEvent>,
-    wins: Query<&Window>,
+    bm_close_ev: MessageWriter<BuildMenuCloseMessage>,
+    q_win: Query<&Window>,
     board: Res<Board>,
     board_cache: Res<BoardCache>,
     game: Res<Game>,
     assets: Res<AssetServer>,
 ) {
-    zoom_cam_to_board(&board, &mut q_cam, wins.single());
+    zoom_cam_to_board(&board, &mut q_cam, q_win);
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache, &assets);
     draw_build_menu(&mut cmds, bm_close_ev, game.base_lvl);

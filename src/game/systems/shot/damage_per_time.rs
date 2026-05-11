@@ -1,5 +1,5 @@
 use crate::{
-    game::{actions::damage::DamageEvent, enemies::Enemy},
+    game::{actions::damage::DamageMessage, enemies::Enemy},
     utils::{pos_to_quat, shots::DamagePerTimeShot, IngameTime},
 };
 use bevy::prelude::*;
@@ -7,7 +7,7 @@ use bevy::prelude::*;
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy)>;
 
 pub fn damage_system(
-    mut dmg_ev: EventWriter<DamageEvent>,
+    mut dmg_ev: MessageWriter<DamageMessage>,
     q_shots: Query<&DamagePerTimeShot>,
     q_enemies: EnemiesQuery,
     time: Res<IngameTime>,
@@ -15,7 +15,7 @@ pub fn damage_system(
     let frame_dur = time.delta_secs();
     for shot in q_shots.iter() {
         if let Some((enemy_entity, _)) = find_enemy_in_range(&q_enemies, shot) {
-            dmg_ev.send(DamageEvent::new(enemy_entity, frame_dur * shot.damage));
+            dmg_ev.write(DamageMessage::new(enemy_entity, frame_dur * shot.damage));
         }
     }
 }
@@ -29,7 +29,7 @@ pub fn despawn_system(
     let now = time.now();
     for (entity, shot) in q_shots.iter() {
         if now >= shot.die_time || find_enemy_in_range(&q_enemies, shot).is_none() {
-            cmds.entity(entity).despawn_recursive();
+            cmds.entity(entity).despawn();
         }
     }
 }

@@ -64,12 +64,6 @@ impl DamageInRadiusTargetPosShotValues {
 }
 
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub enum Target {
-    Entity(Entity),
-    Pos(Vec2Board),
-}
-
-#[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DamageInRadiusTargetPosShotValues {
     pub pos_start: Vec2Board,
     pub pos: Vec2Board,

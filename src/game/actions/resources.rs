@@ -1,5 +1,4 @@
 use crate::{
-    board::visualisation::TILE_SIZE,
     game::{Game, GameScreen},
     utils::{
         energy::energy_symbol, materials::materials_symbol, text_bundle, Energy, IngameTime,
@@ -11,10 +10,9 @@ use bevy::prelude::*;
 use std::time::Duration;
 
 pub const RESOURCE_ANIMATION_TIME: Duration = Duration::from_secs(2);
-const WIDTH: f32 = TILE_SIZE / 2.;
 
-#[derive(Event, Debug)]
-pub enum ResourcesEvent {
+#[derive(Message, Debug)]
+pub enum ResourcesMessage {
     Energy(Energy, Vec2Board),
     Materials(Materials, Vec2Board),
 }
@@ -38,18 +36,18 @@ impl ResourceAnimation {
 
 pub(super) fn on_change_resources(
     mut cmds: Commands,
-    mut events: EventReader<ResourcesEvent>,
+    mut events: MessageReader<ResourcesMessage>,
     mut game: ResMut<Game>,
     assets: Res<AssetServer>,
     time: Res<IngameTime>,
 ) {
     for ev in events.read() {
         match ev {
-            ResourcesEvent::Energy(energy, pos) => {
+            ResourcesMessage::Energy(energy, pos) => {
                 game.energy += energy;
                 spawn_energy_animation(&mut cmds, *energy, *pos, &assets, time.now())
             }
-            ResourcesEvent::Materials(materials, pos) => {
+            ResourcesMessage::Materials(materials, pos) => {
                 game.materials += materials;
                 spawn_materials_animation(&mut cmds, *materials, *pos, &assets, time.now());
             }
@@ -138,10 +136,10 @@ fn resource_text(
 }
 
 pub fn consume(
-    res_actions: &mut EventWriter<ResourcesEvent>,
+    res_actions: &mut MessageWriter<ResourcesMessage>,
     resources: (Energy, Materials),
     pos: Vec2Board,
 ) {
-    res_actions.send(ResourcesEvent::Energy(resources.0, pos));
-    res_actions.send(ResourcesEvent::Materials(resources.1, pos));
+    res_actions.write(ResourcesMessage::Energy(resources.0, pos));
+    res_actions.write(ResourcesMessage::Materials(resources.1, pos));
 }

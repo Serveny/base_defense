@@ -1,5 +1,5 @@
 use super::actions::{
-    EditorEditBoardEvent, EditorLoadBoardEvent, EditorNewBoardEvent, EditorSaveBoardEvent,
+    EditorEditBoardMessage, EditorLoadBoardMessage, EditorNewBoardMessage, EditorSaveBoardMessage,
 };
 use crate::{
     board::Board,
@@ -83,7 +83,7 @@ pub(super) struct SaveBoardWindow {
 pub(super) fn add_save_board_window(
     mut egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    mut save_ev: EventWriter<EditorSaveBoardEvent>,
+    mut save_ev: MessageWriter<EditorSaveBoardMessage>,
 ) {
     let mut is_close = false;
     if let Popups::Save(popup) = &mut *popup {
@@ -100,7 +100,7 @@ pub(super) fn add_save_board_window(
             let (is_ok, is_cancel) = add_ok_cancel_row(ui);
 
             if is_ok {
-                save_ev.send(EditorSaveBoardEvent);
+                save_ev.write(EditorSaveBoardMessage);
             } else if is_cancel {
                 is_close = true;
             }
@@ -119,7 +119,7 @@ pub(super) fn add_save_board_window(
 pub(super) fn add_load_board_window(
     mut egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    load_ev: EventWriter<EditorLoadBoardEvent>,
+    load_ev: MessageWriter<EditorLoadBoardMessage>,
 ) {
     let mut is_close = false;
     if let Popups::Load(popup) = &mut *popup {
@@ -145,7 +145,7 @@ pub(super) fn add_load_board_window(
 fn add_load_board_select(
     ui: &mut egui::Ui,
     load_win: &mut LoadBoardWindow,
-    mut load_ev: EventWriter<EditorLoadBoardEvent>,
+    mut load_ev: MessageWriter<EditorLoadBoardMessage>,
 ) {
     egui::containers::ScrollArea::vertical().show(ui, |ui| {
         for board in &load_win.boards {
@@ -156,7 +156,7 @@ fn add_load_board_select(
                 )
                 .clicked()
             {
-                load_ev.send(EditorLoadBoardEvent(board.clone()));
+                load_ev.write(EditorLoadBoardMessage(board.clone()));
                 break;
             }
         }
@@ -166,14 +166,14 @@ fn add_load_board_select(
 pub(super) fn add_new_board_window(
     egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    mut new_board_ev: EventWriter<EditorNewBoardEvent>,
+    mut new_board_ev: MessageWriter<EditorNewBoardMessage>,
 ) {
     let mut is_close = false;
     if let Popups::New(popup) = &mut *popup {
         let (is_ok, is_cancel) =
             add_new_edit_popup(egui_ctx, &mut popup.width, &mut popup.height, "New map");
         if is_ok {
-            new_board_ev.send(EditorNewBoardEvent::new(popup.width, popup.height));
+            new_board_ev.write(EditorNewBoardMessage::new(popup.width, popup.height));
         } else if is_cancel {
             is_close = true;
         }
@@ -186,14 +186,14 @@ pub(super) fn add_new_board_window(
 pub(super) fn add_edit_board_window(
     egui_ctx: EguiContexts,
     mut popup: ResMut<Popups>,
-    mut edit_ev: EventWriter<EditorEditBoardEvent>,
+    mut edit_ev: MessageWriter<EditorEditBoardMessage>,
 ) {
     let mut is_close = false;
     if let Popups::Edit(popup) = &mut *popup {
         let (is_ok, is_cancel) =
             add_new_edit_popup(egui_ctx, &mut popup.width, &mut popup.height, "Edit size");
         if is_ok {
-            edit_ev.send(EditorEditBoardEvent::new(popup.width, popup.height));
+            edit_ev.write(EditorEditBoardMessage::new(popup.width, popup.height));
         } else if is_cancel {
             is_close = true;
         }
@@ -254,11 +254,12 @@ fn add_popup_window<R>(
     title: &str,
     content: impl FnOnce(&mut bevy_egui::egui::Ui) -> R,
 ) {
+    let Ok(ctx) = egui_ctx.ctx_mut() else { return };
     bevy_egui::egui::Window::new(title)
         .fixed_size((400., 200.))
         .collapsible(false)
         .anchor(bevy_egui::egui::Align2::CENTER_CENTER, (0., 0.))
-        .show(egui_ctx.ctx_mut(), |ui| {
+        .show(ctx, |ui| {
             // Content
             ui.add_space(10.);
             content(ui);

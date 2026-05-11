@@ -1,7 +1,7 @@
 use crate::{
     board::{step::BoardDirection, BoardCache},
     game::{
-        actions::{collision::EnemyCollisionAddEvent, resources::ResourcesEvent},
+        actions::{collision::EnemyCollisionAddMessage, resources::ResourcesMessage},
         enemies::Enemy,
     },
     utils::{
@@ -17,7 +17,7 @@ type QEnemies<'w, 's, 'a> =
 
 pub(super) fn enemy_walk_system(
     mut cmds: Commands,
-    mut res_actions: EventWriter<ResourcesEvent>,
+    mut res_actions: MessageWriter<ResourcesMessage>,
     mut q_enemies: QEnemies,
     board_cache: Res<BoardCache>,
     time: Res<IngameTime>,
@@ -41,7 +41,7 @@ pub(super) fn enemy_walk_system(
 }
 
 pub(super) fn enemy_collision_add_system(
-    mut add_ev: EventWriter<EnemyCollisionAddEvent>,
+    mut add_ev: MessageWriter<EnemyCollisionAddMessage>,
     mut collisions: ResMut<Collisions>,
     q_enemies: Query<(Entity, &Enemy)>,
 ) {
@@ -58,7 +58,7 @@ pub(super) fn enemy_collision_add_system(
                     } else {
                         Collision::new(entity, other_entity, is_critical)
                     });
-                    add_ev.send(EnemyCollisionAddEvent(entity, other_entity));
+                    add_ev.write(EnemyCollisionAddMessage(entity, other_entity));
                 }
             }
         });
@@ -74,14 +74,14 @@ fn is_already_found(entity_0: Entity, entity_1: Entity, collisions: &[Collision]
 
 fn enemy_reached_base(
     cmds: &mut Commands,
-    res_actions: &mut EventWriter<ResourcesEvent>,
+    res_actions: &mut MessageWriter<ResourcesMessage>,
     enemy: &Enemy,
     entity: Entity,
 ) {
     let damage = (-enemy.health * 20.).round();
-    res_actions.send(ResourcesEvent::Energy(damage, enemy.pos));
-    res_actions.send(ResourcesEvent::Materials(damage, enemy.pos));
-    cmds.entity(entity).despawn_recursive();
+    res_actions.write(ResourcesMessage::Energy(damage, enemy.pos));
+    res_actions.write(ResourcesMessage::Materials(damage, enemy.pos));
+    cmds.entity(entity).despawn();
 }
 
 fn set_enemy_spawn_line_flag(enemy: &mut Enemy, board_cache: &BoardCache) {

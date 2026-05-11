@@ -7,8 +7,8 @@ use crate::{
 use bevy::prelude::*;
 
 #[allow(clippy::large_enum_variant)]
-#[derive(Event)]
-pub(super) enum MenuActionEvent {
+#[derive(Message)]
+pub(super) enum MenuActionMessage {
     EnterNewGameMenu,
     StartNewGame(Game, Board, BoardCache),
     LeaveMenu(GameState),
@@ -26,7 +26,7 @@ pub(super) fn menu_actions(
     menu_state: Res<State<MenuState>>,
     mut set_menu_state: ResMut<NextState<MenuState>>,
     mut set_game_state: ResMut<NextState<GameState>>,
-    mut menu_actions: EventReader<MenuActionEvent>,
+    mut menu_actions: MessageReader<MenuActionMessage>,
 ) {
     if !menu_actions.is_empty() {
         let mut ma_params = MenuActionParams {
@@ -37,7 +37,7 @@ pub(super) fn menu_actions(
         };
         for event in menu_actions.read() {
             match event {
-                MenuActionEvent::StartNewGame(game, board, board_cache) => {
+                MenuActionMessage::StartNewGame(game, board, board_cache) => {
                     start_new_game(
                         &mut ma_params,
                         game.clone(),
@@ -45,8 +45,8 @@ pub(super) fn menu_actions(
                         board_cache.clone(),
                     );
                 }
-                MenuActionEvent::LeaveMenu(to) => leave_menu(&mut ma_params, *to),
-                MenuActionEvent::EnterNewGameMenu => enter_new_game_menu(&mut ma_params),
+                MenuActionMessage::LeaveMenu(to) => leave_menu(&mut ma_params, *to),
+                MenuActionMessage::EnterNewGameMenu => enter_new_game_menu(&mut ma_params),
             }
         }
     }

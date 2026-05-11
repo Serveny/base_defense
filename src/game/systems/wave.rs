@@ -1,5 +1,5 @@
 use crate::board::BoardCache;
-use crate::game::actions::wave::WaveActionsEvent;
+use crate::game::actions::wave::WaveActionsMessage;
 use crate::game::enemies::{Enemy, EnemyType};
 use crate::game::Game;
 use crate::utils::{IngameTime, IngameTimestamp};
@@ -44,12 +44,12 @@ impl Wave {
 pub(in crate::game) fn wave_spawn_system(
     game: Res<Game>,
     time: Res<IngameTime>,
-    mut actions: EventWriter<WaveActionsEvent>,
+    mut actions: MessageWriter<WaveActionsMessage>,
 ) {
     // Start next wave on next wave time point
     if let Some(next_wave_spawn) = game.next_wave_spawn {
         if time.elapsed_secs() >= *next_wave_spawn {
-            actions.send(WaveActionsEvent::StartWave);
+            actions.write(WaveActionsMessage::StartWave);
         }
     }
 }
@@ -57,7 +57,7 @@ pub(in crate::game) fn wave_spawn_system(
 #[allow(clippy::too_many_arguments)]
 pub(in crate::game) fn wave_system(
     mut cmds: Commands,
-    mut wave_acts: EventWriter<WaveActionsEvent>,
+    mut wave_acts: MessageWriter<WaveActionsMessage>,
     mut wave: ResMut<Wave>,
     q_enemies: Query<&Enemy>,
     time: Res<IngameTime>,
@@ -70,7 +70,7 @@ pub(in crate::game) fn wave_system(
 
         // Let enemies walk
         if q_enemies.is_empty() && is_wave_end {
-            wave_acts.send(WaveActionsEvent::EndWave);
+            wave_acts.write(WaveActionsMessage::EndWave);
         }
 
         // Spawn enemy on next spawn time point

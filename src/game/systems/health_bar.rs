@@ -3,14 +3,14 @@ use bevy::prelude::*;
 
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy), With<Enemy>>;
 type HealthBarsQuery<'w, 's, 'a> =
-    Query<'w, 's, (&'a Parent, &'a mut Transform), With<HealthBarPercentage>>;
+    Query<'w, 's, (&'a ChildOf, &'a mut Transform), With<HealthBarPercentage>>;
 
 pub(in crate::game) fn health_bar_system(
     mut health_bar_query: HealthBarsQuery,
     enemy_query: EnemiesQuery,
 ) {
-    for (parent, mut transform) in health_bar_query.iter_mut() {
-        let enemy = find_enemy(&enemy_query, **parent).unwrap();
+    for (child_of, mut transform) in health_bar_query.iter_mut() {
+        let enemy = find_enemy(&enemy_query, child_of.parent()).unwrap();
         transform.scale = Vec3::new(enemy.health_as_percent(), 1., 1.);
     }
 }

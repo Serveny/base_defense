@@ -10,13 +10,13 @@ use crate::{
             power_plant::{spawn_power_plant, PowerPlant},
             Building, BuildingBase,
         },
-        towers::{draw_tower, Tower, TowerParent, TowerRangeCircle},
+        towers::{draw_tower, ChildOfTower, Tower, TowerRangeCircle},
         Vec2Board,
     },
 };
 use bevy::prelude::*;
 
-use super::resources::{consume, ResourcesEvent};
+use super::resources::{consume, ResourcesMessage};
 
 type QueryBuildMenuCircle<'w, 's, 'a> = Query<
     'w,
@@ -30,7 +30,7 @@ pub(in crate::game) type QueryTowerMenuParents<'w, 's, 'a> = Query<
     's,
     (&'a mut Visibility, &'a mut Transform, &'a Tower),
     (
-        With<TowerParent>,
+        With<ChildOfTower>,
         With<BuildMenuScreen>,
         Without<Building>,
         Without<BuildingBase>,
@@ -45,21 +45,21 @@ pub(in crate::game) type QueryBuildingMenuParents<'w, 's, 'a> = Query<
         With<BuildingBase>,
         With<BuildMenuScreen>,
         Without<Tower>,
-        Without<TowerParent>,
+        Without<ChildOfTower>,
     ),
 >;
 
 type QueryBuildMenu<'w, 's, 'a> =
     Query<'w, 's, (Entity, &'a mut Visibility), (With<BuildMenuScreen>, Without<TowerRangeCircle>)>;
 
-#[derive(Event, Clone, Copy)]
-pub enum BuildMenuScrollEvent {
+#[derive(Message, Clone, Copy)]
+pub enum BuildMenuScrollMessage {
     Before = -1,
     After = 1,
 }
 
 pub(super) fn on_scroll(
-    mut evr: EventReader<BuildMenuScrollEvent>,
+    mut evr: MessageReader<BuildMenuScrollMessage>,
     mut tbm: ResMut<BuildMenu>,
     mut q_tower: QueryTowerMenuParents,
     mut q_building: QueryBuildingMenuParents,
@@ -78,11 +78,11 @@ pub(super) fn on_scroll(
     }
 }
 
-#[derive(Event)]
-pub struct BuildMenuOpenEvent(pub UVec2);
+#[derive(Message)]
+pub struct BuildMenuOpenMessage(pub UVec2);
 
 pub(super) fn on_open(
-    mut evr: EventReader<BuildMenuOpenEvent>,
+    mut evr: MessageReader<BuildMenuOpenMessage>,
     mut tbm: ResMut<BuildMenu>,
     mut q_circle: QueryBuildMenuCircle,
     mut q_tower: QueryTowerMenuParents,
@@ -102,25 +102,25 @@ pub(super) fn on_open(
     }
 }
 
-#[derive(Event)]
-pub struct BuildMenuCloseEvent;
+#[derive(Message)]
+pub struct BuildMenuCloseMessage;
 
 pub(super) fn on_close(
-    mut evr: EventReader<BuildMenuCloseEvent>,
-    mut bm_hide_ev: EventWriter<BuildMenuHideEvent>,
+    mut evr: MessageReader<BuildMenuCloseMessage>,
+    mut bm_hide_ev: MessageWriter<BuildMenuHideMessage>,
     mut tbm: ResMut<BuildMenu>,
 ) {
     for _ in evr.read() {
-        bm_hide_ev.send(BuildMenuHideEvent);
+        bm_hide_ev.write(BuildMenuHideMessage);
         tbm.is_open = false;
     }
 }
 
-#[derive(Event)]
-pub struct BuildMenuHideEvent;
+#[derive(Message)]
+pub struct BuildMenuHideMessage;
 
 pub(super) fn on_hide(
-    mut evr: EventReader<BuildMenuHideEvent>,
+    mut evr: MessageReader<BuildMenuHideMessage>,
     mut tbm: ResMut<BuildMenu>,
     mut q_tm: QueryBuildMenu,
 ) {
@@ -133,7 +133,9 @@ pub(super) fn on_hide(
 }
 
 fn set_build_circle(q_tmc: &mut QueryBuildMenuCircle, translation: Vec3) {
-    let mut circle = q_tmc.single_mut();
+    let Ok(mut circle) = q_tmc.single_mut() else {
+        return;
+    };
     *circle.0 = Visibility::Visible;
     circle.1.translation = translation;
 }
@@ -224,17 +226,17 @@ fn scroll(
     }
 }
 
-#[derive(Event)]
-pub struct BuildMenuBuildEvent;
+#[derive(Message)]
+pub struct BuildMenuBuildMessage;
 
 #[allow(clippy::too_many_arguments)]
 pub(super) fn on_build(
-    mut evr: EventReader<BuildMenuBuildEvent>,
+    mut evr: MessageReader<BuildMenuBuildMessage>,
     mut cmds: Commands,
     mut board: ResMut<Board>,
     tbm: ResMut<BuildMenu>,
-    mut res_actions: EventWriter<ResourcesEvent>,
-    mut bm_close_ev: EventWriter<BuildMenuCloseEvent>,
+    mut res_actions: MessageWriter<ResourcesMessage>,
+    mut bm_close_ev: MessageWriter<BuildMenuCloseMessage>,
     q_tower: Query<&Tower>,
     q_qmp_tower: QueryTowerMenuParents,
     q_qmp_building: QueryBuildingMenuParents,
@@ -264,7 +266,7 @@ pub(super) fn on_build(
             }
         }
 
-        bm_close_ev.send(BuildMenuCloseEvent);
+        bm_close_ev.write(BuildMenuCloseMessage);
     }
 }
 
@@ -276,7 +278,7 @@ fn is_tile_occupied_tower(query: &Query<&Tower>, tile_pos: UVec2) -> bool {
 
 fn place_tower(
     cmds: &mut Commands,
-    res_actions: &mut EventWriter<ResourcesEvent>,
+    res_actions: &mut MessageWriter<ResourcesMessage>,
     tower: Option<&Tower>,
     pos: &UVec2,
 ) {
@@ -298,7 +300,7 @@ fn place_tower(
 
 fn place_building(
     cmds: &mut Commands,
-    res_actions: &mut EventWriter<ResourcesEvent>,
+    res_actions: &mut MessageWriter<ResourcesMessage>,
     building: Option<&Building>,
     pos: &UVec2,
 ) {

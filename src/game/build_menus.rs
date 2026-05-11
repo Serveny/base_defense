@@ -1,5 +1,5 @@
 use super::{
-    actions::build_menu::{BuildMenuCloseEvent, QueryBuildingMenuParents, QueryTowerMenuParents},
+    actions::build_menu::{BuildMenuCloseMessage, QueryBuildingMenuParents, QueryTowerMenuParents},
     BaseLevel,
 };
 use crate::{
@@ -15,7 +15,7 @@ use crate::{
     },
 };
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*, shapes::Circle};
+use bevy_prototype_lyon::{prelude::*, shapes::Circle};
 
 #[derive(Component, Default)]
 pub(super) struct BuildMenuScreen;
@@ -93,22 +93,23 @@ pub struct BuildMenuCircle;
 
 fn menu_circle_shape(tile_size: f32) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&Circle {
-                center: Vec2::default(),
-                radius: tile_size / 2.5,
-            }),
-            transform: Transform::from_translation(Vec3::new(0., 0., 3.)),
-            ..default()
-        },
-        Fill::color(Color::srgba(0.75, 0.75, 0.75, 0.)),
-        Stroke::new(Color::srgba(0.25, 0.25, 0.25, 0.5), tile_size / 32.),
+        ShapeBuilder::with(&Circle {
+            center: Vec2::default(),
+            radius: tile_size / 2.5,
+        })
+        .fill(Color::srgba(0.75, 0.75, 0.75, 0.))
+        .stroke(Stroke::new(
+            Color::srgba(0.25, 0.25, 0.25, 0.5),
+            tile_size / 32.,
+        ))
+        .build(),
+        Transform::from_translation(Vec3::new(0., 0., 3.)),
     )
 }
 
 pub fn draw_build_menu(
     cmds: &mut Commands,
-    mut bm_close_ev: EventWriter<BuildMenuCloseEvent>,
+    mut bm_close_ev: MessageWriter<BuildMenuCloseMessage>,
     base_lvl: BaseLevel,
 ) {
     cmds.spawn((
@@ -132,5 +133,5 @@ pub fn draw_build_menu(
             }
         }
     }
-    bm_close_ev.send(BuildMenuCloseEvent);
+    bm_close_ev.write(BuildMenuCloseMessage);
 }

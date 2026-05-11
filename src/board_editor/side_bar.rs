@@ -29,10 +29,11 @@ pub(super) fn add_side_bar(
     mut set_tile_state: ResMut<NextState<SettileState>>,
     tile_state: Res<State<SettileState>>,
 ) {
+    let Ok(ctx) = egui_ctx.ctx_mut() else { return };
     SidePanel::left("map_editor_left_bar")
         .resizable(false)
         .default_width(LEFT_BAR_WIDTH_PX)
-        .show(egui_ctx.ctx_mut(), |ui| {
+        .show(ctx, |ui| {
             ui.add_sized([LEFT_BAR_WIDTH_PX - 20., 40.], Label::new("tile type"));
             add_tile_radio_button(
                 &mut set_tile_state,

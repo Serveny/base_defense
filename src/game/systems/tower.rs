@@ -1,5 +1,5 @@
 use crate::{
-    game::{actions::tower::TowerActionsEvent, build_menus::BuildMenuScreen, enemies::Enemy},
+    game::{actions::tower::TowerActionsMessage, build_menus::BuildMenuScreen, enemies::Enemy},
     utils::{
         pos_to_quat,
         shots::{Shot, TowerStatus},
@@ -8,7 +8,7 @@ use crate::{
     },
 };
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
+use bevy_prototype_lyon::entity::Shape;
 use std::time::Duration;
 
 type QueryTowersAndChildren<'w, 's, 'a> =
@@ -16,12 +16,12 @@ type QueryTowersAndChildren<'w, 's, 'a> =
 type QueryCannonTransMut<'w, 's, 'a> =
     Query<'w, 's, &'a mut Transform, (With<TowerCannon>, Without<BuildMenuScreen>)>;
 type QueryCannonDrawMut<'w, 's, 'a> =
-    Query<'w, 's, &'a mut Fill, (With<TowerCannon>, Without<BuildMenuScreen>)>;
+    Query<'w, 's, &'a mut Shape, (With<TowerCannon>, Without<BuildMenuScreen>)>;
 type EnemiesQuery<'w, 's, 'a> = Query<'w, 's, (Entity, &'a Enemy, &'a Children)>;
 type EntityEnemy<'a> = (Entity, &'a Enemy);
 
 pub(super) fn tower_target_system(
-    mut tower_acts: EventWriter<TowerActionsEvent>,
+    mut tower_acts: MessageWriter<TowerActionsMessage>,
     mut q_towers: Query<&mut Tower, Without<BuildMenuScreen>>,
     q_enemies: EnemiesQuery,
     time: Res<IngameTime>,
@@ -118,8 +118,8 @@ fn cannon_trans_mut<'a>(
     tower_children: &Children,
 ) -> Option<Mut<'a, Transform>> {
     for child in tower_children.iter() {
-        if cannons.get(*child).is_ok() {
-            return cannons.get_mut(*child).ok();
+        if cannons.get(child).is_ok() {
+            return cannons.get_mut(child).ok();
         }
     }
     None
@@ -128,10 +128,10 @@ fn cannon_trans_mut<'a>(
 fn cannon_draw_mut<'a>(
     cannons: &'a mut QueryCannonDrawMut,
     tower_children: &Children,
-) -> Option<Mut<'a, Fill>> {
+) -> Option<Mut<'a, Shape>> {
     for child in tower_children.iter() {
-        if cannons.get(*child).is_ok() {
-            return cannons.get_mut(*child).ok();
+        if cannons.get(child).is_ok() {
+            return cannons.get_mut(child).ok();
         }
     }
     None
@@ -145,8 +145,10 @@ fn rotate_tower_cannon_to_pos(
     transform.rotation = pos_to_quat(tower_pos, enemy_pos);
 }
 
-fn overheat_cannon(mut fill: Mut<Fill>, tower_vals: &TowerValues, now: IngameTimestamp) {
-    *fill = Fill::color(overheat_color(tower_vals, now));
+fn overheat_cannon(mut shape: Mut<Shape>, tower_vals: &TowerValues, now: IngameTimestamp) {
+    if let Some(fill) = shape.fill.as_mut() {
+        fill.color = overheat_color(tower_vals, now);
+    }
 }
 
 fn overheat_color(tower_vals: &TowerValues, now: IngameTimestamp) -> Color {
@@ -180,7 +182,7 @@ fn time_to_percent_inverted(
 }
 
 fn shoot_or_reload(
-    actions: &mut EventWriter<TowerActionsEvent>,
+    actions: &mut MessageWriter<TowerActionsMessage>,
     vals: &mut TowerValues,
     enemy: Option<EntityEnemy>,
     now: IngameTimestamp,
@@ -210,20 +212,20 @@ fn set_tower_status_reload(tower_vals: &mut TowerValues, finish: IngameTimestamp
 }
 
 fn shoot(
-    actions: &mut EventWriter<TowerActionsEvent>,
+    actions: &mut MessageWriter<TowerActionsMessage>,
     shot: &Shot,
     enemy: Option<EntityEnemy>,
 ) -> bool {
     match shot {
         Shot::Laser(shot) => {
             if let Some((entity, _)) = enemy {
-                actions.send(TowerActionsEvent::ShootLaser(shot.clone(), entity));
+                actions.write(TowerActionsMessage::ShootLaser(shot.clone(), entity));
                 return true;
             }
         }
         Shot::Rocket(shot) => {
             if let Some((entity, _)) = enemy {
-                actions.send(TowerActionsEvent::ShootRocket(shot.clone(), entity));
+                actions.write(TowerActionsMessage::ShootRocket(shot.clone(), entity));
                 return true;
             }
         }

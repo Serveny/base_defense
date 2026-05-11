@@ -7,7 +7,7 @@ use crate::utils::{
 };
 use bevy::color::palettes::css::{DARK_GRAY, GRAY};
 use bevy::prelude::*;
-use bevy_prototype_lyon::{entity::ShapeBundle, prelude::*};
+use bevy_prototype_lyon::prelude::*;
 use euclid::Angle;
 use serde::{Deserialize, Serialize};
 
@@ -52,7 +52,7 @@ pub fn spawn_factory<TScreen: Component + Default>(
     .insert(TScreen::default());
 }
 
-fn factory_children(parent: &mut ChildBuilder, tile_size: f32) {
+fn factory_children(parent: &mut ChildSpawnerCommands, tile_size: f32) {
     let color = MATERIALS_COLOR.into();
     parent.spawn(building_base_shape(tile_size / 1.1, color));
     parent.spawn(factory_building_shape(tile_size, GRAY.into()));
@@ -86,52 +86,46 @@ fn factory_children(parent: &mut ChildBuilder, tile_size: f32) {
 
 fn factory_roof_shape(tile_size: f32, color: Color, translation: Vec3) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::RegularPolygon {
-                sides: 3,
-                feature: RegularPolygonFeature::Radius(tile_size / 10.),
-                ..default()
-            }),
-            transform: Transform {
-                translation,
-                rotation: Quat::from_rotation_z(Angle::degrees(0.).radians),
-                ..default()
-            },
+        ShapeBuilder::with(&shapes::RegularPolygon {
+            sides: 3,
+            feature: RegularPolygonFeature::Radius(tile_size / 10.),
+            ..default()
+        })
+        .fill(color)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 40.))
+        .build(),
+        Transform {
+            translation,
+            rotation: Quat::from_rotation_z(Angle::degrees(0.).radians),
             ..default()
         },
-        Fill::color(color),
-        Stroke::new(DARK_GRAY, tile_size / 40.),
     )
 }
 
 fn factory_chimney_shape(tile_size: f32, color: Color, translation: Vec3) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Rectangle {
-                origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
-                extents: Vec2::new(tile_size / 10., tile_size / 2.),
-                radii: None,
-            }),
-            transform: Transform::from_translation(translation),
-            ..default()
-        },
-        Fill::color(color),
-        Stroke::new(DARK_GRAY, tile_size / 20.),
+        ShapeBuilder::with(&shapes::Rectangle {
+            origin: RectangleOrigin::CustomCenter(Vec2::new(0., tile_size / 2.)),
+            extents: Vec2::new(tile_size / 10., tile_size / 2.),
+            radii: None,
+        })
+        .fill(color)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .build(),
+        Transform::from_translation(translation),
     )
 }
 
 fn factory_building_shape(tile_size: f32, color: Color) -> impl Bundle {
     (
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&shapes::Rectangle {
-                origin: RectangleOrigin::Center,
-                extents: Vec2::new(tile_size / 1.75, tile_size / 3.),
-                radii: None,
-            }),
-            transform: Transform::from_xyz(0., 0., 0.02),
-            ..default()
-        },
-        Fill::color(color),
-        Stroke::new(DARK_GRAY, tile_size / 20.),
+        ShapeBuilder::with(&shapes::Rectangle {
+            origin: RectangleOrigin::Center,
+            extents: Vec2::new(tile_size / 1.75, tile_size / 3.),
+            radii: None,
+        })
+        .fill(color)
+        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .build(),
+        Transform::from_xyz(0., 0., 0.02),
     )
 }
