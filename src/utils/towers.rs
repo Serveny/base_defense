@@ -4,7 +4,7 @@ use super::{
     Vec2Board,
 };
 use crate::board::visualisation::TILE_SIZE;
-use bevy::color::palettes::css::{DARK_GRAY, SILVER};
+use bevy::color::palettes::css::{DARK_RED, DIM_GRAY, SILVER};
 use bevy::prelude::*;
 use bevy_prototype_lyon::{prelude::*, shapes::Circle};
 use serde::{Deserialize, Serialize};
@@ -119,7 +119,7 @@ fn tower_base_shape(color: Color) -> impl Bundle {
         ..default()
     })
     .fill(color)
-    .stroke(Stroke::new(DARK_GRAY, TILE_SIZE / 16.))
+    .stroke(Stroke::new(DIM_GRAY, TILE_SIZE / 16.))
     .build(),)
 }
 
@@ -130,20 +130,20 @@ fn tower_circle_shape() -> impl Bundle {
             radius: TILE_SIZE / 5.,
         })
         .fill(SILVER)
-        .stroke(Stroke::new(DARK_GRAY, TILE_SIZE / 16.))
+        .stroke(Stroke::new(DIM_GRAY, TILE_SIZE / 16.))
         .build(),
         Transform::from_xyz(0., 0., 0.4),
     )
 }
 
-fn tower_range_circle_shape(radius: f32, color: Color, visibility: Visibility) -> impl Bundle {
+fn tower_range_circle_shape(radius: f32, visibility: Visibility) -> impl Bundle {
     (
         ShapeBuilder::with(&Circle {
             center: Vec2::default(),
-            radius,
+            radius: radius * TILE_SIZE,
         })
         .fill(Color::NONE)
-        .stroke(Stroke::new(color, 0.025 * TILE_SIZE))
+        .stroke(Stroke::new(DARK_RED, 0.025 * TILE_SIZE))
         .build(),
         visibility,
         Transform::from_xyz(0., 0., 0.3),

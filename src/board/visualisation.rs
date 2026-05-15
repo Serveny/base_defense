@@ -5,7 +5,7 @@ use crate::{
     utils::{towers::TowerRangeCircle, Vec2Board},
 };
 use bevy::{
-    color::palettes::css::{ANTIQUE_WHITE, DARK_GRAY, GOLD, GRAY, SILVER},
+    color::palettes::css::{ANTIQUE_WHITE, DARK_GRAY, DIM_GRAY, GOLD, GRAY},
     prelude::*,
     sprite::Anchor,
 };
@@ -217,7 +217,7 @@ impl<TScreen: Component + Default> BoardVisualisation<TScreen> {
         (
             ShapeBuilder::with(&Self::hover_cross_path())
                 .fill(Color::srgba(1., 1., 1., 0.05))
-                .stroke(Stroke::new(SILVER, TILE_SIZE / 8.))
+                .stroke(Stroke::new(DIM_GRAY, TILE_SIZE / 8.))
                 .build(),
             Visibility::Hidden,
         )
@@ -264,7 +264,7 @@ mod road_end_mark {
             Vec2Board,
         },
     };
-    use bevy::color::palettes::css::{DARK_GRAY, GOLD, OLIVE, ORANGE_RED};
+    use bevy::color::palettes::css::{DIM_GRAY, GOLD, OLIVE, ORANGE_RED};
     use bevy::sprite::Anchor;
 
     pub fn spawn_road_end_mark<TScreen: Component + Default>(
@@ -346,7 +346,7 @@ mod road_end_mark {
                 ..default()
             })
             .fill(OLIVE)
-            .stroke(Stroke::new(DARK_GRAY, size_px / 10.))
+            .stroke(Stroke::new(DIM_GRAY, size_px / 10.))
             .build(),
             transform,
             visibility,
@@ -361,7 +361,7 @@ mod road_end_mark {
                 radii: None,
             })
             .fill(OLIVE)
-            .stroke(Stroke::new(DARK_GRAY, size_px / 32.))
+            .stroke(Stroke::new(DIM_GRAY, size_px / 32.))
             .build(),
             Transform::from_translation(Vec3::new(size_px / 3., 0., -0.1)),
             visibility,

@@ -10,7 +10,7 @@ use crate::{
         health_bar::health_bar, range_circle::RangeCircle, speed::Speed, TilesPerSecond, Vec2Board,
     },
 };
-use bevy::color::palettes::css::{DARK_GRAY, MAROON, OLIVE};
+use bevy::color::palettes::css::{DIM_GRAY, MAROON, OLIVE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use rand::random_range;
@@ -545,7 +545,7 @@ fn enemy_normal_shape(enemy: &Enemy) -> impl Bundle {
             ..default()
         })
         .fill(MAROON)
-        .stroke(Stroke::new(DARK_GRAY, line_width))
+        .stroke(Stroke::new(DIM_GRAY, line_width))
         .build(),
         Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
     )
@@ -573,7 +573,7 @@ fn enemy_tank_shape(enemy: &Enemy) -> impl Bundle {
             ..shapes::RegularPolygon::default()
         })
         .fill(OLIVE)
-        .stroke(Stroke::new(DARK_GRAY, line_width))
+        .stroke(Stroke::new(DIM_GRAY, line_width))
         .build(),
         Transform::from_translation(enemy.pos.to_scaled_vec3(1.)),
     )

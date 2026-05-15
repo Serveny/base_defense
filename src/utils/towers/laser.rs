@@ -11,7 +11,7 @@ use crate::{
         visible, BoardPos, Vec2Board,
     },
 };
-use bevy::color::palettes::css::{DARK_GRAY, RED, SILVER};
+use bevy::color::palettes::css::{DIM_GRAY, RED, SILVER};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
@@ -79,7 +79,7 @@ fn laser_tower_children<TScreen: Component + Default>(
         true => vals.range_radius * 2.,
         false => vals.range_radius,
     };
-    let range_circle = tower_range_circle_shape(range_radius, color, visible(is_preview));
+    let range_circle = tower_range_circle_shape(range_radius, visible(is_preview));
     parent
         .spawn(range_circle)
         .insert(TowerRangeCircle(vals.pos.as_uvec2()))
@@ -94,7 +94,7 @@ fn tower_laser_cannon() -> impl Bundle {
             radii: None,
         })
         .fill(SILVER)
-        .stroke(Stroke::new(DARK_GRAY, TILE_SIZE / 16.))
+        .stroke(Stroke::new(DIM_GRAY, TILE_SIZE / 16.))
         .build(),
         Transform {
             translation: Vec3::new(0., 0., 0.1),

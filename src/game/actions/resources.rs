@@ -1,7 +1,7 @@
 use crate::{
     game::{Game, GameScreen},
     utils::{
-        energy::energy_symbol, materials::materials_symbol, text_bundle, Energy, IngameTime,
+        bold_text_bundle, energy::energy_symbol, materials::materials_symbol, Energy, IngameTime,
         IngameTimestamp, Materials, Vec2Board,
     },
 };
@@ -137,7 +137,7 @@ fn resource_text(
     assets: &AssetServer,
     translation: Vec3,
 ) -> impl Bundle {
-    text_bundle(
+    bold_text_bundle(
         &format!("{number}"),
         color,
         assets,

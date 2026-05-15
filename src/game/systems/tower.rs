@@ -224,8 +224,12 @@ fn shoot(
             }
         }
         Shot::Rocket(shot) => {
-            if let Some((entity, _)) = enemy {
-                actions.write(TowerActionsMessage::ShootRocket(shot.clone(), entity));
+            if let Some((entity, enemy)) = enemy {
+                actions.write(TowerActionsMessage::ShootRocket(
+                    shot.clone(),
+                    entity,
+                    enemy.pos,
+                ));
                 return true;
             }
         }

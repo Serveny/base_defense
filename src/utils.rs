@@ -63,7 +63,7 @@ pub fn despawn_all_of<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
     }
 }
 
-use crate::assets::FONT_QUICKSAND;
+use crate::assets::{FONT_QUICKSAND, FONT_SCREEN_DIAGS};
 use bevy::camera::ScalingMode;
 use std::error::Error;
 use std::fs::{read_dir, read_to_string, DirEntry, File};
@@ -222,6 +222,30 @@ pub fn text_bundle_with_anchor(
             linebreak: LineBreak::NoWrap,
         },
         anchor,
+        Transform::from_translation(translation),
+    )
+}
+
+pub fn bold_text_bundle(
+    text: &str,
+    color: Color,
+    assets: &AssetServer,
+    translation: Vec3,
+    font_size: f32,
+) -> impl Bundle {
+    (
+        Text2d::new(text),
+        TextFont {
+            font: assets.load(FONT_SCREEN_DIAGS),
+            font_size,
+            ..default()
+        },
+        TextColor(color),
+        TextLayout {
+            justify: Justify::Center,
+            linebreak: LineBreak::NoWrap,
+        },
+        Anchor::CENTER,
         Transform::from_translation(translation),
     )
 }

@@ -53,16 +53,6 @@ impl DamagePerTimeShotValues {
     }
 }
 
-impl DamageInRadiusTargetPosShotValues {
-    pub fn new_shot(&self, target_id: Entity) -> DamageInRadiusTargetPosShot {
-        DamageInRadiusTargetPosShot {
-            target_pos: Vec2Board::default(),
-            target_id: Some(target_id),
-            vals: self.clone(),
-        }
-    }
-}
-
 #[derive(Component, Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct DamageInRadiusTargetPosShotValues {
     pub pos_start: Vec2Board,

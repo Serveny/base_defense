@@ -6,11 +6,12 @@ use crate::{
         Materials, Vec2Board,
     },
 };
-use bevy::color::palettes::css::{DARK_GRAY, PURPLE};
+use bevy::color::palettes::css::{DIM_GRAY, PURPLE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
 pub const INIT_RANGE_RADIUS: f32 = 3.5;
+const BARREL_SPAWN_OFFSET_TILES: f32 = 0.18;
 
 #[derive(Component)]
 pub struct RocketShot;
@@ -26,6 +27,25 @@ impl Shot {
             speed: 3.,
             fuel: Buffer::<Materials>::new(5., Amount::PerSecond(1.)),
         })
+    }
+}
+
+impl DamageInRadiusTargetPosShotValues {
+    pub fn new_rocket_shot_from_cannon(
+        &self,
+        target_id: Entity,
+        target_pos: Vec2Board,
+    ) -> DamageInRadiusTargetPosShot {
+        let direction: Vec2 = (target_pos - self.pos).into();
+        let mut vals = self.clone();
+        vals.pos =
+            self.pos + Vec2Board::from(direction.normalize_or_zero() * BARREL_SPAWN_OFFSET_TILES);
+
+        DamageInRadiusTargetPosShot {
+            target_pos,
+            target_id: Some(target_id),
+            vals,
+        }
     }
 }
 
@@ -51,7 +71,7 @@ fn rocket_body_shape(tile_size: f32) -> impl Bundle {
         radii: None,
     })
     .fill(PURPLE)
-    .stroke(Stroke::new(DARK_GRAY, tile_size / 40.))
+    .stroke(Stroke::new(DIM_GRAY, tile_size / 40.))
     .build(),)
 }
 
@@ -77,7 +97,7 @@ fn rocket_head_shape(tile_size: f32) -> impl Bundle {
             ..default()
         })
         .fill(PURPLE)
-        .stroke(Stroke::new(DARK_GRAY, tile_size / 40.))
+        .stroke(Stroke::new(DIM_GRAY, tile_size / 40.))
         .build(),
         Transform::from_translation(Vec3::new(0., tile_size / 10. + tile_size / 20., 0.1)),
     )
@@ -91,7 +111,7 @@ fn rocket_bottom_shape(tile_size: f32) -> impl Bundle {
             ..default()
         })
         .fill(PURPLE)
-        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .stroke(Stroke::new(DIM_GRAY, tile_size / 20.))
         .build(),
         Transform::from_translation(Vec3::new(0., -tile_size / 10., -0.1)),
     )

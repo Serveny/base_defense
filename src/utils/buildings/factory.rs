@@ -5,7 +5,7 @@ use crate::utils::{
     buffer::Buffer, materials::MATERIALS_COLOR, resource_bar::spawn_resource_bar, Amount, BoardPos,
     Energy, Materials, Vec2Board,
 };
-use bevy::color::palettes::css::{DARK_GRAY, GRAY};
+use bevy::color::palettes::css::{DIM_GRAY, GRAY};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use euclid::Angle;
@@ -92,7 +92,7 @@ fn factory_roof_shape(tile_size: f32, color: Color, translation: Vec3) -> impl B
             ..default()
         })
         .fill(color)
-        .stroke(Stroke::new(DARK_GRAY, tile_size / 40.))
+        .stroke(Stroke::new(DIM_GRAY, tile_size / 40.))
         .build(),
         Transform {
             translation,
@@ -110,7 +110,7 @@ fn factory_chimney_shape(tile_size: f32, color: Color, translation: Vec3) -> imp
             radii: None,
         })
         .fill(color)
-        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .stroke(Stroke::new(DIM_GRAY, tile_size / 20.))
         .build(),
         Transform::from_translation(translation),
     )
@@ -124,7 +124,7 @@ fn factory_building_shape(tile_size: f32, color: Color) -> impl Bundle {
             radii: None,
         })
         .fill(color)
-        .stroke(Stroke::new(DARK_GRAY, tile_size / 20.))
+        .stroke(Stroke::new(DIM_GRAY, tile_size / 20.))
         .build(),
         Transform::from_xyz(0., 0., 0.02),
     )

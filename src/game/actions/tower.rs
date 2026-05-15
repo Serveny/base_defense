@@ -8,7 +8,7 @@ use crate::{
             laser::spawn_shot_laser, rocket::spawn_shot_rocket, DamageInRadiusTargetPosShotValues,
             DamagePerTimeShotValues,
         },
-        IngameTime,
+        IngameTime, Vec2Board,
     },
 };
 use bevy::prelude::*;
@@ -16,7 +16,7 @@ use bevy::prelude::*;
 #[derive(Message)]
 pub enum TowerActionsMessage {
     ShootLaser(DamagePerTimeShotValues, Entity),
-    ShootRocket(DamageInRadiusTargetPosShotValues, Entity),
+    ShootRocket(DamageInRadiusTargetPosShotValues, Entity, Vec2Board),
 }
 
 pub fn on_tower_actions(
@@ -36,8 +36,11 @@ pub fn on_tower_actions(
                 );
                 laser_count.0 += 1;
             }
-            ShootRocket(shot, enemy) => {
-                spawn_shot_rocket::<GameScreen>(&mut cmds, shot.new_shot(*enemy));
+            ShootRocket(shot, enemy, enemy_pos) => {
+                spawn_shot_rocket::<GameScreen>(
+                    &mut cmds,
+                    shot.new_rocket_shot_from_cannon(*enemy, *enemy_pos),
+                );
                 rocket_count.0 += 1;
             }
         }
