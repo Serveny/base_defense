@@ -67,8 +67,8 @@ fn write_control_action(
     use GameActionMessage::*;
 
     match control_action {
-        ControlAction::BackToMainMenu => {
-            actions.write(BackToMainMenu);
+        ControlAction::Pause => {
+            actions.write(Pause);
         }
         _ if **ingame_state != IngameState::Running => (),
         ControlAction::ActivateOverview => {
@@ -88,9 +88,6 @@ fn write_control_action(
         }
         ControlAction::NormalSpeed => {
             actions.write(Speed(1.));
-        }
-        ControlAction::Pause => {
-            actions.write(Pause);
         }
         ControlAction::BuildMenuPrevious => {
             bm_scroll_ev.write(BuildMenuScrollMessage::Before);

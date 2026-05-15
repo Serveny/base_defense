@@ -7,6 +7,7 @@ use self::{
     explosions::explosion_system,
     game_over::{end_game, game_over_screen, game_over_system, game_over_timer_system},
     health_bar::health_bar_system,
+    pause::{pause_menu, reset_pause_menu, PauseMenu},
     resource::{resource_animation_system, resource_symbol_fade_system, resource_text_fade_system},
     resource_bar::resource_bar_system,
     speed::acceleration_system,
@@ -26,6 +27,7 @@ pub mod enemy;
 pub mod explosions;
 pub mod game_over;
 pub mod health_bar;
+pub mod pause;
 pub mod resource;
 pub mod resource_bar;
 pub mod shot;
@@ -38,6 +40,7 @@ pub struct GameSystems;
 impl Plugin for GameSystems {
     fn build(&self, app: &mut App) {
         app.init_state::<WaveState>()
+            .init_resource::<PauseMenu>()
             .add_systems(
                 Update,
                 (
@@ -92,11 +95,16 @@ impl Plugin for GameSystems {
                 EguiPrimaryContextPass,
                 (game_over_screen).run_if(in_state(IngameState::GameOver)),
             )
+            .add_systems(OnEnter(IngameState::Pause), reset_pause_menu)
+            .add_systems(
+                EguiPrimaryContextPass,
+                (pause_menu).run_if(in_state(IngameState::Pause)),
+            )
             .add_systems(
                 Update,
                 (wave_system)
                     .before(Labels::Actions)
-                    .run_if(in_state(WaveState::Running)),
+                    .run_if(in_state(WaveState::Running).and(in_state(IngameState::Running))),
             );
     }
 }

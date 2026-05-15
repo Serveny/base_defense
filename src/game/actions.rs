@@ -52,6 +52,7 @@ pub enum GameActionMessage {
     SpeedDown,
     Speed(f32),
     Pause,
+    Continue,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, SystemSet)]
@@ -100,7 +101,7 @@ impl Plugin for GameActions {
                 Update,
                 (/*on_game_actions,*/on_wave_actions)
                     .in_set(Labels::Actions)
-                    .run_if(in_state(GameState::Game)),
+                    .run_if(in_state(GameState::Game).and(in_state(IngameState::Running))),
             )
             .add_systems(
                 Update,
@@ -126,6 +127,7 @@ fn on_game_actions(
     mut game_actions: MessageReader<GameActionMessage>,
     mut q_game_screen: GameScreenQuery,
     mut q_range_circle: RangeCircleQuery,
+    ingame_state: Res<State<IngameState>>,
     mut set_ingame_state: ResMut<NextState<IngameState>>,
 ) {
     if !game_actions.is_empty() {
@@ -157,7 +159,16 @@ fn on_game_actions(
                     }
                 }
 
-                Pause => set_ingame_state.set(IngameState::Pause),
+                Pause => match **ingame_state {
+                    IngameState::Running => set_ingame_state.set(IngameState::Pause),
+                    IngameState::Pause => set_ingame_state.set(IngameState::Running),
+                    _ => (),
+                },
+                Continue => {
+                    if **ingame_state == IngameState::Pause {
+                        set_ingame_state.set(IngameState::Running);
+                    }
+                }
             }
         }
     }

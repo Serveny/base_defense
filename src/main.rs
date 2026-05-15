@@ -24,6 +24,7 @@ mod board_editor;
 mod controls;
 mod game;
 mod main_menu;
+mod menu_panels;
 mod splash;
 mod user;
 mod utils;

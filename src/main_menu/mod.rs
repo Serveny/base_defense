@@ -3,16 +3,13 @@ use self::{
     new_game_menu::{add_new_game_menu, new_game_menu_setup},
 };
 use crate::{
-    controls::{key_label, KEY_BINDINGS, MOUSE_BINDINGS},
-    utils::{add_row, GameState},
+    menu_panels::{controls_content, settings_content},
+    utils::GameState,
     TITLE,
 };
 use bevy::{app::AppExit, prelude::*};
 use bevy_egui::{
-    egui::{
-        self, CentralPanel, Color32, Frame, Label, Response, RichText, ScrollArea, SidePanel,
-        SliderClamping,
-    },
+    egui::{self, CentralPanel, Color32, Frame, Label, Response, RichText, ScrollArea, SidePanel},
     EguiContexts, EguiPrimaryContextPass,
 };
 
@@ -132,10 +129,7 @@ fn add_settings(egui_ctx: &mut EguiContexts, mut settings: ResMut<crate::user::S
     CentralPanel::default().show(ctx, |ui| {
         ui.set_height(ui.available_height());
         ScrollArea::vertical().show(ui, |ui| {
-            let volume_silder = egui::Slider::new(&mut settings.volume.0, 0..=100)
-                .show_value(false)
-                .clamping(SliderClamping::Always);
-            add_row("Volume", volume_silder, ui);
+            settings_content(ui, &mut settings);
         });
     });
 }
@@ -147,82 +141,7 @@ fn add_controls(egui_ctx: &mut EguiContexts) {
         ScrollArea::vertical()
             .auto_shrink([false, false])
             .show(ui, |ui| {
-                ui.set_width(ui.available_width());
-                ui.heading("Controls & Key Bindings");
-                ui.add_space(22.);
-
-                add_controls_section(
-                    ui,
-                    "Keyboard",
-                    KEY_BINDINGS
-                        .iter()
-                        .map(|binding| (key_label(binding.key_code), binding.label)),
-                );
-
-                ui.add_space(18.);
-                add_controls_section(
-                    ui,
-                    "Mouse Controls In-Game",
-                    MOUSE_BINDINGS
-                        .iter()
-                        .map(|binding| (binding.input, binding.description)),
-                );
+                controls_content(ui, true);
             });
     });
-}
-
-fn add_controls_section<'a>(
-    ui: &mut egui::Ui,
-    title: &str,
-    rows: impl IntoIterator<Item = (&'a str, &'a str)>,
-) {
-    Frame::new()
-        .fill(Color32::from_white_alpha(10))
-        .stroke(egui::Stroke::new(1., Color32::from_white_alpha(24)))
-        .inner_margin(egui::Margin::symmetric(22, 18))
-        .show(ui, |ui| {
-            ui.set_min_width(ui.available_width());
-            ui.label(
-                RichText::new(title)
-                    .size(24.)
-                    .strong()
-                    .color(Color32::from_gray(220)),
-            );
-            ui.add_space(12.);
-
-            for (index, (input, description)) in rows.into_iter().enumerate() {
-                add_control_row(ui, index, input, description);
-            }
-        });
-}
-
-fn add_control_row(ui: &mut egui::Ui, index: usize, input: &str, description: &str) {
-    let row_fill = match index % 2 {
-        0 => Color32::from_white_alpha(12),
-        _ => Color32::from_white_alpha(6),
-    };
-
-    Frame::new()
-        .fill(row_fill)
-        .inner_margin(egui::Margin::symmetric(14, 9))
-        .show(ui, |ui| {
-            ui.set_min_width(ui.available_width());
-            let key_width = (ui.available_width() * 0.26).clamp(150., 240.);
-            ui.horizontal(|ui| {
-                ui.add_sized(
-                    [key_width, 26.],
-                    Label::new(
-                        RichText::new(input)
-                            .monospace()
-                            .strong()
-                            .color(Color32::from_gray(225)),
-                    ),
-                );
-                ui.add_sized(
-                    [ui.available_width(), 26.],
-                    Label::new(RichText::new(description).color(Color32::from_gray(185))),
-                );
-            });
-        });
-    ui.add_space(6.);
 }

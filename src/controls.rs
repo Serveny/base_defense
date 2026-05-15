@@ -2,7 +2,6 @@ use bevy::prelude::{KeyCode, MouseButton};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub(crate) enum ControlAction {
-    BackToMainMenu,
     ActivateOverview,
     DeactivateOverview,
     SpeedDown,
@@ -26,9 +25,9 @@ pub(crate) struct KeyBinding {
 pub(crate) static KEY_BINDINGS: [KeyBinding; 9] = [
     KeyBinding {
         key_code: KeyCode::Escape,
-        label: "Back to main menu",
+        label: "Pause / continue",
         on_press: None,
-        on_release: Some(ControlAction::BackToMainMenu),
+        on_release: Some(ControlAction::Pause),
     },
     KeyBinding {
         key_code: KeyCode::ShiftLeft,
@@ -56,7 +55,7 @@ pub(crate) static KEY_BINDINGS: [KeyBinding; 9] = [
     },
     KeyBinding {
         key_code: KeyCode::KeyP,
-        label: "Pause",
+        label: "Pause / continue",
         on_press: None,
         on_release: Some(ControlAction::Pause),
     },
