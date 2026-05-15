@@ -129,7 +129,7 @@ fn game_setup(
     zoom_cam_to_board(&board, &mut q_cam, q_win);
     let visu = BoardVisu::new(1.);
     visu.draw_board(&mut cmds, &board, &board_cache, &assets);
-    draw_build_menu(&mut cmds, bm_close_ev, game.base_lvl);
+    draw_build_menu(&mut cmds, bm_close_ev, game.base_lvl, &assets);
 
     cmds.insert_resource(visu);
     cmds.init_resource::<IngameTime>();

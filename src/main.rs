@@ -104,6 +104,14 @@ const fn font_quicksand_regular() -> &'static [u8; 78628] {
     include_bytes!("../assets/fonts/Quicksand-Regular.ttf")
 }
 
+const fn font_screen_diags() -> &'static [u8; 78628] {
+    #[cfg(windows)]
+    return include_bytes!("..\\assets\\fonts\\screen-diags-font.ttf");
+
+    #[cfg(unix)]
+    include_bytes!("../assets/fonts/screen-diags-font.ttf")
+}
+
 fn add_font(ctx: &egui::Context, name: &str, font: &'static [u8]) {
     ctx.add_font(FontInsert::new(
         name,
@@ -127,6 +135,7 @@ fn setup_egui(mut egui_ctx: EguiContexts) {
         return;
     };
     add_font(ctx, "Quicksand-Regular", font_quicksand_regular());
+    add_font(ctx, "Screen-Diags", font_screen_diags());
 
     let mut style = (*ctx.style()).clone();
     style.text_styles.insert(
@@ -135,7 +144,7 @@ fn setup_egui(mut egui_ctx: EguiContexts) {
     );
     style.text_styles.insert(
         TextStyle::Body,
-        FontId::new(20., egui::FontFamily::Proportional),
+        FontId::new(21., egui::FontFamily::Proportional),
     );
     style.text_styles.insert(
         TextStyle::Button,

@@ -5,15 +5,19 @@ use super::{
 use crate::{
     board::visualisation::TILE_SIZE,
     utils::{
+        bold_text_bundle,
         buildings::{
             factory::{spawn_factory, Factory},
             power_plant::{spawn_power_plant, PowerPlant},
             Building,
         },
+        energy::{energy_symbol, ENERGY_COLOR},
+        materials::{materials_symbol, MATERIALS_COLOR},
         towers::Tower,
         Vec2Board,
     },
 };
+use bevy::color::palettes::css::RED;
 use bevy::prelude::*;
 use bevy_prototype_lyon::{prelude::*, shapes::Circle};
 
@@ -91,6 +95,15 @@ impl BuildMenu {
 #[derive(Component)]
 pub struct BuildMenuCircle;
 
+#[derive(Component)]
+pub struct BuildMenuCostPanel;
+
+#[derive(Component)]
+pub struct BuildMenuEnergyCostText;
+
+#[derive(Component)]
+pub struct BuildMenuMaterialsCostText;
+
 fn menu_circle_shape(tile_size: f32) -> impl Bundle {
     (
         ShapeBuilder::with(&Circle {
@@ -111,6 +124,7 @@ pub fn draw_build_menu(
     cmds: &mut Commands,
     mut bm_close_ev: MessageWriter<BuildMenuCloseMessage>,
     base_lvl: BaseLevel,
+    assets: &AssetServer,
 ) {
     cmds.spawn((
         menu_circle_shape(TILE_SIZE),
@@ -133,5 +147,54 @@ pub fn draw_build_menu(
             }
         }
     }
+    spawn_build_cost_texts(cmds, assets);
     bm_close_ev.write(BuildMenuCloseMessage);
+}
+
+fn spawn_build_cost_texts(cmds: &mut Commands, assets: &AssetServer) {
+    let text_color = RED.into();
+    let font_size = TILE_SIZE / 4.;
+    cmds.spawn((
+        Transform::from_xyz(0., 0., 6.),
+        Visibility::Hidden,
+        BuildMenuCostPanel,
+        BuildMenuScreen,
+    ))
+    .with_children(|parent| {
+        parent.spawn(energy_symbol(
+            Transform {
+                translation: Vec3::new(-TILE_SIZE / 4., TILE_SIZE / 8., 0.),
+                scale: Vec3::splat(0.16),
+                ..default()
+            },
+            ENERGY_COLOR.into(),
+        ));
+        parent
+            .spawn(bold_text_bundle(
+                "",
+                text_color,
+                assets,
+                Vec3::new(TILE_SIZE / 10., TILE_SIZE / 8., 0.),
+                font_size,
+            ))
+            .insert(BuildMenuEnergyCostText);
+
+        parent.spawn(materials_symbol(
+            Transform {
+                translation: Vec3::new(-TILE_SIZE / 4., -TILE_SIZE / 8., 0.),
+                scale: Vec3::splat(0.16),
+                ..default()
+            },
+            MATERIALS_COLOR.into(),
+        ));
+        parent
+            .spawn(bold_text_bundle(
+                "",
+                text_color,
+                assets,
+                Vec3::new(TILE_SIZE / 10., -TILE_SIZE / 8., 0.),
+                font_size,
+            ))
+            .insert(BuildMenuMaterialsCostText);
+    });
 }

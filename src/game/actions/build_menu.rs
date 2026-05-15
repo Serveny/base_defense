@@ -6,7 +6,10 @@ use crate::{
     },
     board::{visualisation::TILE_SIZE, Board, Tile},
     game::{
-        build_menus::{BuildMenu, BuildMenuCircle, BuildMenuScreen},
+        build_menus::{
+            BuildMenu, BuildMenuCircle, BuildMenuCostPanel, BuildMenuEnergyCostText,
+            BuildMenuMaterialsCostText, BuildMenuScreen,
+        },
         GameScreen,
     },
     utils::{
@@ -16,12 +19,15 @@ use crate::{
             Building, BuildingBase,
         },
         towers::{draw_tower, ChildOfTower, Tower, TowerRangeCircle},
-        Vec2Board,
+        Energy, Materials, Vec2Board,
     },
 };
+use bevy::ecs::query::QueryFilter;
 use bevy::prelude::*;
 
 use super::resources::{consume, ResourcesMessage};
+
+const BUILD_COST_TEXT_Y_OFFSET: f32 = -0.58;
 
 type QueryBuildMenuCircle<'w, 's, 'a> = Query<
     'w,
@@ -57,6 +63,40 @@ pub(in crate::game) type QueryBuildingMenuParents<'w, 's, 'a> = Query<
 type QueryBuildMenu<'w, 's, 'a> =
     Query<'w, 's, (Entity, &'a mut Visibility), (With<BuildMenuScreen>, Without<TowerRangeCircle>)>;
 
+type QueryBuildMenuCostPanel<'w, 's, 'a> = Query<
+    'w,
+    's,
+    (&'a mut Transform, &'a mut Visibility),
+    (
+        With<BuildMenuCostPanel>,
+        Without<BuildMenuCircle>,
+        Without<ChildOfTower>,
+        Without<BuildingBase>,
+        Without<Tower>,
+        Without<Building>,
+    ),
+>;
+
+type QueryBuildMenuEnergyCostText<'w, 's, 'a> = Query<
+    'w,
+    's,
+    &'a mut Text2d,
+    (
+        With<BuildMenuEnergyCostText>,
+        Without<BuildMenuMaterialsCostText>,
+    ),
+>;
+
+type QueryBuildMenuMaterialsCostText<'w, 's, 'a> = Query<
+    'w,
+    's,
+    &'a mut Text2d,
+    (
+        With<BuildMenuMaterialsCostText>,
+        Without<BuildMenuEnergyCostText>,
+    ),
+>;
+
 #[derive(Message, Clone, Copy)]
 pub enum BuildMenuScrollMessage {
     Before = -1,
@@ -68,6 +108,9 @@ pub(super) fn on_scroll(
     mut tbm: ResMut<BuildMenu>,
     mut q_tower: QueryTowerMenuParents,
     mut q_building: QueryBuildingMenuParents,
+    mut q_cost_panel: QueryBuildMenuCostPanel,
+    mut q_energy_cost: QueryBuildMenuEnergyCostText,
+    mut q_materials_cost: QueryBuildMenuMaterialsCostText,
     board: Res<Board>,
 ) {
     for ev in evr.read() {
@@ -76,6 +119,9 @@ pub(super) fn on_scroll(
                 &mut tbm,
                 &mut q_tower,
                 &mut q_building,
+                &mut q_cost_panel,
+                &mut q_energy_cost,
+                &mut q_materials_cost,
                 &board,
                 *ev as isize,
             );
@@ -92,6 +138,9 @@ pub(super) fn on_open(
     mut q_circle: QueryBuildMenuCircle,
     mut q_tower: QueryTowerMenuParents,
     mut q_building: QueryBuildingMenuParents,
+    mut q_cost_panel: QueryBuildMenuCostPanel,
+    mut q_energy_cost: QueryBuildMenuEnergyCostText,
+    mut q_materials_cost: QueryBuildMenuMaterialsCostText,
     board: Res<Board>,
 ) {
     for ev in evr.read() {
@@ -99,7 +148,16 @@ pub(super) fn on_open(
         if let Some(tile) = board.get_tile(pos) {
             let translation = Vec2Board::from_uvec2_middle(pos).to_scaled_vec3(3.);
             set_build_circle(&mut q_circle, translation);
-            show_preview(&mut tbm, &mut q_tower, &mut q_building, translation, tile);
+            show_preview(
+                &mut tbm,
+                &mut q_tower,
+                &mut q_building,
+                &mut q_cost_panel,
+                &mut q_energy_cost,
+                &mut q_materials_cost,
+                translation,
+                tile,
+            );
             tbm.is_open = true;
             tbm.is_visible = true;
             tbm.tile_pos = *pos;
@@ -149,6 +207,9 @@ fn show_preview(
     tm: &mut BuildMenu,
     q_tower: &mut QueryTowerMenuParents,
     q_building: &mut QueryBuildingMenuParents,
+    q_cost_panel: &mut QueryBuildMenuCostPanel,
+    q_energy_cost: &mut QueryBuildMenuEnergyCostText,
+    q_materials_cost: &mut QueryBuildMenuMaterialsCostText,
     translation: Vec3,
     tile: &Tile,
 ) {
@@ -156,36 +217,56 @@ fn show_preview(
     hide_building_preview_base(q_building);
 
     match *tile {
-        Tile::TowerGround => show_preview_tower(q_tower, translation, tm.selected_tower_index),
+        Tile::TowerGround => show_build_costs(
+            q_cost_panel,
+            q_energy_cost,
+            q_materials_cost,
+            translation,
+            show_preview_tower(q_tower, translation, tm.selected_tower_index),
+        ),
         Tile::BuildingGround => {
-            show_preview_building(q_building, translation, tm.selected_building_index)
+            show_build_costs(
+                q_cost_panel,
+                q_energy_cost,
+                q_materials_cost,
+                translation,
+                show_preview_building(q_building, translation, tm.selected_building_index),
+            );
         }
-        _ => (),
+        _ => hide_build_costs(q_cost_panel),
     }
 }
 
-fn show_preview_tower(q_tower: &mut QueryTowerMenuParents, translation: Vec3, selected_i: usize) {
-    for (i, (mut visi, mut transform, _)) in q_tower.iter_mut().enumerate() {
+fn show_preview_tower(
+    q_tower: &mut QueryTowerMenuParents,
+    translation: Vec3,
+    selected_i: usize,
+) -> Option<(Energy, Materials)> {
+    for (i, (mut visi, mut transform, tower)) in q_tower.iter_mut().enumerate() {
         if i == selected_i {
             transform.translation = translation;
             transform.scale = Vec3::new(0.5, 0.5, 1.);
             *visi = Visibility::Visible;
+            return Some(tower_build_cost(tower));
         }
     }
+    None
 }
 
 fn show_preview_building(
     q_building: &mut QueryBuildingMenuParents,
     translation: Vec3,
     selected_i: usize,
-) {
-    for (i, (mut visi, mut transform, _)) in q_building.iter_mut().enumerate() {
+) -> Option<(Energy, Materials)> {
+    for (i, (mut visi, mut transform, building)) in q_building.iter_mut().enumerate() {
         if i == selected_i {
             transform.translation = translation;
             transform.scale = Vec3::new(0.5, 0.5, 1.);
             *visi = Visibility::Visible;
+            return Some(building_build_cost(building));
         }
     }
+    None
 }
 
 fn hide_tower_preview_base(q_tower: &mut QueryTowerMenuParents) {
@@ -208,6 +289,9 @@ fn scroll(
     tm: &mut BuildMenu,
     q_tower: &mut QueryTowerMenuParents,
     q_building: &mut QueryBuildingMenuParents,
+    q_cost_panel: &mut QueryBuildMenuCostPanel,
+    q_energy_cost: &mut QueryBuildMenuEnergyCostText,
+    q_materials_cost: &mut QueryBuildMenuMaterialsCostText,
     board: &Board,
     additor: isize,
 ) {
@@ -218,14 +302,32 @@ fn scroll(
             let new_i = tm.selected_tower_index as isize + additor;
             if count > 1 {
                 tm.selected_tower_index = new_i.rem_euclid(count as isize) as usize;
-                show_preview(tm, q_tower, q_building, translation, tile);
+                show_preview(
+                    tm,
+                    q_tower,
+                    q_building,
+                    q_cost_panel,
+                    q_energy_cost,
+                    q_materials_cost,
+                    translation,
+                    tile,
+                );
             }
         } else {
             let count = q_building.iter().count();
             let new_i = tm.selected_building_index as isize + additor;
             if count > 1 {
                 tm.selected_building_index = new_i.rem_euclid(count as isize) as usize;
-                show_preview(tm, q_tower, q_building, translation, tile);
+                show_preview(
+                    tm,
+                    q_tower,
+                    q_building,
+                    q_cost_panel,
+                    q_energy_cost,
+                    q_materials_cost,
+                    translation,
+                    tile,
+                );
             }
         }
     }
@@ -290,16 +392,7 @@ fn place_tower(
     if let Some(tower) = tower {
         let pos = Vec2Board::from_uvec2_middle(pos);
         draw_tower::<GameScreen>(cmds, pos, tower);
-        consume(
-            res_actions,
-            match *tower {
-                Tower::Laser(_) => (-LASER_TOWER_ENERGY_COST, -LASER_TOWER_MATERIALS_COST),
-                Tower::Microwave(_) => todo!(),
-                Tower::Rocket(_) => (-ROCKET_TOWER_ENERGY_COST, -ROCKET_TOWER_MATERIALS_COST),
-                Tower::Grenade(_) => todo!(),
-            },
-            pos,
-        );
+        consume(res_actions, negate_cost(tower_build_cost(tower)), pos);
     }
 }
 
@@ -311,22 +404,67 @@ fn place_building(
 ) {
     let pos = Vec2Board::from_uvec2_middle(pos);
     match building {
-        Some(Building::PowerPlant) => {
+        Some(building @ Building::PowerPlant) => {
             spawn_power_plant::<GameScreen>(cmds, PowerPlant::new(pos), TILE_SIZE);
-            consume(
-                res_actions,
-                (-POWER_PLANT_ENERGY_COST, -POWER_PLANT_MATERIALS_COST),
-                pos,
-            );
+            consume(res_actions, negate_cost(building_build_cost(building)), pos);
         }
-        Some(Building::Factory) => {
+        Some(building @ Building::Factory) => {
             spawn_factory::<GameScreen>(cmds, Factory::new(pos), TILE_SIZE);
-            consume(
-                res_actions,
-                (-FACTORY_ENERGY_COST, -FACTORY_MATERIALS_COST),
-                pos,
-            );
+            consume(res_actions, negate_cost(building_build_cost(building)), pos);
         }
         None => (),
     }
+}
+
+fn show_build_costs(
+    q_cost_panel: &mut QueryBuildMenuCostPanel,
+    q_energy_cost: &mut QueryBuildMenuEnergyCostText,
+    q_materials_cost: &mut QueryBuildMenuMaterialsCostText,
+    translation: Vec3,
+    cost: Option<(Energy, Materials)>,
+) {
+    let Some((energy_cost, materials_cost)) = cost else {
+        hide_build_costs(q_cost_panel);
+        return;
+    };
+    if let Ok((mut transform, mut visibility)) = q_cost_panel.single_mut() {
+        transform.translation =
+            translation + Vec3::new(0., TILE_SIZE * BUILD_COST_TEXT_Y_OFFSET, 3.);
+        *visibility = Visibility::Visible;
+    }
+    set_build_cost_text(q_energy_cost, energy_cost);
+    set_build_cost_text(q_materials_cost, materials_cost);
+}
+
+fn set_build_cost_text(q_text: &mut Query<&mut Text2d, impl QueryFilter>, cost: f32) {
+    let Ok(mut text) = q_text.single_mut() else {
+        return;
+    };
+    text.0 = format!("-{cost:.0}");
+}
+
+fn hide_build_costs(q_cost_panel: &mut QueryBuildMenuCostPanel) {
+    if let Ok((_, mut visibility)) = q_cost_panel.single_mut() {
+        *visibility = Visibility::Hidden;
+    }
+}
+
+fn tower_build_cost(tower: &Tower) -> (Energy, Materials) {
+    match tower {
+        Tower::Laser(_) => (LASER_TOWER_ENERGY_COST, LASER_TOWER_MATERIALS_COST),
+        Tower::Microwave(_) => todo!(),
+        Tower::Rocket(_) => (ROCKET_TOWER_ENERGY_COST, ROCKET_TOWER_MATERIALS_COST),
+        Tower::Grenade(_) => todo!(),
+    }
+}
+
+fn building_build_cost(building: &Building) -> (Energy, Materials) {
+    match building {
+        Building::PowerPlant => (POWER_PLANT_ENERGY_COST, POWER_PLANT_MATERIALS_COST),
+        Building::Factory => (FACTORY_ENERGY_COST, FACTORY_MATERIALS_COST),
+    }
+}
+
+fn negate_cost(cost: (Energy, Materials)) -> (Energy, Materials) {
+    (-cost.0, -cost.1)
 }
