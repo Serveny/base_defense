@@ -1,9 +1,15 @@
 use std::time::Duration;
 
 use super::{building_base_shape, Building, BuildingBase};
-use crate::utils::{
-    buffer::Buffer, materials::MATERIALS_COLOR, resource_bar::spawn_resource_bar, Amount, BoardPos,
-    Energy, Materials, Vec2Board,
+use crate::{
+    balance::{
+        FACTORY_ENERGY_BUFFER_SIZE, FACTORY_ENERGY_PER_SECOND, FACTORY_MATERIALS_BUFFER_SIZE,
+        FACTORY_MATERIALS_PER_SECOND,
+    },
+    utils::{
+        buffer::Buffer, materials::MATERIALS_COLOR, resource_bar::spawn_resource_bar, Amount,
+        BoardPos, Energy, Materials, Vec2Board,
+    },
 };
 use bevy::color::palettes::css::{DIM_GRAY, GRAY};
 use bevy::prelude::*;
@@ -22,8 +28,14 @@ impl Factory {
     pub fn new(pos: Vec2Board) -> Self {
         Self {
             pos,
-            enery: Buffer::new(10., Amount::PerSecond(2.)),
-            materials: Buffer::new(5., Amount::PerSecond(1.)),
+            enery: Buffer::new(
+                FACTORY_ENERGY_BUFFER_SIZE,
+                Amount::PerSecond(FACTORY_ENERGY_PER_SECOND),
+            ),
+            materials: Buffer::new(
+                FACTORY_MATERIALS_BUFFER_SIZE,
+                Amount::PerSecond(FACTORY_MATERIALS_PER_SECOND),
+            ),
         }
     }
 

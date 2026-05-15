@@ -18,6 +18,7 @@ use bevy_egui::{
 use bevy_egui::{EguiContext, EguiPrimaryContextPass, PrimaryEguiContext};
 
 mod assets;
+mod balance;
 mod board;
 mod board_editor;
 mod controls;

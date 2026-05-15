@@ -1,4 +1,5 @@
 use crate::{
+    balance::ENEMY_BASE_DAMAGE_MULTIPLIER,
     board::{step::BoardDirection, BoardCache},
     game::{
         actions::{collision::EnemyCollisionAddMessage, resources::ResourcesMessage},
@@ -78,7 +79,7 @@ fn enemy_reached_base(
     enemy: &Enemy,
     entity: Entity,
 ) {
-    let damage = (-enemy.health * 20.).round();
+    let damage = (-enemy.health * ENEMY_BASE_DAMAGE_MULTIPLIER).round();
     res_actions.write(ResourcesMessage::Energy(damage, enemy.pos));
     res_actions.write(ResourcesMessage::Materials(damage, enemy.pos));
     cmds.entity(entity).try_despawn();

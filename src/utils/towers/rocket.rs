@@ -5,6 +5,7 @@ use super::{
     TowerCannon, TowerRangeCircle, TowerValues,
 };
 use crate::{
+    balance::{ROCKET_RELOAD_DURATION_SECS, ROCKET_SHOOT_DURATION_SECS},
     board::visualisation::TILE_SIZE,
     utils::{
         shots::{Shot, TowerStatus},
@@ -28,8 +29,8 @@ impl TowerValues {
             pos,
             range_radius: rocket::INIT_RANGE_RADIUS,
             shot: Shot::rocket(pos),
-            reload_duration: Duration::from_secs_f32(5.),
-            shoot_duration: Duration::from_secs_f32(1.),
+            reload_duration: Duration::from_secs_f32(ROCKET_RELOAD_DURATION_SECS),
+            shoot_duration: Duration::from_secs_f32(ROCKET_SHOOT_DURATION_SECS),
 
             target_lock: None,
             tower_status: TowerStatus::Waiting,

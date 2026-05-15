@@ -1,4 +1,5 @@
 use crate::{
+    balance::{ENEMY_DEATH_EXPLOSION_DAMAGE_DIVISOR, ENEMY_DEATH_EXPLOSION_RADIUS_FACTOR},
     game::{enemies::Enemy, GameScreen},
     utils::{
         explosions::{spawn_explosion, Explosion},
@@ -26,8 +27,8 @@ impl ExplosionMessage {
     pub fn death(enemy: &Enemy) -> Self {
         Self {
             pos: enemy.pos,
-            radius: enemy.size_radius * 1.2,
-            damage: enemy.health_max / 20.,
+            radius: enemy.size_radius * ENEMY_DEATH_EXPLOSION_RADIUS_FACTOR,
+            damage: enemy.health_max / ENEMY_DEATH_EXPLOSION_DAMAGE_DIVISOR,
         }
     }
 

@@ -1,3 +1,4 @@
+use crate::balance::ENEMY_KILL_MATERIAL_REWARD_DIVISOR;
 use crate::game::{
     actions::{explosions::ExplosionMessage, resources::ResourcesMessage},
     enemies::Enemy,
@@ -16,7 +17,7 @@ pub fn death_system(
         if enemy.health <= 0. {
             expl_actions.write(ExplosionMessage::death(enemy));
             res_actions.write(ResourcesMessage::Materials(
-                enemy.health_max / 10.,
+                enemy.health_max / ENEMY_KILL_MATERIAL_REWARD_DIVISOR,
                 enemy.pos,
             ));
             cmds.entity(entity).try_despawn();

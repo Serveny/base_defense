@@ -1,11 +1,15 @@
 use super::{DamagePerTimeShot, DamagePerTimeShotValues, Shot};
-use crate::{board::visualisation::TILE_SIZE, utils::Vec2Board};
+use crate::{
+    balance::{LASER_DAMAGE_PER_SECOND, LASER_RANGE_RADIUS, LASER_SHOT_DURATION_SECS},
+    board::visualisation::TILE_SIZE,
+    utils::Vec2Board,
+};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use std::time::Duration;
 
-pub const INIT_RANGE_RADIUS: f32 = 1.5;
-pub const INIT_SHOT_DURATION_SECS: f32 = 1.;
+pub const INIT_RANGE_RADIUS: f32 = LASER_RANGE_RADIUS;
+pub const INIT_SHOT_DURATION_SECS: f32 = LASER_SHOT_DURATION_SECS;
 
 #[derive(Component)]
 pub struct LaserShot;
@@ -13,7 +17,7 @@ pub struct LaserShot;
 impl Shot {
     pub fn laser_vals(pos_start: Vec2Board) -> Self {
         Self::Laser(DamagePerTimeShotValues {
-            damage: 100.,
+            damage: LASER_DAMAGE_PER_SECOND,
             lifetime: Duration::from_secs_f32(INIT_SHOT_DURATION_SECS),
             range_radius: INIT_RANGE_RADIUS,
             pos_start,

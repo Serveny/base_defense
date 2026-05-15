@@ -12,6 +12,7 @@ use self::{
     },
 };
 use crate::{
+    balance::{GAME_OVER_COUNTDOWN_SECS, INITIAL_WAVE_DELAY_SECS, START_ENERGY, START_MATERIALS},
     board::{visualisation::BoardVisualisation, Board, BoardCache, Tile},
     utils::{
         collision::Collisions, despawn_all_of, zoom_cam_to_board, Difficulty, Energy, IngameTime,
@@ -43,7 +44,7 @@ enum IngameState {
 #[derive(Resource, Default, Clone)]
 struct HoveredTile(Option<(Vec2Board, Tile)>);
 
-pub const GAME_OVER_COUNTDOWN_TIME: Duration = Duration::from_secs(60);
+pub const GAME_OVER_COUNTDOWN_TIME: Duration = Duration::from_secs(GAME_OVER_COUNTDOWN_SECS);
 pub struct GamePlugin;
 
 impl Plugin for GamePlugin {
@@ -87,10 +88,10 @@ impl Game {
     pub fn new(difficulty: Difficulty) -> Self {
         Self {
             difficulty,
-            energy: 1000.,
-            materials: 1000.,
+            energy: START_ENERGY,
+            materials: START_MATERIALS,
             wave_no: 0,
-            next_wave_spawn: Some(IngameTimestamp::new(1.)),
+            next_wave_spawn: Some(IngameTimestamp::new(INITIAL_WAVE_DELAY_SECS)),
             is_overview: false,
             base_lvl: 1,
             speed: 1.,

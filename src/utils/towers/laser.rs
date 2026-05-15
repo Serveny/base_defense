@@ -5,6 +5,7 @@ use super::{
     TowerCannon, TowerRangeCircle, TowerValues,
 };
 use crate::{
+    balance::LASER_RELOAD_DURATION_SECS,
     board::visualisation::TILE_SIZE,
     utils::{
         shots::{Shot, TowerStatus},
@@ -27,7 +28,7 @@ impl TowerValues {
             pos,
             range_radius: laser::INIT_RANGE_RADIUS,
             shot: Shot::laser_vals(pos),
-            reload_duration: Duration::from_secs(1),
+            reload_duration: Duration::from_secs_f32(LASER_RELOAD_DURATION_SECS),
             shoot_duration: Duration::from_secs_f32(laser::INIT_SHOT_DURATION_SECS),
 
             target_lock: None,

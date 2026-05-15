@@ -1,4 +1,9 @@
 use crate::{
+    balance::{
+        FACTORY_ENERGY_COST, FACTORY_MATERIALS_COST, LASER_TOWER_ENERGY_COST,
+        LASER_TOWER_MATERIALS_COST, POWER_PLANT_ENERGY_COST, POWER_PLANT_MATERIALS_COST,
+        ROCKET_TOWER_ENERGY_COST, ROCKET_TOWER_MATERIALS_COST,
+    },
     board::{visualisation::TILE_SIZE, Board, Tile},
     game::{
         build_menus::{BuildMenu, BuildMenuCircle, BuildMenuScreen},
@@ -288,9 +293,9 @@ fn place_tower(
         consume(
             res_actions,
             match *tower {
-                Tower::Laser(_) => (-100., -200.),
+                Tower::Laser(_) => (-LASER_TOWER_ENERGY_COST, -LASER_TOWER_MATERIALS_COST),
                 Tower::Microwave(_) => todo!(),
-                Tower::Rocket(_) => (-1000., -1000.),
+                Tower::Rocket(_) => (-ROCKET_TOWER_ENERGY_COST, -ROCKET_TOWER_MATERIALS_COST),
                 Tower::Grenade(_) => todo!(),
             },
             pos,
@@ -308,11 +313,19 @@ fn place_building(
     match building {
         Some(Building::PowerPlant) => {
             spawn_power_plant::<GameScreen>(cmds, PowerPlant::new(pos), TILE_SIZE);
-            consume(res_actions, (-500., -600.), pos);
+            consume(
+                res_actions,
+                (-POWER_PLANT_ENERGY_COST, -POWER_PLANT_MATERIALS_COST),
+                pos,
+            );
         }
         Some(Building::Factory) => {
             spawn_factory::<GameScreen>(cmds, Factory::new(pos), TILE_SIZE);
-            consume(res_actions, (-10000., -1000.), pos);
+            consume(
+                res_actions,
+                (-FACTORY_ENERGY_COST, -FACTORY_MATERIALS_COST),
+                pos,
+            );
         }
         None => (),
     }

@@ -1,4 +1,5 @@
 use crate::{
+    balance::NEXT_WAVE_DELAY_SECS,
     game::{
         systems::wave::{Wave, WaveState},
         Game,
@@ -58,5 +59,5 @@ fn end_wave_and_prepare_next(
     now: IngameTimestamp,
 ) {
     set_wave_state.set(WaveState::None);
-    game.next_wave_spawn = Some(now + Duration::from_secs(1));
+    game.next_wave_spawn = Some(now + Duration::from_secs_f32(NEXT_WAVE_DELAY_SECS));
 }

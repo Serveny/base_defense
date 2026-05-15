@@ -1,5 +1,9 @@
 use super::{DamageInRadiusTargetPosShot, DamageInRadiusTargetPosShotValues, Shot};
 use crate::{
+    balance::{
+        ROCKET_DAMAGE, ROCKET_DAMAGE_RADIUS, ROCKET_FUEL_CONSUMPTION_PER_SECOND,
+        ROCKET_FUEL_RANGE_TILES, ROCKET_RANGE_RADIUS, ROCKET_SPEED_TILES_PER_SECOND,
+    },
     board::visualisation::TILE_SIZE,
     utils::{
         buffer::Buffer, materials::MATERIALS_COLOR, resource_bar::spawn_resource_bar, Amount,
@@ -10,7 +14,7 @@ use bevy::color::palettes::css::{DIM_GRAY, PURPLE};
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
-pub const INIT_RANGE_RADIUS: f32 = 3.5;
+pub const INIT_RANGE_RADIUS: f32 = ROCKET_RANGE_RADIUS;
 const BARREL_SPAWN_OFFSET_TILES: f32 = 0.18;
 
 #[derive(Component)]
@@ -21,11 +25,14 @@ impl Shot {
         Self::Rocket(DamageInRadiusTargetPosShotValues {
             pos_start: pos,
             pos,
-            damage: 100.,
-            damage_radius: 0.5,
+            damage: ROCKET_DAMAGE,
+            damage_radius: ROCKET_DAMAGE_RADIUS,
             range_radius: INIT_RANGE_RADIUS,
-            speed: 3.,
-            fuel: Buffer::<Materials>::new(5., Amount::PerSecond(1.)),
+            speed: ROCKET_SPEED_TILES_PER_SECOND,
+            fuel: Buffer::<Materials>::new(
+                ROCKET_FUEL_RANGE_TILES,
+                Amount::PerSecond(ROCKET_FUEL_CONSUMPTION_PER_SECOND),
+            ),
         })
     }
 }

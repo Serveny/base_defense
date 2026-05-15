@@ -1,7 +1,10 @@
 use super::{building_base_shape, Building, BuildingBase};
-use crate::utils::{
-    buffer::Buffer, energy::ENERGY_COLOR, resource_bar::spawn_resource_bar, Amount, BoardPos,
-    Energy, Vec2Board,
+use crate::{
+    balance::{POWER_PLANT_BUFFER_SIZE, POWER_PLANT_ENERGY_PER_SECOND},
+    utils::{
+        buffer::Buffer, energy::ENERGY_COLOR, resource_bar::spawn_resource_bar, Amount, BoardPos,
+        Energy, Vec2Board,
+    },
 };
 use bevy::color::palettes::css::{DIM_GRAY, GRAY};
 use bevy::prelude::*;
@@ -19,7 +22,10 @@ impl PowerPlant {
     pub fn new(pos: Vec2Board) -> Self {
         Self {
             pos,
-            energy: Buffer::new(50., Amount::PerSecond(10.)),
+            energy: Buffer::new(
+                POWER_PLANT_BUFFER_SIZE,
+                Amount::PerSecond(POWER_PLANT_ENERGY_PER_SECOND),
+            ),
         }
     }
 

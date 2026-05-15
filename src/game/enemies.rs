@@ -1,5 +1,11 @@
 use super::GameScreen;
 use crate::{
+    balance::{
+        ENEMY_BREAK_RADIUS_PADDING_FACTOR, NORMAL_ENEMY_HEALTH, NORMAL_ENEMY_SIZE_RADIUS,
+        NORMAL_ENEMY_SPEED_TILES_PER_SECOND, SPEEDER_ENEMY_HEALTH, SPEEDER_ENEMY_SIZE_RADIUS,
+        SPEEDER_ENEMY_SPEED_TILES_PER_SECOND, TANK_ENEMY_HEALTH, TANK_ENEMY_SIZE_RADIUS,
+        TANK_ENEMY_SPEED_TILES_PER_SECOND,
+    },
     board::{
         spawn_line::SpawnLine,
         step::{BoardDirection, BoardStep},
@@ -76,18 +82,18 @@ impl Enemy {
         q_enemies: &Query<&Enemy>,
         board_cache: &BoardCache,
     ) -> Option<Self> {
-        let size_radius = 0.125;
+        let size_radius = NORMAL_ENEMY_SIZE_RADIUS;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
             current_step.distance += 0.5;
             let pos = first_pos(&current_step, path_offset);
             current_step.start_pos = pos;
-            let speed = 1.;
+            let speed = NORMAL_ENEMY_SPEED_TILES_PER_SECOND;
             return Some(Self {
                 size_radius,
-                break_radius: size_radius + (size_radius / 10.),
+                break_radius: size_radius + (size_radius * ENEMY_BREAK_RADIUS_PADDING_FACTOR),
                 speed,
-                health_max: 100.,
-                health: 100.,
+                health_max: NORMAL_ENEMY_HEALTH,
+                health: NORMAL_ENEMY_HEALTH,
                 pos,
                 enemy_type: EnemyType::Normal,
                 current_step,
@@ -104,18 +110,18 @@ impl Enemy {
         q_enemies: &Query<&Enemy>,
         board_cache: &BoardCache,
     ) -> Option<Self> {
-        let size_radius = 0.075;
+        let size_radius = SPEEDER_ENEMY_SIZE_RADIUS;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
             current_step.distance += 0.5;
             let pos = first_pos(&current_step, path_offset);
             current_step.start_pos = pos;
-            let speed = 2.;
+            let speed = SPEEDER_ENEMY_SPEED_TILES_PER_SECOND;
             return Some(Self {
                 size_radius,
-                break_radius: size_radius + (size_radius / 10.),
+                break_radius: size_radius + (size_radius * ENEMY_BREAK_RADIUS_PADDING_FACTOR),
                 speed,
-                health_max: 10.,
-                health: 10.,
+                health_max: SPEEDER_ENEMY_HEALTH,
+                health: SPEEDER_ENEMY_HEALTH,
                 pos,
                 enemy_type: EnemyType::Speeder,
                 current_step,
@@ -132,18 +138,18 @@ impl Enemy {
         q_enemies: &Query<&Enemy>,
         board_cache: &BoardCache,
     ) -> Option<Self> {
-        let size_radius = 0.25;
+        let size_radius = TANK_ENEMY_SIZE_RADIUS;
         if let Some(path_offset) = Self::generate_offset(size_radius, q_enemies, board_cache) {
             current_step.distance += 0.5;
             let pos = first_pos(&current_step, path_offset);
             current_step.start_pos = pos;
-            let speed = 0.5;
+            let speed = TANK_ENEMY_SPEED_TILES_PER_SECOND;
             return Some(Self {
                 size_radius,
-                break_radius: size_radius + (size_radius / 10.),
+                break_radius: size_radius + (size_radius * ENEMY_BREAK_RADIUS_PADDING_FACTOR),
                 speed,
-                health_max: 1000.,
-                health: 1000.,
+                health_max: TANK_ENEMY_HEALTH,
+                health: TANK_ENEMY_HEALTH,
                 pos,
                 enemy_type: EnemyType::Tank,
                 current_step,
