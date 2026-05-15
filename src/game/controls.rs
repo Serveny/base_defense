@@ -12,6 +12,9 @@ use super::{
 };
 use crate::{
     board::{Board, Tile},
+    controls::{
+        ControlAction, BUILD_MENU_MOUSE_BUTTON, CLOSE_BUILD_MENU_MOUSE_BUTTON, KEY_BINDINGS,
+    },
     utils::{cursor_pos, BoardPos, Vec2Board},
     CamQuery,
 };
@@ -27,46 +30,77 @@ pub(super) fn keyboard_input(
     mut bm_build_ev: MessageWriter<BuildMenuBuildMessage>,
     ingame_state: Res<State<IngameState>>,
 ) {
+    for binding in KEY_BINDINGS.iter() {
+        if keys.just_pressed(binding.key_code) {
+            if let Some(control_action) = binding.on_press {
+                write_control_action(
+                    control_action,
+                    &ingame_state,
+                    &mut actions,
+                    &mut bm_scroll_ev,
+                    &mut bm_build_ev,
+                );
+            }
+        }
+
+        if keys.just_released(binding.key_code) {
+            if let Some(control_action) = binding.on_release {
+                write_control_action(
+                    control_action,
+                    &ingame_state,
+                    &mut actions,
+                    &mut bm_scroll_ev,
+                    &mut bm_build_ev,
+                );
+            }
+        }
+    }
+}
+
+fn write_control_action(
+    control_action: ControlAction,
+    ingame_state: &State<IngameState>,
+    actions: &mut MessageWriter<GameActionMessage>,
+    bm_scroll_ev: &mut MessageWriter<BuildMenuScrollMessage>,
+    bm_build_ev: &mut MessageWriter<BuildMenuBuildMessage>,
+) {
     use GameActionMessage::*;
-    if keys.just_released(KeyCode::Escape) {
-        actions.write(BackToMainMenu);
-    }
 
-    // Ingame keys
-    if *ingame_state != IngameState::Running {
-        return;
-    }
-    if keys.just_pressed(KeyCode::ShiftLeft) {
-        actions.write(ActivateOverview);
-    }
-    if keys.just_released(KeyCode::ShiftLeft) {
-        actions.write(DeactivateOverview);
-    }
-    if keys.just_pressed(KeyCode::Comma) {
-        actions.write(SpeedDown);
-    }
-    if keys.just_pressed(KeyCode::Period) {
-        actions.write(SpeedUp);
-    }
-    if keys.just_pressed(KeyCode::KeyF) {
-        actions.write(Speed(4.));
-    }
-    if keys.just_released(KeyCode::KeyF) {
-        actions.write(Speed(1.));
-    }
-    if keys.just_released(KeyCode::KeyP) {
-        actions.write(Pause);
-    }
-
-    // Build Menu
-    if keys.just_released(KeyCode::ArrowUp) {
-        bm_scroll_ev.write(BuildMenuScrollMessage::Before);
-    }
-    if keys.just_released(KeyCode::ArrowDown) {
-        bm_scroll_ev.write(BuildMenuScrollMessage::After);
-    }
-    if keys.just_released(KeyCode::Enter) {
-        bm_build_ev.write(BuildMenuBuildMessage);
+    match control_action {
+        ControlAction::BackToMainMenu => {
+            actions.write(BackToMainMenu);
+        }
+        _ if **ingame_state != IngameState::Running => (),
+        ControlAction::ActivateOverview => {
+            actions.write(ActivateOverview);
+        }
+        ControlAction::DeactivateOverview => {
+            actions.write(DeactivateOverview);
+        }
+        ControlAction::SpeedDown => {
+            actions.write(SpeedDown);
+        }
+        ControlAction::SpeedUp => {
+            actions.write(SpeedUp);
+        }
+        ControlAction::FastForward => {
+            actions.write(Speed(4.));
+        }
+        ControlAction::NormalSpeed => {
+            actions.write(Speed(1.));
+        }
+        ControlAction::Pause => {
+            actions.write(Pause);
+        }
+        ControlAction::BuildMenuPrevious => {
+            bm_scroll_ev.write(BuildMenuScrollMessage::Before);
+        }
+        ControlAction::BuildMenuNext => {
+            bm_scroll_ev.write(BuildMenuScrollMessage::After);
+        }
+        ControlAction::BuildSelected => {
+            bm_build_ev.write(BuildMenuBuildMessage);
+        }
     }
 }
 
@@ -110,7 +144,7 @@ pub(super) fn mouse_input(
         None => tile_unhover(&mut bm_hide_ev, &mut tile_ac),
     };
 
-    if mbi.just_pressed(MouseButton::Right) {
+    if mbi.just_pressed(CLOSE_BUILD_MENU_MOUSE_BUTTON) {
         bm_close_ev.write(BuildMenuCloseMessage);
     }
 }
@@ -130,7 +164,7 @@ fn tile_hover(
     tile: Tile,
 ) {
     let upos = pos.as_uvec2();
-    let is_left_click = mbi.just_pressed(MouseButton::Left);
+    let is_left_click = mbi.just_pressed(BUILD_MENU_MOUSE_BUTTON);
     let is_tile_filled = p_pos.iter().any(|t_pos| upos == **t_pos);
     let is_build_tile = tile.is_buildable();
     match (is_left_click, tbm.is_open, is_tile_filled) {

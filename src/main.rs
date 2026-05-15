@@ -20,6 +20,7 @@ use bevy_egui::{EguiContext, EguiPrimaryContextPass, PrimaryEguiContext};
 mod assets;
 mod board;
 mod board_editor;
+mod controls;
 mod game;
 mod main_menu;
 mod splash;
